@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import {
   Leaf, MapPin, Search, ShoppingBasket, Sprout, Truck, ArrowRight,
   CircleCheck, Star, Tractor, Carrot, Wheat, Apple, Milk, Egg,
@@ -6,6 +7,7 @@ import {
 import heroFarm from "@/assets/hero-farm.jpg";
 import produceFlatlay from "@/assets/produce-flatlay.jpg";
 import farmerPortrait from "@/assets/farmer-portrait.jpg";
+import { SiteNav } from "@/components/site-nav";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -24,7 +26,7 @@ export const Route = createFileRoute("/")({
 function Index() {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Nav />
+      <SiteNav />
       <Hero />
       <Stats />
       <Categories />
@@ -65,7 +67,6 @@ function Nav() {
     </header>
   );
 }
-
 function Hero() {
   return (
     <section className="relative overflow-hidden">
@@ -111,9 +112,9 @@ function Hero() {
               className="bg-transparent outline-none w-full md:w-56 text-sm placeholder:text-muted-foreground"
             />
           </div>
-          <button className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity">
+          <Link to="/browse" className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity">
             Find produce
-          </button>
+          </Link>
         </div>
 
         <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-white/70">
@@ -171,8 +172,9 @@ function Categories() {
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {cats.map((c) => (
-            <button
+            <Link
               key={c.name}
+              to="/browse"
               className="group flex flex-col items-start gap-3 p-5 rounded-2xl bg-card border border-border hover:border-leaf hover:shadow-[var(--shadow-soft)] transition-all text-left"
             >
               <div className="grid place-items-center w-12 h-12 rounded-xl bg-secondary text-leaf group-hover:bg-[image:var(--gradient-leaf)] group-hover:text-primary-foreground transition-all">
@@ -182,7 +184,7 @@ function Categories() {
                 <div className="font-semibold text-foreground">{c.name}</div>
                 <div className="text-xs text-muted-foreground mt-0.5">{c.count}</div>
               </div>
-            </button>
+            </Link>
           ))}
         </div>
       </div>
@@ -263,9 +265,9 @@ function FeaturedFarmer() {
             ))}
           </ul>
           <div className="mt-10 flex gap-3">
-            <button className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity">
+            <Link to="/dashboard" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity">
               <Tractor className="w-5 h-5" /> Become a seller
-            </button>
+            </Link>
           </div>
         </div>
       </div>
@@ -322,12 +324,12 @@ function CTA() {
             <h2 className="text-4xl md:text-5xl font-bold leading-tight">Ready to taste the difference?</h2>
             <p className="mt-4 text-white/80 text-lg">Join thousands of buyers and farmers building a more transparent food chain.</p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <button className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-sun text-sun-foreground font-semibold hover:opacity-90 transition-opacity">
+              <Link to="/browse" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-sun text-sun-foreground font-semibold hover:opacity-90 transition-opacity">
                 Start shopping <ArrowRight className="w-4 h-4" />
-              </button>
-              <button className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/10 border border-white/20 text-primary-foreground font-semibold hover:bg-white/15 transition-colors">
+              </Link>
+              <Link to="/dashboard" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/10 border border-white/20 text-primary-foreground font-semibold hover:bg-white/15 transition-colors">
                 Sell your harvest
-              </button>
+              </Link>
             </div>
           </div>
         </div>
