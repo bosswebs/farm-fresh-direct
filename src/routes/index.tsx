@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import {
   Leaf, MapPin, Search, ShoppingBasket, Sprout, Truck, ArrowRight,
   CircleCheck, Star, Tractor, Carrot, Wheat, Apple, Milk, Egg,
@@ -6,6 +7,7 @@ import {
 import heroFarm from "@/assets/hero-farm.jpg";
 import produceFlatlay from "@/assets/produce-flatlay.jpg";
 import farmerPortrait from "@/assets/farmer-portrait.jpg";
+import { SiteNav } from "@/components/site-nav";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -24,7 +26,7 @@ export const Route = createFileRoute("/")({
 function Index() {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Nav />
+      <SiteNav />
       <Hero />
       <Stats />
       <Categories />
