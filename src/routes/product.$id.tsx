@@ -2,13 +2,13 @@ import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-rout
 import { useEffect, useState } from "react";
 import { ArrowLeft, MapPin, Star, Calendar, Package, Tractor, ShoppingBasket, MessageCircle } from "lucide-react";
 import { SiteNav } from "@/components/site-nav";
-import { getProduct, subscribe, type Product } from "@/lib/products-store";
+import { getProduct, subscribe, formatRWF, WHATSAPP_LINK, type Product } from "@/lib/products-store";
 
 export const Route = createFileRoute("/product/$id")({
   head: () => ({
     meta: [
-      { title: "Product — AgriMarket Connect" },
-      { name: "description", content: "Buy fresh produce directly from the farmer." },
+      { title: "Product — Deacomart Ltd" },
+      { name: "description", content: "Order quality food and beverage products from Deacomart Rwanda." },
     ],
   }),
   component: ProductPage,
@@ -82,7 +82,7 @@ function ProductPage() {
             </div>
 
             <div className="mt-6 flex items-baseline gap-3">
-              <span className="font-display text-5xl font-bold text-primary">${product.price.toFixed(2)}</span>
+              <span className="font-display text-4xl md:text-5xl font-bold text-primary">{formatRWF(product.price)}</span>
               <span className="text-muted-foreground">/ {product.unit}</span>
               <span className={`ml-auto text-xs font-semibold px-3 py-1.5 rounded-full ${stockBadge.className}`}>
                 {stockBadge.label}
@@ -111,17 +111,25 @@ function ProductPage() {
               </button>
             </div>
 
-            <div className="mt-6 flex gap-3">
+            <div className="mt-6 flex flex-col sm:flex-row gap-3">
+              <a
+                href={`${WHATSAPP_LINK}?text=${encodeURIComponent(`Hello Deacomart, I'd like to order: ${product.name} (${formatRWF(product.price)} / ${product.unit}).`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`flex-1 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity ${product.quantity === 0 ? "opacity-50 pointer-events-none" : ""}`}
+              >
+                <MessageCircle className="w-5 h-5" /> Order on WhatsApp
+              </a>
               <button
                 disabled={product.quantity === 0}
-                className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-sun text-sun-foreground font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ShoppingBasket className="w-5 h-5" /> Add to cart
               </button>
-              <button className="px-6 py-3.5 rounded-xl bg-sun text-sun-foreground font-semibold hover:opacity-90 transition-opacity">
-                Buy now
-              </button>
             </div>
+            <p className="mt-3 text-xs text-muted-foreground">
+              LPO confirmation required at least 2 hours before delivery. Payment via Equity Bank — Deacomart Ltd, Account 4014201311299.
+            </p>
           </div>
         </div>
       </div>
