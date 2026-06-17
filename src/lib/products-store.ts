@@ -3,24 +3,32 @@ import produceFlatlay from "@/assets/produce-flatlay.jpg";
 import farmerPortrait from "@/assets/farmer-portrait.jpg";
 
 export type Category =
-  | "Vegetables"
-  | "Fruits"
-  | "Grains & Cereals"
-  | "Dairy"
-  | "Poultry & Eggs"
-  | "Herbs & Spices";
+  | "Juices & Beverages"
+  | "Teas & Herbal"
+  | "Natural Health"
+  | "Condiments & Staples"
+  | "Fresh Produce"
+  | "Poultry & Eggs";
 
 export const CATEGORIES: Category[] = [
-  "Vegetables",
-  "Fruits",
-  "Grains & Cereals",
-  "Dairy",
+  "Juices & Beverages",
+  "Teas & Herbal",
+  "Natural Health",
+  "Condiments & Staples",
+  "Fresh Produce",
   "Poultry & Eggs",
-  "Herbs & Spices",
 ];
 
-export type Unit = "Kg" | "Ton" | "Sack" | "Crate" | "Dozen" | "Piece";
-export const UNITS: Unit[] = ["Kg", "Ton", "Sack", "Crate", "Dozen", "Piece"];
+export type Unit = "Kg" | "Litre" | "Bottle" | "Jar" | "Pack" | "Tray" | "Dozen" | "Piece";
+export const UNITS: Unit[] = ["Kg", "Litre", "Bottle", "Jar", "Pack", "Tray", "Dozen", "Piece"];
+
+export const WHATSAPP_NUMBER = "+250780165257";
+export const WHATSAPP_LINK = "https://wa.me/250780165257";
+export const CONTACT_EMAIL = "deaco2025@gmail.com";
+
+export function formatRWF(n: number): string {
+  return `RWF ${Math.round(n).toLocaleString()}`;
+}
 
 export type Product = {
   id: string;
@@ -55,16 +63,16 @@ function today(offsetDays = 0) {
 const SEED: Product[] = [
   {
     id: "seed-1",
-    name: "Vine-Ripened Heirloom Tomatoes",
-    category: "Vegetables",
+    name: "Passion Fruit Juice",
+    category: "Juices & Beverages",
     description:
-      "Hand-picked heirloom tomatoes grown without pesticides. Rich, sweet, and perfect for sauces or salads.",
-    price: 3.5,
-    quantity: 120,
-    unit: "Kg",
-    location: "Nakuru, Kenya",
-    farmerName: "Joseph K.",
-    farmName: "Green Valley Farm",
+      "100% natural passion juice bottled fresh from Rwandan orchards. No added preservatives — crisp, tangy, and refreshing.",
+    price: 2500,
+    quantity: 240,
+    unit: "Bottle",
+    location: "Kigali, Rwanda",
+    farmerName: "Deacomart Ltd",
+    farmName: "Deacomart Distribution",
     harvestDate: today(-1),
     image: produceFlatlay,
     rating: 4.9,
@@ -72,48 +80,49 @@ const SEED: Product[] = [
   },
   {
     id: "seed-2",
-    name: "Organic Lettuce Heads",
-    category: "Vegetables",
+    name: "Hibiscus Herbal Tea",
+    category: "Teas & Herbal",
     description:
-      "Crisp, fresh lettuce harvested this morning. Grown using regenerative practices.",
-    price: 1.2,
+      "Caffeine-free hibiscus blend grown by Nyagatare farmers. Bright, floral and rich in antioxidants.",
+    price: 3200,
     quantity: 80,
-    unit: "Piece",
-    location: "Nairobi, Kenya",
-    farmerName: "Amina W.",
-    farmName: "Sunrise Greens",
-    harvestDate: today(0),
+    unit: "Pack",
+    location: "Nyagatare, Rwanda",
+    farmerName: "Nyagatare Farmers Cooperative",
+    farmName: "Cyabayaga Tea Growers",
+    harvestDate: today(-10),
     image: heroFarm,
     rating: 4.8,
     createdAt: Date.now() - 1000 * 60 * 60 * 6,
   },
   {
     id: "seed-3",
-    name: "Free-Range Eggs",
-    category: "Poultry & Eggs",
-    description: "Pasture-raised, brown-shell eggs from happy hens.",
-    price: 4.0,
-    quantity: 40,
-    unit: "Dozen",
-    location: "Kiambu, Kenya",
-    farmerName: "Daniel M.",
-    farmName: "Hilltop Poultry",
-    harvestDate: today(0),
+    name: "Pure Rwandan Honey",
+    category: "Natural Health",
+    description:
+      "Raw, unfiltered honey harvested by smallholder beekeepers trained by Deacomart. Single-origin and traceable.",
+    price: 6500,
+    quantity: 60,
+    unit: "Jar",
+    location: "Musanze, Rwanda",
+    farmerName: "Habimana Joseph",
+    farmName: "Volcanoes Apiary",
+    harvestDate: today(-30),
     image: farmerPortrait,
     rating: 5.0,
     createdAt: Date.now() - 1000 * 60 * 60 * 2,
   },
   {
     id: "seed-4",
-    name: "Sweet Mangoes",
-    category: "Fruits",
-    description: "Juicy Kent mangoes at peak ripeness. Limited stock.",
-    price: 2.2,
-    quantity: 60,
+    name: "Hass Avocado",
+    category: "Fresh Produce",
+    description: "Buttery, ripe Hass avocados delivered the day after harvest. Perfect for hotels and restaurants.",
+    price: 1800,
+    quantity: 150,
     unit: "Kg",
-    location: "Mombasa, Kenya",
-    farmerName: "Grace O.",
-    farmName: "Coastal Orchards",
+    location: "Huye, Rwanda",
+    farmerName: "Southern Growers Group",
+    farmName: "Huye Avocado Farm",
     harvestDate: today(-2),
     image: produceFlatlay,
     rating: 4.7,
@@ -121,35 +130,67 @@ const SEED: Product[] = [
   },
   {
     id: "seed-5",
-    name: "Whole-Grain Maize",
-    category: "Grains & Cereals",
-    description: "Sun-dried, non-GMO maize. Ideal for flour or animal feed.",
-    price: 0.8,
-    quantity: 5,
-    unit: "Ton",
-    location: "Eldoret, Kenya",
-    farmerName: "Peter R.",
-    farmName: "Highland Grains",
-    harvestDate: today(-30),
+    name: "Roasted Sesame Seeds",
+    category: "Natural Health",
+    description: "Sun-dried, lightly roasted sesame — high in calcium and protein. Ideal for bakeries and home kitchens.",
+    price: 4200,
+    quantity: 18,
+    unit: "Kg",
+    location: "Bugesera, Rwanda",
+    farmerName: "Eastern Oilseed Coop",
+    farmName: "Bugesera Sesame Farm",
+    harvestDate: today(-25),
     image: heroFarm,
     rating: 4.6,
     createdAt: Date.now() - 1000 * 60 * 60 * 72,
   },
   {
     id: "seed-6",
-    name: "Fresh Cow Milk",
-    category: "Dairy",
-    description: "Pasteurized whole milk from grass-fed cows. Delivered daily.",
-    price: 1.0,
-    quantity: 200,
-    unit: "Kg",
-    location: "Limuru, Kenya",
-    farmerName: "Sarah N.",
-    farmName: "Meadow Dairy",
+    name: "Free-Range Eggs",
+    category: "Poultry & Eggs",
+    description: "Pasture-raised eggs from happy hens. Delivered daily to Kigali partners and households.",
+    price: 3600,
+    quantity: 90,
+    unit: "Tray",
+    location: "Kigali, Rwanda",
+    farmerName: "Deacomart Poultry Partners",
+    farmName: "Hilltop Poultry",
     harvestDate: today(0),
     image: farmerPortrait,
     rating: 4.9,
     createdAt: Date.now() - 1000 * 60 * 30,
+  },
+  {
+    id: "seed-7",
+    name: "Green Tea Leaves",
+    category: "Teas & Herbal",
+    description: "Premium loose-leaf green tea from Rwanda's highland plantations. Smooth, grassy and clean.",
+    price: 3000,
+    quantity: 120,
+    unit: "Pack",
+    location: "Nyabihu, Rwanda",
+    farmerName: "Highland Tea Growers",
+    farmName: "Nyabihu Tea Estate",
+    harvestDate: today(-7),
+    image: produceFlatlay,
+    rating: 4.8,
+    createdAt: Date.now() - 1000 * 60 * 60 * 30,
+  },
+  {
+    id: "seed-8",
+    name: "House-Made Salsa",
+    category: "Condiments & Staples",
+    description: "Fresh tomato salsa with onion, coriander and chilli — produced under Deacomart food safety standards.",
+    price: 2800,
+    quantity: 45,
+    unit: "Jar",
+    location: "Kigali, Rwanda",
+    farmerName: "Deacomart Ltd",
+    farmName: "Deacomart Kitchen",
+    harvestDate: today(-3),
+    image: heroFarm,
+    rating: 4.7,
+    createdAt: Date.now() - 1000 * 60 * 60 * 40,
   },
 ];
 
