@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { SiteNav } from "@/components/site-nav";
 import {
-  CATEGORIES, UNITS,
+  CATEGORIES, UNITS, formatRWF,
   createProduct, deleteProduct, fileToDataUrl, listProducts, subscribe, updateProduct,
   type Category, type Product, type ProductInput, type Unit,
 } from "@/lib/products-store";
@@ -14,24 +14,24 @@ import {
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
-      { title: "Farmer Dashboard — AgriMarket Connect" },
-      { name: "description", content: "Manage your produce listings, inventory, and prices." },
+      { title: "Inventory & Catalogue — Deacomart Ltd" },
+      { name: "description", content: "Manage Deacomart's product catalogue, partner inventory, and pricing in real time." },
     ],
   }),
   component: Dashboard,
 });
 
-const FARMER = { name: "You (Demo Farmer)", farmName: "Your Farm" };
+const FARMER = { name: "Deacomart Ltd", farmName: "Deacomart Distribution" };
 
 function emptyDraft(): ProductInput {
   return {
     name: "",
-    category: "Vegetables",
+    category: "Fresh Produce",
     description: "",
     price: 0,
     quantity: 0,
     unit: "Kg",
-    location: "",
+    location: "Kigali, Rwanda",
     farmerName: FARMER.name,
     farmName: FARMER.farmName,
     harvestDate: new Date().toISOString().slice(0, 10),
@@ -63,9 +63,9 @@ function Dashboard() {
       <section className="border-b border-border bg-[image:var(--gradient-soft)]">
         <div className="mx-auto max-w-7xl px-6 py-12 flex flex-wrap items-end justify-between gap-6">
           <div>
-            <p className="text-sm font-semibold text-leaf uppercase tracking-wider">Farmer dashboard</p>
-            <h1 className="mt-2 text-4xl md:text-5xl font-bold text-foreground">Manage your harvest.</h1>
-            <p className="mt-2 text-muted-foreground">Add, edit, or remove listings. Inventory updates are live across the marketplace.</p>
+            <p className="text-sm font-semibold text-leaf uppercase tracking-wider">Inventory & Catalogue</p>
+            <h1 className="mt-2 text-4xl md:text-5xl font-bold text-foreground">Manage Deacomart's stock.</h1>
+            <p className="mt-2 text-muted-foreground">Add, edit, or remove products. Updates publish live to the Deacomart shop and WhatsApp catalogue.</p>
           </div>
           <button
             onClick={() => setCreating(true)}
@@ -78,7 +78,7 @@ function Dashboard() {
 
       <section className="mx-auto max-w-7xl px-6 py-10 grid sm:grid-cols-3 gap-4">
         <StatCard icon={Package} label="Active listings" value={stats.totalListings.toString()} />
-        <StatCard icon={DollarSign} label="Inventory value" value={`$${stats.totalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} />
+        <StatCard icon={DollarSign} label="Inventory value" value={formatRWF(stats.totalValue)} />
         <StatCard icon={TrendingUp} label="Low-stock items" value={stats.lowStock.toString()} accent />
       </section>
 
@@ -161,7 +161,7 @@ function Row({ product, onEdit, onDelete, onAdjust }: { product: Product; onEdit
         </div>
       </div>
       <div className="text-sm">
-        <div className="font-semibold text-foreground">${product.price.toFixed(2)}</div>
+        <div className="font-semibold text-foreground">{formatRWF(product.price)}</div>
         <div className="text-xs text-muted-foreground">per {product.unit}</div>
       </div>
       <div className="flex items-center gap-1">
@@ -290,9 +290,9 @@ function ProductForm({
 
           {/* Price/Quantity/Unit */}
           <div className="grid grid-cols-3 gap-4">
-            <Field label="Price (USD)">
+            <Field label="Price (RWF)">
               <input
-                type="number" min={0} step={0.01}
+                type="number" min={0} step={50}
                 value={form.price || ""}
                 onChange={(e) => set("price", parseFloat(e.target.value) || 0)}
                 className="input"
@@ -320,7 +320,7 @@ function ProductForm({
                 value={form.location}
                 onChange={(e) => set("location", e.target.value)}
                 maxLength={80}
-                placeholder="City, Country"
+                placeholder="District, Rwanda"
                 className="input"
               />
             </Field>

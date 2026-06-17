@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { MapPin, Search, Star, Package } from "lucide-react";
 import { SiteNav } from "@/components/site-nav";
 import {
-  CATEGORIES,
+  CATEGORIES, formatRWF,
   listProducts,
   subscribe,
   type Category,
@@ -13,10 +13,10 @@ import {
 export const Route = createFileRoute("/browse")({
   head: () => ({
     meta: [
-      { title: "Browse Fresh Produce — AgriMarket Connect" },
-      { name: "description", content: "Discover fresh produce from local farmers. Filter by category, location, or keyword." },
-      { property: "og:title", content: "Browse Fresh Produce — AgriMarket" },
-      { property: "og:description", content: "Search vegetables, fruits, grains, dairy and more — directly from farmers." },
+      { title: "Shop Food & Beverages — Deacomart Ltd" },
+      { name: "description", content: "Order juices, teas, honey, sesame, eggs and fresh produce from Deacomart across all Districts of Rwanda." },
+      { property: "og:title", content: "Deacomart Shop — Be EcoWise" },
+      { property: "og:description", content: "Quality Rwandan food and beverage products, delivered from Kigali nationwide." },
     ],
   }),
   component: BrowsePage,
@@ -56,9 +56,9 @@ function BrowsePage() {
       {/* Header */}
       <section className="border-b border-border bg-[image:var(--gradient-soft)]">
         <div className="mx-auto max-w-7xl px-6 py-12">
-          <p className="text-sm font-semibold text-leaf uppercase tracking-wider">Marketplace</p>
-          <h1 className="mt-2 text-4xl md:text-5xl font-bold text-foreground">Fresh produce, direct from the farm.</h1>
-          <p className="mt-3 text-muted-foreground max-w-xl">Filter by category and location to find what's in season near you.</p>
+          <p className="text-sm font-semibold text-leaf uppercase tracking-wider">Deacomart Shop</p>
+          <h1 className="mt-2 text-4xl md:text-5xl font-bold text-foreground">Quality food & beverages, from Rwandan farms.</h1>
+          <p className="mt-3 text-muted-foreground max-w-xl">Filter by category and District. Place orders via WhatsApp or directly from any product page.</p>
 
           <div className="mt-8 bg-card rounded-2xl p-2 shadow-[var(--shadow-soft)] border border-border flex flex-col md:flex-row gap-2">
             <label className="flex items-center gap-2 flex-1 px-4 py-3">
@@ -66,7 +66,7 @@ function BrowsePage() {
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Search produce or farmer..."
+                placeholder="Search products, e.g. honey, hibiscus tea..."
                 className="bg-transparent outline-none w-full text-sm"
               />
             </label>
@@ -78,7 +78,7 @@ function BrowsePage() {
                 onChange={(e) => setLoc(e.target.value)}
                 className="bg-transparent outline-none text-sm pr-2"
               >
-                <option value="">All locations</option>
+                <option value="">All Districts</option>
                 {locations.map((l) => (
                   <option key={l} value={l}>{l}</option>
                 ))}
@@ -179,7 +179,7 @@ function ProductCard({ product }: { product: Product }) {
         </div>
         <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
           <div>
-            <div className="font-display font-bold text-xl text-primary">${product.price.toFixed(2)}</div>
+            <div className="font-display font-bold text-xl text-primary">{formatRWF(product.price)}</div>
             <div className="text-xs text-muted-foreground">per {product.unit}</div>
           </div>
           <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${stockBadge.className}`}>
