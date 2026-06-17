@@ -47,8 +47,8 @@ export type Product = {
   createdAt: number;
 };
 
-const STORAGE_KEY = "agrimarket.products.v1";
-const SEEDED_KEY = "agrimarket.seeded.v1";
+const STORAGE_KEY = "deacomart.products.v1";
+const SEEDED_KEY = "deacomart.seeded.v1";
 
 function uid() {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
