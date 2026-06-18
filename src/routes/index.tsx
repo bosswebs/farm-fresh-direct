@@ -1,13 +1,26 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import {
   Leaf, MapPin, Search, ArrowRight, CircleCheck, MessageCircle,
   GraduationCap, Truck, Briefcase, ShieldCheck, Sprout, Phone, Mail, Building2, Coffee, Apple, Egg, Droplets, FlaskConical,
+  Landmark, FileText, Wallet, Clock, Settings,
 } from "lucide-react";
 import heroFarm from "@/assets/hero-farm.jpg";
 import produceFlatlay from "@/assets/produce-flatlay.jpg";
 import farmerPortrait from "@/assets/farmer-portrait.jpg";
 import { SiteNav } from "@/components/site-nav";
 import { WHATSAPP_LINK, WHATSAPP_NUMBER, CONTACT_EMAIL } from "@/lib/products-store";
+import { getContent, subscribeContent, type SiteContent } from "@/lib/content-store";
+
+const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  GraduationCap, Truck, Briefcase, MessageCircle, ShieldCheck, Sprout,
+};
+
+function useSiteContent(): SiteContent {
+  const [c, setC] = useState<SiteContent>(() => getContent());
+  useEffect(() => subscribeContent(() => setC(getContent())), []);
+  return c;
+}
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -24,17 +37,19 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const content = useSiteContent();
   return (
     <div className="min-h-screen bg-background text-foreground">
       <SiteNav />
       <Hero />
-      <Partners />
-      <Services />
+      <Partners partners={content.partners} />
+      <Services heading={content.servicesHeading} intro={content.servicesIntro} services={content.services} />
       <Products />
       <About />
-      <Team />
+      <Team team={content.team} />
       <Outcomes />
-      <Contact />
+      <Terms terms={content.terms} />
+      <Contact contact={content.contact} />
       <CTA />
       <Footer />
     </div>
