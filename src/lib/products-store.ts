@@ -47,8 +47,14 @@ export type Product = {
   createdAt: number;
 };
 
-const STORAGE_KEY = "deacomart.products.v1";
-const SEEDED_KEY = "deacomart.seeded.v1";
+const STORAGE_KEY = "deacomart.products.v2";
+const SEEDED_KEY = "deacomart.seeded.v2";
+const LEGACY_KEYS = [
+  "agrimarket.products.v1",
+  "agrimarket.seeded.v1",
+  "deacomart.products.v1",
+  "deacomart.seeded.v1",
+];
 
 function uid() {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
@@ -192,6 +198,38 @@ const SEED: Product[] = [
     rating: 4.7,
     createdAt: Date.now() - 1000 * 60 * 60 * 40,
   },
+  {
+    id: "seed-9",
+    name: "Black Tea Leaves",
+    category: "Teas & Herbal",
+    description: "Full-bodied Rwandan black tea from highland estates — rich, malty and aromatic. Wholesale and retail.",
+    price: 2800,
+    quantity: 100,
+    unit: "Pack",
+    location: "Nyabihu, Rwanda",
+    farmerName: "Highland Tea Growers",
+    farmName: "Nyabihu Tea Estate",
+    harvestDate: today(-9),
+    image: heroFarm,
+    rating: 4.8,
+    createdAt: Date.now() - 1000 * 60 * 60 * 50,
+  },
+  {
+    id: "seed-10",
+    name: "Ginger Herbal Tea",
+    category: "Teas & Herbal",
+    description: "Warming ginger infusion blended with Rwandan herbs — naturally caffeine-free and soothing.",
+    price: 3500,
+    quantity: 70,
+    unit: "Pack",
+    location: "Musanze, Rwanda",
+    farmerName: "Volcanoes Herb Coop",
+    farmName: "Musanze Herbal Gardens",
+    harvestDate: today(-12),
+    image: produceFlatlay,
+    rating: 4.7,
+    createdAt: Date.now() - 1000 * 60 * 60 * 60,
+  },
 ];
 
 function safeRead(): Product[] {
@@ -213,8 +251,12 @@ function safeWrite(items: Product[]) {
 
 export function ensureSeeded() {
   if (typeof window === "undefined") return;
+  // Purge any legacy localStorage keys so the new catalog always loads cleanly.
+  LEGACY_KEYS.forEach((k) => {
+    try { window.localStorage.removeItem(k); } catch { /* ignore */ }
+  });
   if (window.localStorage.getItem(SEEDED_KEY)) return;
-  if (safeRead().length === 0) safeWrite(SEED);
+  safeWrite(SEED);
   window.localStorage.setItem(SEEDED_KEY, "1");
 }
 
