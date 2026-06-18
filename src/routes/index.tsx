@@ -108,14 +108,7 @@ function Hero() {
   );
 }
 
-function Partners() {
-  const partners = [
-    "Gorillas Golf Hotel",
-    "Dove Hotel Kigali",
-    "Great Seasons Hotel",
-    "Nyagatare Farmers Coop",
-    "Food & Beverage Partners",
-  ];
+function Partners({ partners }: { partners: string[] }) {
   return (
     <section className="border-b border-border bg-card">
       <div className="mx-auto max-w-7xl px-6 py-8">
@@ -130,47 +123,30 @@ function Partners() {
   );
 }
 
-function Services() {
-  const services = [
-    {
-      icon: GraduationCap,
-      title: "Farmer Training",
-      desc: "Structured programs across all Districts of Rwanda — modern agriculture, Hinga Ugwize, value addition, food safety, post-harvest management, and financial literacy.",
-    },
-    {
-      icon: Truck,
-      title: "Food & Beverage Distribution",
-      desc: "Wholesale and retail supply of juices, teas, honey, sesame, avocado, eggs and condiments to supermarkets, hotels, restaurants and institutions.",
-    },
-    {
-      icon: Briefcase,
-      title: "Consultancy Services",
-      desc: "Agribusiness strategy, food safety audits, project design, business development, and IT & digital transformation for the agricultural value chain.",
-    },
-    {
-      icon: MessageCircle,
-      title: "WhatsApp Ordering",
-      desc: "Order directly on WhatsApp, receive catalogues and promotions, book training, and track deliveries — fast, personal service.",
-    },
-  ];
+function Services({
+  heading, intro, services,
+}: { heading: string; intro: string; services: { icon: string; title: string; desc: string }[] }) {
   return (
     <section id="services" className="py-20 md:py-28 bg-[image:var(--gradient-soft)]">
       <div className="mx-auto max-w-7xl px-6">
         <div className="max-w-2xl">
           <p className="text-sm font-semibold text-leaf uppercase tracking-wider">Core Activities</p>
-          <h2 className="mt-2 text-4xl md:text-5xl font-bold text-foreground">Four pillars. One eco-conscious mission.</h2>
-          <p className="mt-4 text-muted-foreground">From the farm gate to the supermarket shelf, Deacomart strengthens every link in Rwanda's agricultural value chain.</p>
+          <h2 className="mt-2 text-4xl md:text-5xl font-bold text-foreground">{heading}</h2>
+          <p className="mt-4 text-muted-foreground">{intro}</p>
         </div>
         <div className="mt-14 grid md:grid-cols-2 gap-6">
-          {services.map((s) => (
-            <div key={s.title} className="p-8 rounded-3xl bg-card border border-border shadow-[var(--shadow-soft)]">
-              <div className="grid place-items-center w-14 h-14 rounded-2xl bg-[image:var(--gradient-leaf)] text-primary-foreground mb-5">
-                <s.icon className="w-7 h-7" />
+          {services.map((s) => {
+            const Icon = ICONS[s.icon] ?? Sprout;
+            return (
+              <div key={s.title} className="p-8 rounded-3xl bg-card border border-border shadow-[var(--shadow-soft)]">
+                <div className="grid place-items-center w-14 h-14 rounded-2xl bg-[image:var(--gradient-leaf)] text-primary-foreground mb-5">
+                  <Icon className="w-7 h-7" />
+                </div>
+                <h3 className="text-2xl font-bold text-foreground">{s.title}</h3>
+                <p className="mt-3 text-muted-foreground leading-relaxed">{s.desc}</p>
               </div>
-              <h3 className="text-2xl font-bold text-foreground">{s.title}</h3>
-              <p className="mt-3 text-muted-foreground leading-relaxed">{s.desc}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
@@ -260,17 +236,7 @@ function About() {
   );
 }
 
-function Team() {
-  const team = [
-    { role: "CEO", name: "Dukuzumuremyi Eric", expertise: "Agribusiness Expert" },
-    { role: "Founder & MD", name: "Ahishakiye Claudine (Zoe)", expertise: "Business Strategy & Operations" },
-    { role: "Accountant", name: "Turimaso Innocent", expertise: "Finance & Accounting" },
-    { role: "Business Developer", name: "Habimana Joseph", expertise: "Business Development" },
-    { role: "Food Scientist", name: "Niyonsaba Jeanclaude", expertise: "Food Safety & Quality" },
-    { role: "IT Manager", name: "Bosco", expertise: "Technology & Systems" },
-    { role: "IT Staff", name: "Ngoboka Noel", expertise: "IT Support" },
-    { role: "Agronomist", name: "TBD", expertise: "Agricultural Advisory" },
-  ];
+function Team({ team }: { team: { role: string; name: string; expertise: string }[] }) {
   return (
     <section id="team" className="py-20 md:py-28">
       <div className="mx-auto max-w-7xl px-6">
