@@ -47,8 +47,14 @@ export type Product = {
   createdAt: number;
 };
 
-const STORAGE_KEY = "deacomart.products.v1";
-const SEEDED_KEY = "deacomart.seeded.v1";
+const STORAGE_KEY = "deacomart.products.v2";
+const SEEDED_KEY = "deacomart.seeded.v2";
+const LEGACY_KEYS = [
+  "agrimarket.products.v1",
+  "agrimarket.seeded.v1",
+  "deacomart.products.v1",
+  "deacomart.seeded.v1",
+];
 
 function uid() {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
@@ -213,8 +219,12 @@ function safeWrite(items: Product[]) {
 
 export function ensureSeeded() {
   if (typeof window === "undefined") return;
+  // Purge any legacy localStorage keys so the new catalog always loads cleanly.
+  LEGACY_KEYS.forEach((k) => {
+    try { window.localStorage.removeItem(k); } catch { /* ignore */ }
+  });
   if (window.localStorage.getItem(SEEDED_KEY)) return;
-  if (safeRead().length === 0) safeWrite(SEED);
+  safeWrite(SEED);
   window.localStorage.setItem(SEEDED_KEY, "1");
 }
 
