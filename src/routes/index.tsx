@@ -293,7 +293,7 @@ function Outcomes() {
   );
 }
 
-function Contact() {
+function Contact({ contact }: { contact: import("@/lib/content-store").ContactInfo }) {
   return (
     <section id="contact" className="py-20 md:py-28">
       <div className="mx-auto max-w-6xl px-6">
@@ -303,22 +303,20 @@ function Contact() {
             <h2 className="mt-2 text-4xl md:text-5xl font-bold text-foreground">Get in touch with Deacomart.</h2>
             <p className="mt-4 text-muted-foreground">Place orders, request a training, or enquire about consultancy. We respond fastest on WhatsApp.</p>
             <div className="mt-8 space-y-4 text-sm">
-              <ContactRow icon={Building2} label="Headquarters" value="Kigali, Rwanda" />
-              <ContactRow icon={Phone} label="Phone" value="+250 780 165 257 · +250 798 975 082 · +250 784 467 541" />
-              <ContactRow icon={MessageCircle} label="WhatsApp" value={`${WHATSAPP_NUMBER} (Orders & Inquiries)`} />
-              <ContactRow icon={Mail} label="Email" value={CONTACT_EMAIL} />
-              <ContactRow icon={ShieldCheck} label="Bank" value="Equity Bank — Deacomart Ltd · Acc. 4014201311299" />
+              <ContactRow icon={Building2} label="Headquarters" value={contact.headquarters} />
+              <ContactRow icon={Phone} label="Phone" value={contact.phones} />
+              <ContactRow icon={MessageCircle} label="WhatsApp" value={contact.whatsapp} />
+              <ContactRow icon={Mail} label="Email" value={contact.email} />
+              <ContactRow icon={ShieldCheck} label="Bank" value={contact.bank} />
             </div>
+            <Link to="/admin" className="mt-6 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+              <Settings className="w-3.5 h-3.5" /> Edit site content
+            </Link>
           </div>
 
           <div className="rounded-3xl bg-card border border-border p-8 shadow-[var(--shadow-soft)]">
-            <h3 className="font-display text-2xl font-bold text-foreground">Terms & Conditions</h3>
-            <ul className="mt-5 space-y-3 text-sm text-muted-foreground">
-              <li className="flex gap-2"><CircleCheck className="w-4 h-4 text-leaf mt-0.5 shrink-0" /> Flexible booking arrangements for training and consultancy services.</li>
-              <li className="flex gap-2"><CircleCheck className="w-4 h-4 text-leaf mt-0.5 shrink-0" /> Local Purchase Order (LPO) confirmation required at least 2 hours before delivery.</li>
-              <li className="flex gap-2"><CircleCheck className="w-4 h-4 text-leaf mt-0.5 shrink-0" /> Payment accepted via bank transfer to Deacomart Ltd (Equity Bank: 4014201311299).</li>
-              <li className="flex gap-2"><CircleCheck className="w-4 h-4 text-leaf mt-0.5 shrink-0" /> All prices are quoted in Rwandan Francs (RWF).</li>
-            </ul>
+            <h3 className="font-display text-2xl font-bold text-foreground">Quick summary</h3>
+            <p className="mt-3 text-sm text-muted-foreground">For full delivery & payment terms, see the section above. Reach us instantly on WhatsApp for orders, quotes and training enquiries.</p>
             <a
               href={WHATSAPP_LINK}
               target="_blank"
@@ -326,6 +324,73 @@ function Contact() {
               className="mt-8 inline-flex w-full items-center justify-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity"
             >
               <MessageCircle className="w-5 h-5" /> Chat with Deacomart
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Terms({ terms }: { terms: import("@/lib/content-store").TermsInfo }) {
+  return (
+    <section id="terms" className="py-20 md:py-28 bg-card border-y border-border">
+      <div className="mx-auto max-w-7xl px-6">
+        <div className="max-w-2xl">
+          <p className="text-sm font-semibold text-leaf uppercase tracking-wider">Delivery & Payment Terms</p>
+          <h2 className="mt-2 text-4xl md:text-5xl font-bold text-foreground">Transparent terms. Reliable delivery.</h2>
+          <p className="mt-4 text-muted-foreground">{terms.intro}</p>
+        </div>
+
+        <div className="mt-12 grid lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 p-8 rounded-3xl bg-background border border-border">
+            <div className="flex items-center gap-3 mb-5">
+              <span className="grid place-items-center w-10 h-10 rounded-xl bg-secondary text-leaf"><FileText className="w-5 h-5" /></span>
+              <h3 className="font-display text-xl font-bold text-foreground">Terms & Instructions</h3>
+            </div>
+            <ul className="space-y-3 text-sm text-foreground/90">
+              {terms.bullets.map((b) => (
+                <li key={b} className="flex gap-2"><CircleCheck className="w-4 h-4 text-leaf mt-0.5 shrink-0" /><span>{b}</span></li>
+              ))}
+            </ul>
+            <div className="mt-6 flex flex-wrap gap-3 text-xs">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary text-foreground"><Clock className="w-3.5 h-3.5 text-leaf" /> LPO confirmation ≥ {terms.lpoHours}h before delivery</span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary text-foreground"><ShieldCheck className="w-3.5 h-3.5 text-leaf" /> TIN {terms.tin}</span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary text-foreground"><Wallet className="w-3.5 h-3.5 text-leaf" /> Prices in RWF</span>
+            </div>
+          </div>
+
+          <div className="p-8 rounded-3xl bg-[image:var(--gradient-hero)] text-primary-foreground shadow-[var(--shadow-glow)]">
+            <div className="flex items-center gap-3 mb-5">
+              <span className="grid place-items-center w-10 h-10 rounded-xl bg-white/15 backdrop-blur-sm"><Landmark className="w-5 h-5" /></span>
+              <h3 className="font-display text-xl font-bold">Bank Details</h3>
+            </div>
+            <dl className="space-y-4 text-sm">
+              <div>
+                <dt className="text-xs uppercase tracking-wider text-white/70">Bank</dt>
+                <dd className="font-semibold">{terms.bankName}</dd>
+              </div>
+              <div>
+                <dt className="text-xs uppercase tracking-wider text-white/70">Account Name</dt>
+                <dd className="font-semibold">{terms.accountName}</dd>
+              </div>
+              <div>
+                <dt className="text-xs uppercase tracking-wider text-white/70">Account Number</dt>
+                <dd className="font-mono text-lg font-bold text-sun">{terms.accountNumber}</dd>
+              </div>
+              <div>
+                <dt className="text-xs uppercase tracking-wider text-white/70">TIN</dt>
+                <dd className="font-mono font-semibold">{terms.tin}</dd>
+              </div>
+            </dl>
+            <p className="mt-6 text-xs text-white/70 leading-relaxed">Send proof of payment via WhatsApp to confirm your order. Invoices and EBM receipts are issued upon payment.</p>
+            <a
+              href={WHATSAPP_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-6 inline-flex w-full items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-sun text-sun-foreground font-semibold hover:opacity-90 transition-opacity"
+            >
+              <MessageCircle className="w-4 h-4" /> Send payment proof
             </a>
           </div>
         </div>
