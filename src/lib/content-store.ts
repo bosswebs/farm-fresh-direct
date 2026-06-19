@@ -1,136 +1,127 @@
-import { WHATSAPP_NUMBER, CONTACT_EMAIL } from "@/lib/products-store";
+export type ServiceItem = {
+  id: string;
+  iconName: string;
+  title: string;
+  description: string;
+};
 
-export type Service = { title: string; desc: string; icon: string };
-export type TeamMember = { role: string; name: string; expertise: string };
+export type TeamItem = {
+  id: string;
+  role: string;
+  name: string;
+  expertise: string;
+};
+
 export type ContactInfo = {
   headquarters: string;
   phones: string;
   whatsapp: string;
   email: string;
-  bank: string;
-};
-export type TermsInfo = {
-  intro: string;
-  bullets: string[];
   bankName: string;
-  accountName: string;
-  accountNumber: string;
+  bankAccount: string;
+  bankHolder: string;
   tin: string;
-  lpoHours: number;
 };
 
 export type SiteContent = {
-  servicesHeading: string;
-  servicesIntro: string;
-  services: Service[];
+  services: ServiceItem[];
+  team: TeamItem[];
   partners: string[];
-  team: TeamMember[];
   contact: ContactInfo;
-  terms: TermsInfo;
 };
 
-export const DEFAULT_CONTENT: SiteContent = {
-  servicesHeading: "Four pillars. One eco-conscious mission.",
-  servicesIntro:
-    "From the farm gate to the supermarket shelf, Deacomart strengthens every link in Rwanda's agricultural value chain.",
+const CONTENT_STORAGE_KEY = "deacomart.sitecontent.v1";
+
+const SEED_CONTENT: SiteContent = {
   services: [
     {
-      icon: "GraduationCap",
+      id: "s-1",
+      iconName: "GraduationCap",
       title: "Farmer Training",
-      desc: "Structured programs across all Districts of Rwanda — modern agriculture, Hinga Ugwize, value addition, food safety, post-harvest management, and financial literacy.",
+      description: "Structured programs across all Districts of Rwanda — modern agriculture, Hinga Ugwize, value addition, food safety, post-harvest management, and financial literacy."
     },
     {
-      icon: "Truck",
+      id: "s-2",
+      iconName: "Truck",
       title: "Food & Beverage Distribution",
-      desc: "Wholesale and retail supply of juices, teas, honey, sesame, avocado, eggs and condiments to supermarkets, hotels, restaurants and institutions.",
+      description: "Wholesale and retail supply of juices, teas, honey, sesame, avocado, eggs and condiments to supermarkets, hotels, restaurants and institutions."
     },
     {
-      icon: "Briefcase",
+      id: "s-3",
+      iconName: "Briefcase",
       title: "Consultancy Services",
-      desc: "Agribusiness strategy, food safety audits, project design, business development, and IT & digital transformation for the agricultural value chain.",
+      description: "Agribusiness strategy, food safety audits, project design, business development, and IT & digital transformation for the agricultural value chain."
     },
     {
-      icon: "MessageCircle",
+      id: "s-4",
+      iconName: "MessageCircle",
       title: "WhatsApp Ordering",
-      desc: "Order directly on WhatsApp, receive catalogues and promotions, book training, and track deliveries — fast, personal service.",
-    },
+      description: "Order directly on WhatsApp, receive catalogues and promotions, book training, and track deliveries — fast, personal service."
+    }
+  ],
+  team: [
+    { id: "t-1", role: "CEO", name: "Dukuzumuremyi Eric", expertise: "Agribusiness Expert" },
+    { id: "t-2", role: "Founder & MD", name: "Ahishakiye Claudine (Zoe)", expertise: "Business Strategy & Operations" },
+    { id: "t-3", role: "Accountant", name: "Turimaso Innocent", expertise: "Finance & Accounting" },
+    { id: "t-4", role: "Business Developer", name: "Habimana Joseph", expertise: "Business Development" },
+    { id: "t-5", role: "Food Scientist", name: "Niyonsaba Jeanclaude", expertise: "Food Safety & Quality" },
+    { id: "t-6", role: "IT Manager", name: "Bosco", expertise: "Technology & Systems" },
+    { id: "t-7", role: "IT Staff", name: "Ngoboka Noel", expertise: "IT Support" },
+    { id: "t-8", role: "Agronomist", name: "TBD", expertise: "Agricultural Advisory" }
   ],
   partners: [
     "Gorillas Golf Hotel",
     "Dove Hotel Kigali",
     "Great Seasons Hotel",
     "Nyagatare Farmers Coop",
-    "Food & Beverage Partners",
-  ],
-  team: [
-    { role: "CEO", name: "Dukuzumuremyi Eric", expertise: "Agribusiness Expert" },
-    { role: "Founder & MD", name: "Ahishakiye Claudine (Zoe)", expertise: "Business Strategy & Operations" },
-    { role: "Accountant", name: "Turimaso Innocent", expertise: "Finance & Accounting" },
-    { role: "Business Developer", name: "Habimana Joseph", expertise: "Business Development" },
-    { role: "Food Scientist", name: "Niyonsaba Jeanclaude", expertise: "Food Safety & Quality" },
-    { role: "IT Manager", name: "Bosco", expertise: "Technology & Systems" },
-    { role: "IT Staff", name: "Ngoboka Noel", expertise: "IT Support" },
-    { role: "Agronomist", name: "TBD", expertise: "Agricultural Advisory" },
+    "Food & Beverage Partners"
   ],
   contact: {
     headquarters: "Kigali, Rwanda",
     phones: "+250 780 165 257 · +250 798 975 082 · +250 784 467 541",
-    whatsapp: `${WHATSAPP_NUMBER} (Orders & Inquiries)`,
-    email: CONTACT_EMAIL,
-    bank: "Equity Bank — Deacomart Ltd · Acc. 4014201311299",
-  },
-  terms: {
-    intro:
-      "Deacomart Ltd operates under transparent, customer-first delivery and payment terms. Please review before placing wholesale or institutional orders.",
-    bullets: [
-      "Flexible booking arrangements for training and consultancy services.",
-      "Local Purchase Order (LPO) confirmation required at least 2 hours before delivery.",
-      "Delivery available across all Districts of Rwanda; same-day delivery within Kigali for orders confirmed before 12:00.",
-      "All prices are quoted in Rwandan Francs (RWF) and exclude VAT unless otherwise stated.",
-      "Payment accepted via bank transfer, mobile money (MoMo), or cash on delivery for verified institutional clients.",
-      "Invoices and EBM receipts issued for every transaction (TIN 150039210).",
-    ],
-    bankName: "Equity Bank",
-    accountName: "Deacomart Ltd",
-    accountNumber: "4014201311299",
-    tin: "150039210",
-    lpoHours: 2,
-  },
+    whatsapp: "+250 780 165 257",
+    email: "deaco2025@gmail.com",
+    bankName: "Equity Bank Rwanda",
+    bankAccount: "4014201311299",
+    bankHolder: "Deacomart Ltd",
+    tin: "150039210"
+  }
 };
 
-const STORAGE_KEY = "deacomart.content.v1";
-const EVENT = "deacomart:content-changed";
-
-export function getContent(): SiteContent {
-  if (typeof window === "undefined") return DEFAULT_CONTENT;
+export function getSiteContent(): SiteContent {
+  if (typeof window === "undefined") return SEED_CONTENT;
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULT_CONTENT;
-    const parsed = JSON.parse(raw) as Partial<SiteContent>;
-    return { ...DEFAULT_CONTENT, ...parsed };
+    const raw = window.localStorage.getItem(CONTENT_STORAGE_KEY);
+    if (!raw) {
+      // Seed initial data
+      window.localStorage.setItem(CONTENT_STORAGE_KEY, JSON.stringify(SEED_CONTENT));
+      return SEED_CONTENT;
+    }
+    const parsed = JSON.parse(raw) as SiteContent;
+    // Fallback/fill missing values to prevent errors
+    return {
+      services: parsed.services || SEED_CONTENT.services,
+      team: parsed.team || SEED_CONTENT.team,
+      partners: parsed.partners || SEED_CONTENT.partners,
+      contact: { ...SEED_CONTENT.contact, ...(parsed.contact || {}) }
+    };
   } catch {
-    return DEFAULT_CONTENT;
+    return SEED_CONTENT;
   }
 }
 
-export function saveContent(c: SiteContent) {
+export function updateSiteContent(content: SiteContent) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(c));
-  window.dispatchEvent(new CustomEvent(EVENT));
-}
-
-export function resetContent() {
-  if (typeof window === "undefined") return;
-  window.localStorage.removeItem(STORAGE_KEY);
-  window.dispatchEvent(new CustomEvent(EVENT));
+  window.localStorage.setItem(CONTENT_STORAGE_KEY, JSON.stringify(content));
+  window.dispatchEvent(new CustomEvent("deacomart:content-changed"));
 }
 
 export function subscribeContent(cb: () => void) {
-  const h = () => cb();
-  window.addEventListener(EVENT, h);
-  window.addEventListener("storage", h);
+  const handler = () => cb();
+  window.addEventListener("deacomart:content-changed", handler);
+  window.addEventListener("storage", handler);
   return () => {
-    window.removeEventListener(EVENT, h);
-    window.removeEventListener("storage", h);
+    window.removeEventListener("deacomart:content-changed", handler);
+    window.removeEventListener("storage", handler);
   };
 }

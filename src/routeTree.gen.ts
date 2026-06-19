@@ -9,15 +9,63 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TrainingRouteImport } from './routes/training'
+import { Route as TrackingRouteImport } from './routes/tracking'
+import { Route as MapRouteImport } from './routes/map'
+import { Route as ImpactRouteImport } from './routes/impact'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as ConsultancyRouteImport } from './routes/consultancy'
 import { Route as BrowseRouteImport } from './routes/browse'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
+import { Route as AdminWhatsappRouteImport } from './routes/admin/whatsapp'
+import { Route as AdminTrainingRouteImport } from './routes/admin/training'
+import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
+import { Route as AdminReportsRouteImport } from './routes/admin/reports'
+import { Route as AdminPartnershipsRouteImport } from './routes/admin/partnerships'
+import { Route as AdminLogisticsRouteImport } from './routes/admin/logistics'
+import { Route as AdminGeographicRouteImport } from './routes/admin/geographic'
+import { Route as AdminFnbRouteImport } from './routes/admin/fnb'
+import { Route as AdminContentRouteImport } from './routes/admin/content'
+import { Route as AdminConsultancyRouteImport } from './routes/admin/consultancy'
+import { Route as AdminCommunicationRouteImport } from './routes/admin/communication'
+import { Route as AdminUsersStaffRouteImport } from './routes/admin/users/staff'
+import { Route as AdminUsersFarmersRouteImport } from './routes/admin/users/farmers'
+import { Route as AdminUsersBuyersRouteImport } from './routes/admin/users/buyers'
+import { Route as AdminMarketplaceProductsRouteImport } from './routes/admin/marketplace/products'
+import { Route as AdminMarketplacePaymentsRouteImport } from './routes/admin/marketplace/payments'
+import { Route as AdminMarketplaceOrdersRouteImport } from './routes/admin/marketplace/orders'
 
+const TrainingRoute = TrainingRouteImport.update({
+  id: '/training',
+  path: '/training',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrackingRoute = TrackingRouteImport.update({
+  id: '/tracking',
+  path: '/tracking',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MapRoute = MapRouteImport.update({
+  id: '/map',
+  path: '/map',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ImpactRoute = ImpactRouteImport.update({
+  id: '/impact',
+  path: '/impact',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConsultancyRoute = ConsultancyRouteImport.update({
+  id: '/consultancy',
+  path: '/consultancy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BrowseRoute = BrowseRouteImport.update({
@@ -35,57 +83,341 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
 const ProductIdRoute = ProductIdRouteImport.update({
   id: '/product/$id',
   path: '/product/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminWhatsappRoute = AdminWhatsappRouteImport.update({
+  id: '/whatsapp',
+  path: '/whatsapp',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTrainingRoute = AdminTrainingRouteImport.update({
+  id: '/training',
+  path: '/training',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminReportsRoute = AdminReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPartnershipsRoute = AdminPartnershipsRouteImport.update({
+  id: '/partnerships',
+  path: '/partnerships',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLogisticsRoute = AdminLogisticsRouteImport.update({
+  id: '/logistics',
+  path: '/logistics',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminGeographicRoute = AdminGeographicRouteImport.update({
+  id: '/geographic',
+  path: '/geographic',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminFnbRoute = AdminFnbRouteImport.update({
+  id: '/fnb',
+  path: '/fnb',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminContentRoute = AdminContentRouteImport.update({
+  id: '/content',
+  path: '/content',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminConsultancyRoute = AdminConsultancyRouteImport.update({
+  id: '/consultancy',
+  path: '/consultancy',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCommunicationRoute = AdminCommunicationRouteImport.update({
+  id: '/communication',
+  path: '/communication',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUsersStaffRoute = AdminUsersStaffRouteImport.update({
+  id: '/users/staff',
+  path: '/users/staff',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUsersFarmersRoute = AdminUsersFarmersRouteImport.update({
+  id: '/users/farmers',
+  path: '/users/farmers',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUsersBuyersRoute = AdminUsersBuyersRouteImport.update({
+  id: '/users/buyers',
+  path: '/users/buyers',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMarketplaceProductsRoute =
+  AdminMarketplaceProductsRouteImport.update({
+    id: '/marketplace/products',
+    path: '/marketplace/products',
+    getParentRoute: () => AdminRoute,
+  } as any)
+const AdminMarketplacePaymentsRoute =
+  AdminMarketplacePaymentsRouteImport.update({
+    id: '/marketplace/payments',
+    path: '/marketplace/payments',
+    getParentRoute: () => AdminRoute,
+  } as any)
+const AdminMarketplaceOrdersRoute = AdminMarketplaceOrdersRouteImport.update({
+  id: '/marketplace/orders',
+  path: '/marketplace/orders',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/browse': typeof BrowseRoute
+  '/consultancy': typeof ConsultancyRoute
   '/dashboard': typeof DashboardRoute
+  '/impact': typeof ImpactRoute
+  '/map': typeof MapRoute
+  '/tracking': typeof TrackingRoute
+  '/training': typeof TrainingRoute
+  '/admin/communication': typeof AdminCommunicationRoute
+  '/admin/consultancy': typeof AdminConsultancyRoute
+  '/admin/content': typeof AdminContentRoute
+  '/admin/fnb': typeof AdminFnbRoute
+  '/admin/geographic': typeof AdminGeographicRoute
+  '/admin/logistics': typeof AdminLogisticsRoute
+  '/admin/partnerships': typeof AdminPartnershipsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/training': typeof AdminTrainingRoute
+  '/admin/whatsapp': typeof AdminWhatsappRoute
   '/product/$id': typeof ProductIdRoute
+  '/admin/': typeof AdminIndexRoute
+  '/admin/marketplace/orders': typeof AdminMarketplaceOrdersRoute
+  '/admin/marketplace/payments': typeof AdminMarketplacePaymentsRoute
+  '/admin/marketplace/products': typeof AdminMarketplaceProductsRoute
+  '/admin/users/buyers': typeof AdminUsersBuyersRoute
+  '/admin/users/farmers': typeof AdminUsersFarmersRoute
+  '/admin/users/staff': typeof AdminUsersStaffRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
   '/browse': typeof BrowseRoute
+  '/consultancy': typeof ConsultancyRoute
   '/dashboard': typeof DashboardRoute
+  '/impact': typeof ImpactRoute
+  '/map': typeof MapRoute
+  '/tracking': typeof TrackingRoute
+  '/training': typeof TrainingRoute
+  '/admin/communication': typeof AdminCommunicationRoute
+  '/admin/consultancy': typeof AdminConsultancyRoute
+  '/admin/content': typeof AdminContentRoute
+  '/admin/fnb': typeof AdminFnbRoute
+  '/admin/geographic': typeof AdminGeographicRoute
+  '/admin/logistics': typeof AdminLogisticsRoute
+  '/admin/partnerships': typeof AdminPartnershipsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/training': typeof AdminTrainingRoute
+  '/admin/whatsapp': typeof AdminWhatsappRoute
   '/product/$id': typeof ProductIdRoute
+  '/admin': typeof AdminIndexRoute
+  '/admin/marketplace/orders': typeof AdminMarketplaceOrdersRoute
+  '/admin/marketplace/payments': typeof AdminMarketplacePaymentsRoute
+  '/admin/marketplace/products': typeof AdminMarketplaceProductsRoute
+  '/admin/users/buyers': typeof AdminUsersBuyersRoute
+  '/admin/users/farmers': typeof AdminUsersFarmersRoute
+  '/admin/users/staff': typeof AdminUsersStaffRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/browse': typeof BrowseRoute
+  '/consultancy': typeof ConsultancyRoute
   '/dashboard': typeof DashboardRoute
+  '/impact': typeof ImpactRoute
+  '/map': typeof MapRoute
+  '/tracking': typeof TrackingRoute
+  '/training': typeof TrainingRoute
+  '/admin/communication': typeof AdminCommunicationRoute
+  '/admin/consultancy': typeof AdminConsultancyRoute
+  '/admin/content': typeof AdminContentRoute
+  '/admin/fnb': typeof AdminFnbRoute
+  '/admin/geographic': typeof AdminGeographicRoute
+  '/admin/logistics': typeof AdminLogisticsRoute
+  '/admin/partnerships': typeof AdminPartnershipsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/training': typeof AdminTrainingRoute
+  '/admin/whatsapp': typeof AdminWhatsappRoute
   '/product/$id': typeof ProductIdRoute
+  '/admin/': typeof AdminIndexRoute
+  '/admin/marketplace/orders': typeof AdminMarketplaceOrdersRoute
+  '/admin/marketplace/payments': typeof AdminMarketplacePaymentsRoute
+  '/admin/marketplace/products': typeof AdminMarketplaceProductsRoute
+  '/admin/users/buyers': typeof AdminUsersBuyersRoute
+  '/admin/users/farmers': typeof AdminUsersFarmersRoute
+  '/admin/users/staff': typeof AdminUsersStaffRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/browse' | '/dashboard' | '/product/$id'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/browse'
+    | '/consultancy'
+    | '/dashboard'
+    | '/impact'
+    | '/map'
+    | '/tracking'
+    | '/training'
+    | '/admin/communication'
+    | '/admin/consultancy'
+    | '/admin/content'
+    | '/admin/fnb'
+    | '/admin/geographic'
+    | '/admin/logistics'
+    | '/admin/partnerships'
+    | '/admin/reports'
+    | '/admin/settings'
+    | '/admin/training'
+    | '/admin/whatsapp'
+    | '/product/$id'
+    | '/admin/'
+    | '/admin/marketplace/orders'
+    | '/admin/marketplace/payments'
+    | '/admin/marketplace/products'
+    | '/admin/users/buyers'
+    | '/admin/users/farmers'
+    | '/admin/users/staff'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/browse' | '/dashboard' | '/product/$id'
-  id: '__root__' | '/' | '/admin' | '/browse' | '/dashboard' | '/product/$id'
+  to:
+    | '/'
+    | '/browse'
+    | '/consultancy'
+    | '/dashboard'
+    | '/impact'
+    | '/map'
+    | '/tracking'
+    | '/training'
+    | '/admin/communication'
+    | '/admin/consultancy'
+    | '/admin/content'
+    | '/admin/fnb'
+    | '/admin/geographic'
+    | '/admin/logistics'
+    | '/admin/partnerships'
+    | '/admin/reports'
+    | '/admin/settings'
+    | '/admin/training'
+    | '/admin/whatsapp'
+    | '/product/$id'
+    | '/admin'
+    | '/admin/marketplace/orders'
+    | '/admin/marketplace/payments'
+    | '/admin/marketplace/products'
+    | '/admin/users/buyers'
+    | '/admin/users/farmers'
+    | '/admin/users/staff'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/browse'
+    | '/consultancy'
+    | '/dashboard'
+    | '/impact'
+    | '/map'
+    | '/tracking'
+    | '/training'
+    | '/admin/communication'
+    | '/admin/consultancy'
+    | '/admin/content'
+    | '/admin/fnb'
+    | '/admin/geographic'
+    | '/admin/logistics'
+    | '/admin/partnerships'
+    | '/admin/reports'
+    | '/admin/settings'
+    | '/admin/training'
+    | '/admin/whatsapp'
+    | '/product/$id'
+    | '/admin/'
+    | '/admin/marketplace/orders'
+    | '/admin/marketplace/payments'
+    | '/admin/marketplace/products'
+    | '/admin/users/buyers'
+    | '/admin/users/farmers'
+    | '/admin/users/staff'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRoute
+  AdminRoute: typeof AdminRouteWithChildren
   BrowseRoute: typeof BrowseRoute
+  ConsultancyRoute: typeof ConsultancyRoute
   DashboardRoute: typeof DashboardRoute
+  ImpactRoute: typeof ImpactRoute
+  MapRoute: typeof MapRoute
+  TrackingRoute: typeof TrackingRoute
+  TrainingRoute: typeof TrainingRoute
   ProductIdRoute: typeof ProductIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/training': {
+      id: '/training'
+      path: '/training'
+      fullPath: '/training'
+      preLoaderRoute: typeof TrainingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tracking': {
+      id: '/tracking'
+      path: '/tracking'
+      fullPath: '/tracking'
+      preLoaderRoute: typeof TrackingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/map': {
+      id: '/map'
+      path: '/map'
+      fullPath: '/map'
+      preLoaderRoute: typeof MapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/impact': {
+      id: '/impact'
+      path: '/impact'
+      fullPath: '/impact'
+      preLoaderRoute: typeof ImpactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/consultancy': {
+      id: '/consultancy'
+      path: '/consultancy'
+      fullPath: '/consultancy'
+      preLoaderRoute: typeof ConsultancyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/browse': {
@@ -109,6 +441,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/product/$id': {
       id: '/product/$id'
       path: '/product/$id'
@@ -116,14 +455,182 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/whatsapp': {
+      id: '/admin/whatsapp'
+      path: '/whatsapp'
+      fullPath: '/admin/whatsapp'
+      preLoaderRoute: typeof AdminWhatsappRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/training': {
+      id: '/admin/training'
+      path: '/training'
+      fullPath: '/admin/training'
+      preLoaderRoute: typeof AdminTrainingRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/reports': {
+      id: '/admin/reports'
+      path: '/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminReportsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/partnerships': {
+      id: '/admin/partnerships'
+      path: '/partnerships'
+      fullPath: '/admin/partnerships'
+      preLoaderRoute: typeof AdminPartnershipsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/logistics': {
+      id: '/admin/logistics'
+      path: '/logistics'
+      fullPath: '/admin/logistics'
+      preLoaderRoute: typeof AdminLogisticsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/geographic': {
+      id: '/admin/geographic'
+      path: '/geographic'
+      fullPath: '/admin/geographic'
+      preLoaderRoute: typeof AdminGeographicRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/fnb': {
+      id: '/admin/fnb'
+      path: '/fnb'
+      fullPath: '/admin/fnb'
+      preLoaderRoute: typeof AdminFnbRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/content': {
+      id: '/admin/content'
+      path: '/content'
+      fullPath: '/admin/content'
+      preLoaderRoute: typeof AdminContentRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/consultancy': {
+      id: '/admin/consultancy'
+      path: '/consultancy'
+      fullPath: '/admin/consultancy'
+      preLoaderRoute: typeof AdminConsultancyRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/communication': {
+      id: '/admin/communication'
+      path: '/communication'
+      fullPath: '/admin/communication'
+      preLoaderRoute: typeof AdminCommunicationRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/users/staff': {
+      id: '/admin/users/staff'
+      path: '/users/staff'
+      fullPath: '/admin/users/staff'
+      preLoaderRoute: typeof AdminUsersStaffRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/users/farmers': {
+      id: '/admin/users/farmers'
+      path: '/users/farmers'
+      fullPath: '/admin/users/farmers'
+      preLoaderRoute: typeof AdminUsersFarmersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/users/buyers': {
+      id: '/admin/users/buyers'
+      path: '/users/buyers'
+      fullPath: '/admin/users/buyers'
+      preLoaderRoute: typeof AdminUsersBuyersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/marketplace/products': {
+      id: '/admin/marketplace/products'
+      path: '/marketplace/products'
+      fullPath: '/admin/marketplace/products'
+      preLoaderRoute: typeof AdminMarketplaceProductsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/marketplace/payments': {
+      id: '/admin/marketplace/payments'
+      path: '/marketplace/payments'
+      fullPath: '/admin/marketplace/payments'
+      preLoaderRoute: typeof AdminMarketplacePaymentsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/marketplace/orders': {
+      id: '/admin/marketplace/orders'
+      path: '/marketplace/orders'
+      fullPath: '/admin/marketplace/orders'
+      preLoaderRoute: typeof AdminMarketplaceOrdersRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
+interface AdminRouteChildren {
+  AdminCommunicationRoute: typeof AdminCommunicationRoute
+  AdminConsultancyRoute: typeof AdminConsultancyRoute
+  AdminContentRoute: typeof AdminContentRoute
+  AdminFnbRoute: typeof AdminFnbRoute
+  AdminGeographicRoute: typeof AdminGeographicRoute
+  AdminLogisticsRoute: typeof AdminLogisticsRoute
+  AdminPartnershipsRoute: typeof AdminPartnershipsRoute
+  AdminReportsRoute: typeof AdminReportsRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminTrainingRoute: typeof AdminTrainingRoute
+  AdminWhatsappRoute: typeof AdminWhatsappRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+  AdminMarketplaceOrdersRoute: typeof AdminMarketplaceOrdersRoute
+  AdminMarketplacePaymentsRoute: typeof AdminMarketplacePaymentsRoute
+  AdminMarketplaceProductsRoute: typeof AdminMarketplaceProductsRoute
+  AdminUsersBuyersRoute: typeof AdminUsersBuyersRoute
+  AdminUsersFarmersRoute: typeof AdminUsersFarmersRoute
+  AdminUsersStaffRoute: typeof AdminUsersStaffRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminCommunicationRoute: AdminCommunicationRoute,
+  AdminConsultancyRoute: AdminConsultancyRoute,
+  AdminContentRoute: AdminContentRoute,
+  AdminFnbRoute: AdminFnbRoute,
+  AdminGeographicRoute: AdminGeographicRoute,
+  AdminLogisticsRoute: AdminLogisticsRoute,
+  AdminPartnershipsRoute: AdminPartnershipsRoute,
+  AdminReportsRoute: AdminReportsRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
+  AdminTrainingRoute: AdminTrainingRoute,
+  AdminWhatsappRoute: AdminWhatsappRoute,
+  AdminIndexRoute: AdminIndexRoute,
+  AdminMarketplaceOrdersRoute: AdminMarketplaceOrdersRoute,
+  AdminMarketplacePaymentsRoute: AdminMarketplacePaymentsRoute,
+  AdminMarketplaceProductsRoute: AdminMarketplaceProductsRoute,
+  AdminUsersBuyersRoute: AdminUsersBuyersRoute,
+  AdminUsersFarmersRoute: AdminUsersFarmersRoute,
+  AdminUsersStaffRoute: AdminUsersStaffRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRoute,
+  AdminRoute: AdminRouteWithChildren,
   BrowseRoute: BrowseRoute,
+  ConsultancyRoute: ConsultancyRoute,
   DashboardRoute: DashboardRoute,
+  ImpactRoute: ImpactRoute,
+  MapRoute: MapRoute,
+  TrackingRoute: TrackingRoute,
+  TrainingRoute: TrainingRoute,
   ProductIdRoute: ProductIdRoute,
 }
 export const routeTree = rootRouteImport
