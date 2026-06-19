@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as BrowseRouteImport } from './routes/browse'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
 
@@ -22,6 +23,11 @@ const DashboardRoute = DashboardRouteImport.update({
 const BrowseRoute = BrowseRouteImport.update({
   id: '/browse',
   path: '/browse',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -37,12 +43,14 @@ const ProductIdRoute = ProductIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/browse': typeof BrowseRoute
   '/dashboard': typeof DashboardRoute
   '/product/$id': typeof ProductIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/browse': typeof BrowseRoute
   '/dashboard': typeof DashboardRoute
   '/product/$id': typeof ProductIdRoute
@@ -50,20 +58,22 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/browse': typeof BrowseRoute
   '/dashboard': typeof DashboardRoute
   '/product/$id': typeof ProductIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/browse' | '/dashboard' | '/product/$id'
+  fullPaths: '/' | '/admin' | '/browse' | '/dashboard' | '/product/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/browse' | '/dashboard' | '/product/$id'
-  id: '__root__' | '/' | '/browse' | '/dashboard' | '/product/$id'
+  to: '/' | '/admin' | '/browse' | '/dashboard' | '/product/$id'
+  id: '__root__' | '/' | '/admin' | '/browse' | '/dashboard' | '/product/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
   BrowseRoute: typeof BrowseRoute
   DashboardRoute: typeof DashboardRoute
   ProductIdRoute: typeof ProductIdRoute
@@ -85,6 +95,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BrowseRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -104,6 +121,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
   BrowseRoute: BrowseRoute,
   DashboardRoute: DashboardRoute,
   ProductIdRoute: ProductIdRoute,
