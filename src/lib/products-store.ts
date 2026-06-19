@@ -1,6 +1,9 @@
-import heroFarm from "@/assets/hero-farm.jpg";
-import produceFlatlay from "@/assets/produce-flatlay.jpg";
-import farmerPortrait from "@/assets/farmer-portrait.jpg";
+// Product image constants - served from public/images/ (no bundling needed)
+const IMG_PRODUCE = "/images/fresh-produce.png";
+const IMG_FARMER = "/images/farmer.png";
+const IMG_HONEY = "/images/beekeeper.png";
+const IMG_TEA = "/images/tea-plantation.png";
+const IMG_MARKET = "/images/village-market.png";
 
 export type Category =
   | "Juices & Beverages"
@@ -45,16 +48,13 @@ export type Product = {
   image: string; // data URL or imported asset URL
   rating: number;
   createdAt: number;
+  organicStatus?: boolean;
+  qualityStatus?: boolean;
+  foodSafetyStatus?: boolean;
 };
 
-const STORAGE_KEY = "deacomart.products.v2";
-const SEEDED_KEY = "deacomart.seeded.v2";
-const LEGACY_KEYS = [
-  "agrimarket.products.v1",
-  "agrimarket.seeded.v1",
-  "deacomart.products.v1",
-  "deacomart.seeded.v1",
-];
+const STORAGE_KEY = "deacomart.products.v1";
+const SEEDED_KEY = "deacomart.seeded.v1";
 
 function uid() {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
@@ -80,9 +80,12 @@ const SEED: Product[] = [
     farmerName: "Deacomart Ltd",
     farmName: "Deacomart Distribution",
     harvestDate: today(-1),
-    image: produceFlatlay,
+    image: IMG_PRODUCE,
     rating: 4.9,
     createdAt: Date.now() - 1000 * 60 * 60 * 24,
+    organicStatus: true,
+    qualityStatus: true,
+    foodSafetyStatus: true,
   },
   {
     id: "seed-2",
@@ -97,9 +100,12 @@ const SEED: Product[] = [
     farmerName: "Nyagatare Farmers Cooperative",
     farmName: "Cyabayaga Tea Growers",
     harvestDate: today(-10),
-    image: heroFarm,
+    image: IMG_TEA,
     rating: 4.8,
     createdAt: Date.now() - 1000 * 60 * 60 * 6,
+    organicStatus: true,
+    qualityStatus: true,
+    foodSafetyStatus: false,
   },
   {
     id: "seed-3",
@@ -114,9 +120,12 @@ const SEED: Product[] = [
     farmerName: "Habimana Joseph",
     farmName: "Volcanoes Apiary",
     harvestDate: today(-30),
-    image: farmerPortrait,
+    image: IMG_HONEY,
     rating: 5.0,
     createdAt: Date.now() - 1000 * 60 * 60 * 2,
+    organicStatus: true,
+    qualityStatus: true,
+    foodSafetyStatus: true,
   },
   {
     id: "seed-4",
@@ -130,9 +139,12 @@ const SEED: Product[] = [
     farmerName: "Southern Growers Group",
     farmName: "Huye Avocado Farm",
     harvestDate: today(-2),
-    image: produceFlatlay,
+    image: IMG_FARMER,
     rating: 4.7,
     createdAt: Date.now() - 1000 * 60 * 60 * 48,
+    organicStatus: true,
+    qualityStatus: false,
+    foodSafetyStatus: true,
   },
   {
     id: "seed-5",
@@ -146,9 +158,12 @@ const SEED: Product[] = [
     farmerName: "Eastern Oilseed Coop",
     farmName: "Bugesera Sesame Farm",
     harvestDate: today(-25),
-    image: heroFarm,
+    image: IMG_MARKET,
     rating: 4.6,
     createdAt: Date.now() - 1000 * 60 * 60 * 72,
+    organicStatus: false,
+    qualityStatus: true,
+    foodSafetyStatus: false,
   },
   {
     id: "seed-6",
@@ -162,9 +177,12 @@ const SEED: Product[] = [
     farmerName: "Deacomart Poultry Partners",
     farmName: "Hilltop Poultry",
     harvestDate: today(0),
-    image: farmerPortrait,
+    image: IMG_FARMER,
     rating: 4.9,
     createdAt: Date.now() - 1000 * 60 * 30,
+    organicStatus: false,
+    qualityStatus: true,
+    foodSafetyStatus: true,
   },
   {
     id: "seed-7",
@@ -178,9 +196,12 @@ const SEED: Product[] = [
     farmerName: "Highland Tea Growers",
     farmName: "Nyabihu Tea Estate",
     harvestDate: today(-7),
-    image: produceFlatlay,
+    image: IMG_TEA,
     rating: 4.8,
     createdAt: Date.now() - 1000 * 60 * 60 * 30,
+    organicStatus: true,
+    qualityStatus: true,
+    foodSafetyStatus: false,
   },
   {
     id: "seed-8",
@@ -194,41 +215,12 @@ const SEED: Product[] = [
     farmerName: "Deacomart Ltd",
     farmName: "Deacomart Kitchen",
     harvestDate: today(-3),
-    image: heroFarm,
+    image: IMG_PRODUCE,
     rating: 4.7,
     createdAt: Date.now() - 1000 * 60 * 60 * 40,
-  },
-  {
-    id: "seed-9",
-    name: "Black Tea Leaves",
-    category: "Teas & Herbal",
-    description: "Full-bodied Rwandan black tea from highland estates — rich, malty and aromatic. Wholesale and retail.",
-    price: 2800,
-    quantity: 100,
-    unit: "Pack",
-    location: "Nyabihu, Rwanda",
-    farmerName: "Highland Tea Growers",
-    farmName: "Nyabihu Tea Estate",
-    harvestDate: today(-9),
-    image: heroFarm,
-    rating: 4.8,
-    createdAt: Date.now() - 1000 * 60 * 60 * 50,
-  },
-  {
-    id: "seed-10",
-    name: "Ginger Herbal Tea",
-    category: "Teas & Herbal",
-    description: "Warming ginger infusion blended with Rwandan herbs — naturally caffeine-free and soothing.",
-    price: 3500,
-    quantity: 70,
-    unit: "Pack",
-    location: "Musanze, Rwanda",
-    farmerName: "Volcanoes Herb Coop",
-    farmName: "Musanze Herbal Gardens",
-    harvestDate: today(-12),
-    image: produceFlatlay,
-    rating: 4.7,
-    createdAt: Date.now() - 1000 * 60 * 60 * 60,
+    organicStatus: false,
+    qualityStatus: true,
+    foodSafetyStatus: true,
   },
 ];
 
@@ -251,12 +243,8 @@ function safeWrite(items: Product[]) {
 
 export function ensureSeeded() {
   if (typeof window === "undefined") return;
-  // Purge any legacy localStorage keys so the new catalog always loads cleanly.
-  LEGACY_KEYS.forEach((k) => {
-    try { window.localStorage.removeItem(k); } catch { /* ignore */ }
-  });
   if (window.localStorage.getItem(SEEDED_KEY)) return;
-  safeWrite(SEED);
+  if (safeRead().length === 0) safeWrite(SEED);
   window.localStorage.setItem(SEEDED_KEY, "1");
 }
 
@@ -315,3 +303,127 @@ export const ALL_LOCATIONS = (): string[] => {
   listProducts().forEach((p) => set.add(p.location));
   return Array.from(set).sort();
 };
+
+// --- Farmer Training Academy Schemas & Stores ---
+export type TrainingRegistration = {
+  id: string;
+  courseTitle: string;
+  name: string;
+  email: string;
+  phone: string;
+  district: string;
+  registeredAt: number;
+};
+
+const REGISTRATIONS_KEY = "deacomart.registrations.v1";
+
+export function listRegistrations(): TrainingRegistration[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(REGISTRATIONS_KEY);
+    return raw ? JSON.parse(raw) as TrainingRegistration[] : [];
+  } catch {
+    return [];
+  }
+}
+
+export function registerForTraining(reg: Omit<TrainingRegistration, "id" | "registeredAt">): TrainingRegistration {
+  const newReg: TrainingRegistration = {
+    ...reg,
+    id: "reg-" + Math.random().toString(36).slice(2, 10),
+    registeredAt: Date.now(),
+  };
+  const list = listRegistrations();
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem(REGISTRATIONS_KEY, JSON.stringify([newReg, ...list]));
+    window.dispatchEvent(new CustomEvent("agrimarket:registrations-changed"));
+  }
+  return newReg;
+}
+
+// --- Consultancy Schemas & Stores ---
+export type ConsultancyBooking = {
+  id: string;
+  serviceTitle: string;
+  name: string;
+  email: string;
+  phone: string;
+  scale: string;
+  notes: string;
+  date: string;
+  status: "Pending" | "Confirmed" | "Completed" | "Cancelled";
+  bookedAt: number;
+};
+
+const BOOKINGS_KEY = "deacomart.bookings.v1";
+
+export function listBookings(): ConsultancyBooking[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(BOOKINGS_KEY);
+    return raw ? JSON.parse(raw) as ConsultancyBooking[] : [];
+  } catch {
+    return [];
+  }
+}
+
+export function bookConsultancy(booking: Omit<ConsultancyBooking, "id" | "bookedAt" | "status">): ConsultancyBooking {
+  const newBooking: ConsultancyBooking = {
+    ...booking,
+    id: "book-" + Math.random().toString(36).slice(2, 10),
+    status: "Pending",
+    bookedAt: Date.now(),
+  };
+  const list = listBookings();
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem(BOOKINGS_KEY, JSON.stringify([newBooking, ...list]));
+    window.dispatchEvent(new CustomEvent("agrimarket:bookings-changed"));
+  }
+  return newBooking;
+}
+
+export function updateBookingStatus(id: string, status: ConsultancyBooking["status"]) {
+  const list = listBookings().map((b) => (b.id === id ? { ...b, status } : b));
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem(BOOKINGS_KEY, JSON.stringify(list));
+    window.dispatchEvent(new CustomEvent("agrimarket:bookings-changed"));
+  }
+}
+
+// --- Partnership Schemas & Stores ---
+export type PartnershipApplication = {
+  id: string;
+  organizationName: string;
+  partnerType: string;
+  contactName: string;
+  phone: string;
+  email: string;
+  details: string;
+  appliedAt: number;
+};
+
+const PARTNERSHIPS_KEY = "deacomart.partnerships.v1";
+
+export function listPartnerships(): PartnershipApplication[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(PARTNERSHIPS_KEY);
+    return raw ? JSON.parse(raw) as PartnershipApplication[] : [];
+  } catch {
+    return [];
+  }
+}
+
+export function applyForPartnership(app: Omit<PartnershipApplication, "id" | "appliedAt">): PartnershipApplication {
+  const newApp: PartnershipApplication = {
+    ...app,
+    id: "part-" + Math.random().toString(36).slice(2, 10),
+    appliedAt: Date.now(),
+  };
+  const list = listPartnerships();
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem(PARTNERSHIPS_KEY, JSON.stringify([newApp, ...list]));
+    window.dispatchEvent(new CustomEvent("agrimarket:partnerships-changed"));
+  }
+  return newApp;
+}

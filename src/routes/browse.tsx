@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { MapPin, Search, Star, Package } from "lucide-react";
 import { SiteNav } from "@/components/site-nav";
+import { SiteFooter } from "@/components/site-footer";
 import {
   CATEGORIES, formatRWF,
   listProducts,
@@ -27,6 +28,8 @@ function BrowsePage() {
   const [category, setCategory] = useState<Category | "All">("All");
   const [q, setQ] = useState("");
   const [loc, setLoc] = useState("");
+  const [onlyOrganic, setOnlyOrganic] = useState(false);
+  const [onlyFoodSafety, setOnlyFoodSafety] = useState(false);
 
   useEffect(() => {
     setProducts(listProducts());
@@ -44,10 +47,12 @@ function BrowsePage() {
     return products.filter((p) => {
       if (category !== "All" && p.category !== category) return false;
       if (loc && p.location !== loc) return false;
+      if (onlyOrganic && !p.organicStatus) return false;
+      if (onlyFoodSafety && !p.foodSafetyStatus) return false;
       if (term && !`${p.name} ${p.description} ${p.farmerName}`.toLowerCase().includes(term)) return false;
       return true;
     });
-  }, [products, category, loc, q]);
+  }, [products, category, loc, q, onlyOrganic, onlyFoodSafety]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -89,24 +94,51 @@ function BrowsePage() {
       </section>
 
       {/* Body */}
-      <section className="mx-auto max-w-7xl px-6 py-12 grid lg:grid-cols-[220px_1fr] gap-10">
-        {/* Sidebar categories */}
-        <aside>
-          <h3 className="font-display font-bold text-sm uppercase tracking-wider text-muted-foreground mb-4">Categories</h3>
-          <div className="flex lg:flex-col gap-2 flex-wrap">
-            {(["All", ...CATEGORIES] as const).map((c) => (
-              <button
-                key={c}
-                onClick={() => setCategory(c)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium text-left transition-colors ${
-                  category === c
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-card border border-border text-foreground hover:border-leaf"
-                }`}
-              >
-                {c}
-              </button>
-            ))}
+      <section className="mx-auto max-w-7xl px-6 py-12 grid lg:grid-cols-[240px_1fr] gap-10">
+        {/* Sidebar filters */}
+        <aside className="space-y-6">
+          <div>
+            <h3 className="font-display font-bold text-sm uppercase tracking-wider text-muted-foreground mb-3">Categories</h3>
+            <div className="flex lg:flex-col gap-2 flex-wrap">
+              {(["All", ...CATEGORIES] as const).map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setCategory(c)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium text-left transition-colors ${
+                    category === c
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-card border border-border text-foreground hover:border-leaf"
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="pt-6 border-t border-border">
+            <h3 className="font-display font-bold text-sm uppercase tracking-wider text-muted-foreground mb-3">Certifications</h3>
+            <div className="flex flex-col gap-2">
+              <label className="flex items-center gap-2.5 p-2 rounded-lg border border-border bg-card hover:border-leaf cursor-pointer text-sm font-medium">
+                <input
+                  type="checkbox"
+                  checked={onlyOrganic}
+                  onChange={(e) => setOnlyOrganic(e.target.checked)}
+                  className="rounded border-border text-leaf focus:ring-leaf w-4 h-4"
+                />
+                Certified Organic
+              </label>
+
+              <label className="flex items-center gap-2.5 p-2 rounded-lg border border-border bg-card hover:border-leaf cursor-pointer text-sm font-medium">
+                <input
+                  type="checkbox"
+                  checked={onlyFoodSafety}
+                  onChange={(e) => setOnlyFoodSafety(e.target.checked)}
+                  className="rounded border-border text-leaf focus:ring-leaf w-4 h-4"
+                />
+                Food Safety Approved
+              </label>
+            </div>
           </div>
         </aside>
 
@@ -134,6 +166,7 @@ function BrowsePage() {
           )}
         </div>
       </section>
+      <SiteFooter />
     </div>
   );
 }
@@ -149,15 +182,28 @@ function ProductCard({ product }: { product: Product }) {
     <Link
       to="/product/$id"
       params={{ id: product.id }}
-      className="group rounded-2xl overflow-hidden bg-card border border-border hover:border-leaf hover:shadow-[var(--shadow-soft)] transition-all flex flex-col"
+      className="group rounded-2xl overflow-hidden bg-card border border-border hover:border-leaf hover:shadow-[var(--shadow-soft)] transition-all flex flex-col relative"
     >
-      <div className="aspect-[4/3] overflow-hidden bg-secondary">
+      <div className="aspect-[4/3] overflow-hidden bg-secondary relative">
         <img
           src={product.image}
           alt={product.name}
           loading="lazy"
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
+        {/* Badges on overlay */}
+        <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
+          {product.organicStatus && (
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500 text-white shadow-xs">
+              Organic
+            </span>
+          )}
+          {product.foodSafetyStatus && (
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-600 text-white shadow-xs">
+              Safety Approved
+            </span>
+          )}
+        </div>
       </div>
       <div className="p-5 flex-1 flex flex-col">
         <div className="flex items-start justify-between gap-2">

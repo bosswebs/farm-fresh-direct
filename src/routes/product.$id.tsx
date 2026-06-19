@@ -2,7 +2,9 @@ import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-rout
 import { useEffect, useState } from "react";
 import { ArrowLeft, MapPin, Star, Calendar, Package, Tractor, ShoppingBasket, MessageCircle } from "lucide-react";
 import { SiteNav } from "@/components/site-nav";
+import { SiteFooter } from "@/components/site-footer";
 import { getProduct, subscribe, formatRWF, WHATSAPP_LINK, type Product } from "@/lib/products-store";
+import { addToCart } from "@/lib/cart-store";
 
 export const Route = createFileRoute("/product/$id")({
   head: () => ({
@@ -53,6 +55,12 @@ function ProductPage() {
         ? { label: "Low stock", className: "bg-sun/30 text-sun-foreground" }
         : { label: "In stock", className: "bg-leaf/15 text-primary" };
 
+  function handleAddToCart() {
+    if (!product) return;
+    addToCart(product, 1);
+    window.dispatchEvent(new CustomEvent("agrimarket:open-cart"));
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <SiteNav />
@@ -68,7 +76,22 @@ function ProductPage() {
 
           <div>
             <p className="text-xs font-semibold text-leaf uppercase tracking-wider">{product.category}</p>
-            <h1 className="mt-2 text-4xl md:text-5xl font-bold text-foreground leading-tight">{product.name}</h1>
+            
+            <div className="mt-2 flex flex-wrap items-center gap-2.5">
+              <h1 className="text-4xl md:text-5xl font-bold text-foreground leading-tight">{product.name}</h1>
+              <div className="flex gap-1.5">
+                {product.organicStatus && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500 text-white shadow-xs">
+                    Organic
+                  </span>
+                )}
+                {product.foodSafetyStatus && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-600 text-white shadow-xs">
+                    Safety Approved
+                  </span>
+                )}
+              </div>
+            </div>
 
             <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
               {product.rating > 0 && (
@@ -106,9 +129,14 @@ function ProductPage() {
                 <div className="text-xs text-muted-foreground">Sold by</div>
                 <div className="font-semibold text-foreground">{product.farmerName}</div>
               </div>
-              <button className="inline-flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg border border-border bg-card hover:border-leaf transition-colors">
+              <a
+                href={`${WHATSAPP_LINK}?text=${encodeURIComponent(`Hello Deacomart, I'm interested in products from ${product.farmerName}.`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg border border-border bg-card hover:border-leaf transition-colors"
+              >
                 <MessageCircle className="w-4 h-4" /> Message
-              </button>
+              </a>
             </div>
 
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
@@ -122,7 +150,8 @@ function ProductPage() {
               </a>
               <button
                 disabled={product.quantity === 0}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-sun text-sun-foreground font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleAddToCart}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-sun text-sun-foreground font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 <ShoppingBasket className="w-5 h-5" /> Add to cart
               </button>
@@ -133,6 +162,7 @@ function ProductPage() {
           </div>
         </div>
       </div>
+      <SiteFooter />
     </div>
   );
 }

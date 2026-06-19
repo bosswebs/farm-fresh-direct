@@ -7,10 +7,12 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { CartDrawer } from "../components/cart-drawer";
+import { WhatsAppFloatingWidget } from "../components/whatsapp-widget";
 
 function NotFoundComponent() {
   return (
@@ -77,14 +79,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Deacomart Ltd — Be EcoWise | Rwanda" },
+      { name: "description", content: "Agribusiness & Food Supply in Rwanda" },
+      { name: "author", content: "Deacomart" },
+      { property: "og:title", content: "Deacomart Ltd — Be EcoWise" },
+      { property: "og:description", content: "Agribusiness and food supply chain ecosystem in Rwanda" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:site", content: "@Deacomart" },
     ],
     links: [
       {
@@ -121,11 +123,21 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const [isCartOpen, setIsCartOpen] = useState(false);
+
+  useEffect(() => {
+    const handleOpenCart = () => setIsCartOpen(true);
+    window.addEventListener("agrimarket:open-cart", handleOpenCart);
+    return () => {
+      window.removeEventListener("agrimarket:open-cart", handleOpenCart);
+    };
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+      <WhatsAppFloatingWidget />
     </QueryClientProvider>
   );
 }
