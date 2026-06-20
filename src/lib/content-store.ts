@@ -98,13 +98,16 @@ export const DEFAULT_CONTENT: SiteContent = {
   },
 };
 
-const STORAGE_KEY = "deacomart.content.v1";
+const PUBLISHED_KEY = "deacomart.content.v1"; // live content shown on landing
+const DRAFT_KEY = "deacomart.content.draft.v1"; // edits in admin, not yet live
 const EVENT = "deacomart:content-changed";
 
-export function getContent(): SiteContent {
+export type ContentMode = "published" | "draft";
+
+function readKey(key: string): SiteContent {
   if (typeof window === "undefined") return DEFAULT_CONTENT;
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(key);
     if (!raw) return DEFAULT_CONTENT;
     const parsed = JSON.parse(raw) as Partial<SiteContent>;
     return { ...DEFAULT_CONTENT, ...parsed };
@@ -113,16 +116,50 @@ export function getContent(): SiteContent {
   }
 }
 
-export function saveContent(c: SiteContent) {
+export function getContent(mode: ContentMode = "published"): SiteContent {
+  return readKey(mode === "draft" ? DRAFT_KEY : PUBLISHED_KEY);
+}
+
+export function getDraft(): SiteContent {
+  if (typeof window === "undefined") return DEFAULT_CONTENT;
+  // If no draft yet, seed from published so editing starts from current live state.
+  const raw = window.localStorage.getItem(DRAFT_KEY);
+  if (raw) return readKey(DRAFT_KEY);
+  return readKey(PUBLISHED_KEY);
+}
+
+export function saveDraft(c: SiteContent) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(c));
+  window.localStorage.setItem(DRAFT_KEY, JSON.stringify(c));
+  window.dispatchEvent(new CustomEvent(EVENT));
+}
+
+export function publishDraft(c: SiteContent) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(PUBLISHED_KEY, JSON.stringify(c));
+  window.localStorage.removeItem(DRAFT_KEY);
+  window.dispatchEvent(new CustomEvent(EVENT));
+}
+
+export function discardDraft() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(DRAFT_KEY);
   window.dispatchEvent(new CustomEvent(EVENT));
 }
 
 export function resetContent() {
   if (typeof window === "undefined") return;
-  window.localStorage.removeItem(STORAGE_KEY);
+  window.localStorage.removeItem(PUBLISHED_KEY);
+  window.localStorage.removeItem(DRAFT_KEY);
   window.dispatchEvent(new CustomEvent(EVENT));
+}
+
+export function hasDraftChanges(): boolean {
+  if (typeof window === "undefined") return false;
+  const draft = window.localStorage.getItem(DRAFT_KEY);
+  if (!draft) return false;
+  const published = window.localStorage.getItem(PUBLISHED_KEY) ?? JSON.stringify(DEFAULT_CONTENT);
+  return draft !== published;
 }
 
 export function subscribeContent(cb: () => void) {
@@ -133,4 +170,52 @@ export function subscribeContent(cb: () => void) {
     window.removeEventListener(EVENT, h);
     window.removeEventListener("storage", h);
   };
+}
+
+// ----- Simple local admin auth (local-only backend) -----
+// Password is stored hashed in localStorage on first setup. Session flag in sessionStorage.
+const ADMIN_PASS_KEY = "deacomart.admin.pass.v1";
+const ADMIN_SESSION_KEY = "deacomart.admin.session.v1";
+export const DEFAULT_ADMIN_PASSWORD = "deacomart2026";
+
+async function hash(s: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+export async function getStoredPasswordHash(): Promise<string> {
+  if (typeof window === "undefined") return "";
+  const existing = window.localStorage.getItem(ADMIN_PASS_KEY);
+  if (existing) return existing;
+  const h = await hash(DEFAULT_ADMIN_PASSWORD);
+  window.localStorage.setItem(ADMIN_PASS_KEY, h);
+  return h;
+}
+
+export async function verifyAdminPassword(password: string): Promise<boolean> {
+  const stored = await getStoredPasswordHash();
+  const candidate = await hash(password);
+  const ok = candidate === stored;
+  if (ok && typeof window !== "undefined") {
+    window.sessionStorage.setItem(ADMIN_SESSION_KEY, "1");
+  }
+  return ok;
+}
+
+export function isAdminAuthed(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.sessionStorage.getItem(ADMIN_SESSION_KEY) === "1";
+}
+
+export function adminSignOut() {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.removeItem(ADMIN_SESSION_KEY);
+}
+
+export async function changeAdminPassword(current: string, next: string): Promise<boolean> {
+  const ok = await verifyAdminPassword(current);
+  if (!ok) return false;
+  const h = await hash(next);
+  window.localStorage.setItem(ADMIN_PASS_KEY, h);
+  return true;
 }

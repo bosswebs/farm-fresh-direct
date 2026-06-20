@@ -1,8 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { ArrowLeft, Save, RotateCcw, Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowLeft, Save, RotateCcw, Plus, Trash2, Eye, Upload, Lock, LogOut, KeyRound } from "lucide-react";
 import { SiteNav } from "@/components/site-nav";
-import { getContent, saveContent, resetContent, DEFAULT_CONTENT, type SiteContent } from "@/lib/content-store";
+import {
+  getDraft, saveDraft, publishDraft, discardDraft, resetContent,
+  hasDraftChanges, DEFAULT_CONTENT, type SiteContent,
+  verifyAdminPassword, isAdminAuthed, adminSignOut, changeAdminPassword,
+  DEFAULT_ADMIN_PASSWORD,
+} from "@/lib/content-store";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -18,25 +23,122 @@ export const Route = createFileRoute("/admin")({
 const ICON_OPTIONS = ["GraduationCap", "Truck", "Briefcase", "MessageCircle", "ShieldCheck", "Sprout"];
 
 function Admin() {
-  const [c, setC] = useState<SiteContent>(() => getContent());
-  const [saved, setSaved] = useState(false);
+  const [authed, setAuthed] = useState(false);
+  useEffect(() => { setAuthed(isAdminAuthed()); }, []);
+  if (!authed) return <AuthGate onAuthed={() => setAuthed(true)} />;
+  return <AdminEditor onSignOut={() => { adminSignOut(); setAuthed(false); }} />;
+}
+
+function AuthGate({ onAuthed }: { onAuthed: () => void }) {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true); setError(null);
+    const ok = await verifyAdminPassword(password);
+    setBusy(false);
+    if (ok) onAuthed();
+    else setError("Incorrect password.");
+  }
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <SiteNav />
+      <div className="mx-auto max-w-md px-6 py-20">
+        <div className="rounded-2xl border border-border bg-card p-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary text-xs font-semibold mb-4">
+            <Lock className="w-3.5 h-3.5" /> Admin access
+          </div>
+          <h1 className="text-2xl font-bold mb-2">Sign in to edit content</h1>
+          <p className="text-sm text-muted-foreground mb-6">
+            Only authorized administrators can change site content. Default password is{" "}
+            <code className="px-1.5 py-0.5 rounded bg-secondary text-foreground">{DEFAULT_ADMIN_PASSWORD}</code>{" "}
+            on first use — change it from inside the dashboard.
+          </p>
+          <form onSubmit={submit} className="space-y-3">
+            <input
+              type="password"
+              autoFocus
+              className="input"
+              placeholder="Admin password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            {error && <p className="text-sm text-destructive">{error}</p>}
+            <button
+              type="submit"
+              disabled={busy || !password}
+              className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-50"
+            >
+              {busy ? "Checking…" : "Unlock admin"}
+            </button>
+          </form>
+          <Link to="/" className="mt-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="w-4 h-4" /> Back to site
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AdminEditor({ onSignOut }: { onSignOut: () => void }) {
+  const [c, setC] = useState<SiteContent>(() => getDraft());
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [dirty, setDirty] = useState(false);
+  const [hasDraft, setHasDraft] = useState(false);
+  const [showPwd, setShowPwd] = useState(false);
+
+  useEffect(() => { setHasDraft(hasDraftChanges()); }, [savedAt]);
 
   function update<K extends keyof SiteContent>(key: K, value: SiteContent[K]) {
     setC((prev) => ({ ...prev, [key]: value }));
-    setSaved(false);
+    setDirty(true);
   }
 
-  function onSave() {
-    saveContent(c);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  function onSaveDraft() {
+    saveDraft(c);
+    setDirty(false);
+    setSavedAt(Date.now());
+  }
+
+  function onPreview() {
+    saveDraft(c);
+    setDirty(false);
+    setSavedAt(Date.now());
+    window.open("/?preview=1", "_blank", "noopener");
+  }
+
+  function onPublish() {
+    if (!confirm("Publish these changes? They will replace the live site content.")) return;
+    publishDraft(c);
+    setDirty(false);
+    setSavedAt(Date.now());
+  }
+
+  function onDiscard() {
+    if (!confirm("Discard draft and revert to currently published content?")) return;
+    discardDraft();
+    setC(getDraft());
+    setDirty(false);
+    setSavedAt(Date.now());
   }
 
   function onReset() {
-    if (!confirm("Reset all site content to defaults?")) return;
+    if (!confirm("Reset BOTH published and draft content to defaults?")) return;
     resetContent();
     setC(DEFAULT_CONTENT);
+    setDirty(false);
+    setSavedAt(Date.now());
   }
+
+  const status = dirty
+    ? { label: "Unsaved changes", tone: "bg-amber-500/15 text-amber-700 dark:text-amber-400" }
+    : hasDraft
+    ? { label: "Draft saved — not yet published", tone: "bg-blue-500/15 text-blue-700 dark:text-blue-400" }
+    : { label: "Live & published", tone: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -48,17 +150,31 @@ function Admin() {
               <ArrowLeft className="w-4 h-4" /> Back to site
             </Link>
             <h1 className="text-3xl md:text-4xl font-bold">Site content editor</h1>
-            <p className="mt-2 text-muted-foreground text-sm">Edit Services, Team, Partners, Contact and Delivery & Payment Terms. Changes save locally and update the landing page instantly.</p>
+            <p className="mt-2 text-muted-foreground text-sm">
+              Edit Services, Team, Partners, Contact and Delivery &amp; Payment Terms. Changes are kept as a private draft —
+              use <strong>Preview</strong> to review and <strong>Publish</strong> to push them live.
+            </p>
+            <div className="mt-3 inline-flex items-center gap-2">
+              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${status.tone}`}>{status.label}</span>
+              <button onClick={() => setShowPwd(true)} className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+                <KeyRound className="w-3.5 h-3.5" /> Change password
+              </button>
+              <button onClick={onSignOut} className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+                <LogOut className="w-3.5 h-3.5" /> Sign out
+              </button>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <button onClick={onReset} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm font-semibold hover:bg-secondary">
-              <RotateCcw className="w-4 h-4" /> Reset
-            </button>
-            <button onClick={onSave} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90">
-              <Save className="w-4 h-4" /> {saved ? "Saved!" : "Save changes"}
-            </button>
-          </div>
+          <ActionBar
+            dirty={dirty}
+            hasDraft={hasDraft}
+            onSaveDraft={onSaveDraft}
+            onPreview={onPreview}
+            onPublish={onPublish}
+            onDiscard={onDiscard}
+          />
         </div>
+
+        {showPwd && <ChangePasswordDialog onClose={() => setShowPwd(false)} />}
 
         <div className="space-y-8">
           {/* Services */}
@@ -158,14 +274,88 @@ function Admin() {
           </Section>
         </div>
 
-        <div className="mt-10 flex justify-end gap-2">
-          <button onClick={onReset} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm font-semibold hover:bg-secondary">
-            <RotateCcw className="w-4 h-4" /> Reset
-          </button>
-          <button onClick={onSave} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90">
-            <Save className="w-4 h-4" /> {saved ? "Saved!" : "Save changes"}
-          </button>
+        <div className="mt-10">
+          <ActionBar
+            dirty={dirty}
+            hasDraft={hasDraft}
+            onSaveDraft={onSaveDraft}
+            onPreview={onPreview}
+            onPublish={onPublish}
+            onDiscard={onDiscard}
+            extra={
+              <button onClick={onReset} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border text-xs font-semibold text-muted-foreground hover:bg-secondary">
+                <RotateCcw className="w-3.5 h-3.5" /> Reset all to defaults
+              </button>
+            }
+          />
         </div>
+      </div>
+    </div>
+  );
+}
+
+function ActionBar({
+  dirty, hasDraft, onSaveDraft, onPreview, onPublish, onDiscard, extra,
+}: {
+  dirty: boolean; hasDraft: boolean;
+  onSaveDraft: () => void; onPreview: () => void; onPublish: () => void; onDiscard: () => void;
+  extra?: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {extra}
+      {hasDraft && (
+        <button onClick={onDiscard} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border text-sm font-semibold text-muted-foreground hover:bg-secondary">
+          Discard draft
+        </button>
+      )}
+      <button onClick={onSaveDraft} disabled={!dirty} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm font-semibold hover:bg-secondary disabled:opacity-50">
+        <Save className="w-4 h-4" /> Save draft
+      </button>
+      <button onClick={onPreview} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-primary/40 bg-primary/10 text-primary text-sm font-semibold hover:bg-primary/15">
+        <Eye className="w-4 h-4" /> Preview
+      </button>
+      <button onClick={onPublish} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90">
+        <Upload className="w-4 h-4" /> Publish
+      </button>
+    </div>
+  );
+}
+
+function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [confirmPwd, setConfirmPwd] = useState("");
+  const [msg, setMsg] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setMsg(null);
+    if (next.length < 6) { setMsg("New password must be at least 6 characters."); return; }
+    if (next !== confirmPwd) { setMsg("New passwords do not match."); return; }
+    setBusy(true);
+    const ok = await changeAdminPassword(current, next);
+    setBusy(false);
+    if (!ok) { setMsg("Current password is incorrect."); return; }
+    setMsg("Password updated.");
+    setTimeout(onClose, 800);
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4" onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl border border-border bg-card p-6">
+        <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><KeyRound className="w-4 h-4" /> Change admin password</h3>
+        <form onSubmit={submit} className="space-y-3">
+          <input className="input" type="password" placeholder="Current password" value={current} onChange={(e) => setCurrent(e.target.value)} />
+          <input className="input" type="password" placeholder="New password (min 6 chars)" value={next} onChange={(e) => setNext(e.target.value)} />
+          <input className="input" type="password" placeholder="Confirm new password" value={confirmPwd} onChange={(e) => setConfirmPwd(e.target.value)} />
+          {msg && <p className="text-sm text-muted-foreground">{msg}</p>}
+          <div className="flex justify-end gap-2 pt-2">
+            <button type="button" onClick={onClose} className="px-3 py-2 rounded-lg border border-border text-sm font-semibold hover:bg-secondary">Cancel</button>
+            <button type="submit" disabled={busy} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-50">Update</button>
+          </div>
+        </form>
       </div>
     </div>
   );
