@@ -10,16 +10,25 @@ import produceFlatlay from "@/assets/produce-flatlay.jpg";
 import farmerPortrait from "@/assets/farmer-portrait.jpg";
 import { SiteNav } from "@/components/site-nav";
 import { WHATSAPP_LINK, WHATSAPP_NUMBER, CONTACT_EMAIL } from "@/lib/products-store";
-import { getContent, subscribeContent, type SiteContent } from "@/lib/content-store";
+import { getContent, subscribeContent, type SiteContent, type ContentMode } from "@/lib/content-store";
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   GraduationCap, Truck, Briefcase, MessageCircle, ShieldCheck, Sprout,
 };
 
-function useSiteContent(): SiteContent {
-  const [c, setC] = useState<SiteContent>(() => getContent());
-  useEffect(() => subscribeContent(() => setC(getContent())), []);
-  return c;
+function useSiteContent(): { content: SiteContent; mode: ContentMode } {
+  const [mode, setMode] = useState<ContentMode>("published");
+  const [c, setC] = useState<SiteContent>(() => getContent("published"));
+  useEffect(() => {
+    const isPreview =
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("preview") === "1";
+    const m: ContentMode = isPreview ? "draft" : "published";
+    setMode(m);
+    setC(getContent(m));
+    return subscribeContent(() => setC(getContent(m)));
+  }, []);
+  return { content: c, mode };
 }
 
 export const Route = createFileRoute("/")({
@@ -37,9 +46,10 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const content = useSiteContent();
+  const { content, mode } = useSiteContent();
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {mode === "draft" && <PreviewBanner />}
       <SiteNav />
       <Hero />
       <Partners partners={content.partners} />
@@ -52,6 +62,18 @@ function Index() {
       <Contact contact={content.contact} />
       <CTA />
       <Footer />
+    </div>
+  );
+}
+
+function PreviewBanner() {
+  return (
+    <div className="sticky top-0 z-50 bg-amber-500 text-black text-sm font-semibold px-4 py-2 flex items-center justify-between gap-3">
+      <span>Preview mode — showing unpublished draft changes.</span>
+      <div className="flex items-center gap-3">
+        <a href="/" className="underline hover:no-underline">Exit preview</a>
+        <Link to="/admin" className="underline hover:no-underline">Back to admin</Link>
+      </div>
     </div>
   );
 }
