@@ -21,9 +21,30 @@ export const Route = createFileRoute("/dashboard")({
   component: Dashboard,
 });
 
-const FARMER = { name: "Deacomart Ltd", farmName: "Deacomart Distribution" };
+const FARMER_KEY = "deacomart.farmer.profile.v1";
+type FarmerProfile = { name: string; farmName: string; location: string };
+const DEFAULT_FARMER: FarmerProfile = {
+  name: "Deacomart Ltd",
+  farmName: "Deacomart Distribution",
+  location: "Kigali, Rwanda",
+};
 
-function emptyDraft(): ProductInput {
+function loadFarmer(): FarmerProfile {
+  if (typeof window === "undefined") return DEFAULT_FARMER;
+  try {
+    const raw = window.localStorage.getItem(FARMER_KEY);
+    if (!raw) return DEFAULT_FARMER;
+    return { ...DEFAULT_FARMER, ...JSON.parse(raw) };
+  } catch {
+    return DEFAULT_FARMER;
+  }
+}
+function saveFarmer(p: FarmerProfile) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(FARMER_KEY, JSON.stringify(p));
+}
+
+function emptyDraft(farmer: FarmerProfile): ProductInput {
   return {
     name: "",
     category: "Fresh Produce",
@@ -31,9 +52,9 @@ function emptyDraft(): ProductInput {
     price: 0,
     quantity: 0,
     unit: "Kg",
-    location: "Kigali, Rwanda",
-    farmerName: FARMER.name,
-    farmName: FARMER.farmName,
+    location: farmer.location,
+    farmerName: farmer.name,
+    farmName: farmer.farmName,
     harvestDate: new Date().toISOString().slice(0, 10),
     image: "",
   };
@@ -43,9 +64,11 @@ function Dashboard() {
   const [products, setProducts] = useState<Product[]>([]);
   const [editing, setEditing] = useState<Product | null>(null);
   const [creating, setCreating] = useState(false);
+  const [farmer, setFarmer] = useState<FarmerProfile>(DEFAULT_FARMER);
 
   useEffect(() => {
     setProducts(listProducts());
+    setFarmer(loadFarmer());
     return subscribe(() => setProducts(listProducts()));
   }, []);
 
@@ -117,12 +140,22 @@ function Dashboard() {
 
       {(creating || editing) && (
         <ProductForm
-          initial={editing ?? emptyDraft()}
+          initial={editing ?? emptyDraft(farmer)}
           mode={editing ? "edit" : "create"}
           onCancel={() => { setCreating(false); setEditing(null); }}
           onSubmit={(data) => {
-            if (editing) updateProduct(editing.id, data);
-            else createProduct(data);
+            if (editing) {
+              updateProduct(editing.id, data);
+            } else {
+              createProduct(data);
+              const next = {
+                name: data.farmerName,
+                farmName: data.farmName,
+                location: data.location,
+              };
+              setFarmer(next);
+              saveFarmer(next);
+            }
             setCreating(false);
             setEditing(null);
           }}
