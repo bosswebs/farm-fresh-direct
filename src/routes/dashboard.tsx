@@ -232,13 +232,18 @@ function ProductForm({
   async function handleImage(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 1.5 * 1024 * 1024) {
-      setError("Image must be under 1.5 MB.");
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image must be under 5 MB.");
       return;
     }
     setError(null);
-    const url = await fileToDataUrl(file);
-    set("image", url);
+    try {
+      const url = await uploadProductImage(file);
+      set("image", url);
+    } catch (err) {
+      console.error(err);
+      setError("Image upload failed. Please try again.");
+    }
   }
 
   function handleSubmit(e: React.FormEvent) {
