@@ -248,6 +248,8 @@ function ProductForm({
     if (form.quantity < 0) return setError("Quantity cannot be negative.");
     if (!form.image) return setError("Please upload a product image.");
     if (!form.location.trim()) return setError("Location is required.");
+    if (!form.farmerName.trim()) return setError("Farmer name is required.");
+    if (!form.farmName.trim()) return setError("Farm or cooperative name is required.");
     onSubmit(form);
   }
 
