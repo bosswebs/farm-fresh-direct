@@ -7,7 +7,7 @@ import {
 import { SiteNav } from "@/components/site-nav";
 import {
   CATEGORIES, UNITS, formatRWF,
-  createProduct, deleteProduct, fileToDataUrl, listProducts, subscribe, updateProduct,
+  createProduct, deleteProduct, uploadProductImage, listProducts, subscribe, updateProduct,
   type Category, type Product, type ProductInput, type Unit,
 } from "@/lib/products-store";
 
