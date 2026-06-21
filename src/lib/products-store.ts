@@ -1,6 +1,7 @@
 import heroFarm from "@/assets/hero-farm.jpg";
 import produceFlatlay from "@/assets/produce-flatlay.jpg";
 import farmerPortrait from "@/assets/farmer-portrait.jpg";
+import { supabase } from "@/integrations/supabase/client";
 
 export type Category =
   | "Juices & Beverages"
@@ -298,6 +299,24 @@ export function fileToDataUrl(file: File): Promise<string> {
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+}
+
+const BUCKET = "product-images";
+// 10 years — effectively permanent for marketplace display.
+const SIGNED_URL_TTL = 60 * 60 * 24 * 365 * 10;
+
+export async function uploadProductImage(file: File): Promise<string> {
+  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const path = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
+  const { error: upErr } = await supabase.storage
+    .from(BUCKET)
+    .upload(path, file, { contentType: file.type, upsert: false });
+  if (upErr) throw upErr;
+  const { data, error: signErr } = await supabase.storage
+    .from(BUCKET)
+    .createSignedUrl(path, SIGNED_URL_TTL);
+  if (signErr || !data?.signedUrl) throw signErr ?? new Error("Failed to sign URL");
+  return data.signedUrl;
 }
 
 export function subscribe(cb: () => void) {
