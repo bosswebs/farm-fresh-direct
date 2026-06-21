@@ -362,6 +362,28 @@ function ProductForm({
             </Field>
           </div>
 
+          {/* Farmer + Farm */}
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Field label="Farmer name">
+              <input
+                value={form.farmerName}
+                onChange={(e) => set("farmerName", e.target.value)}
+                maxLength={80}
+                placeholder="e.g. Habimana Joseph"
+                className="input"
+              />
+            </Field>
+            <Field label="Farm / cooperative">
+              <input
+                value={form.farmName}
+                onChange={(e) => set("farmName", e.target.value)}
+                maxLength={80}
+                placeholder="e.g. Volcanoes Apiary"
+                className="input"
+              />
+            </Field>
+          </div>
+
           {error && <p className="text-sm text-destructive">{error}</p>}
         </div>
 
