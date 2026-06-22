@@ -650,7 +650,6 @@ function ProductForm({
               </label>
             </div>
           </div>
-          </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
         </div>
