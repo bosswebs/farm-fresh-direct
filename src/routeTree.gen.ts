@@ -26,6 +26,7 @@ import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
 import { Route as AdminReportsRouteImport } from './routes/admin/reports'
 import { Route as AdminPartnershipsRouteImport } from './routes/admin/partnerships'
 import { Route as AdminLogisticsRouteImport } from './routes/admin/logistics'
+import { Route as AdminImageViewerRouteImport } from './routes/admin/image-viewer'
 import { Route as AdminGeographicRouteImport } from './routes/admin/geographic'
 import { Route as AdminFnbRouteImport } from './routes/admin/fnb'
 import { Route as AdminContentRouteImport } from './routes/admin/content'
@@ -123,6 +124,11 @@ const AdminLogisticsRoute = AdminLogisticsRouteImport.update({
   path: '/logistics',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminImageViewerRoute = AdminImageViewerRouteImport.update({
+  id: '/image-viewer',
+  path: '/image-viewer',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminGeographicRoute = AdminGeographicRouteImport.update({
   id: '/geographic',
   path: '/geographic',
@@ -196,6 +202,7 @@ export interface FileRoutesByFullPath {
   '/admin/content': typeof AdminContentRoute
   '/admin/fnb': typeof AdminFnbRoute
   '/admin/geographic': typeof AdminGeographicRoute
+  '/admin/image-viewer': typeof AdminImageViewerRoute
   '/admin/logistics': typeof AdminLogisticsRoute
   '/admin/partnerships': typeof AdminPartnershipsRoute
   '/admin/reports': typeof AdminReportsRoute
@@ -225,6 +232,7 @@ export interface FileRoutesByTo {
   '/admin/content': typeof AdminContentRoute
   '/admin/fnb': typeof AdminFnbRoute
   '/admin/geographic': typeof AdminGeographicRoute
+  '/admin/image-viewer': typeof AdminImageViewerRoute
   '/admin/logistics': typeof AdminLogisticsRoute
   '/admin/partnerships': typeof AdminPartnershipsRoute
   '/admin/reports': typeof AdminReportsRoute
@@ -256,6 +264,7 @@ export interface FileRoutesById {
   '/admin/content': typeof AdminContentRoute
   '/admin/fnb': typeof AdminFnbRoute
   '/admin/geographic': typeof AdminGeographicRoute
+  '/admin/image-viewer': typeof AdminImageViewerRoute
   '/admin/logistics': typeof AdminLogisticsRoute
   '/admin/partnerships': typeof AdminPartnershipsRoute
   '/admin/reports': typeof AdminReportsRoute
@@ -288,6 +297,7 @@ export interface FileRouteTypes {
     | '/admin/content'
     | '/admin/fnb'
     | '/admin/geographic'
+    | '/admin/image-viewer'
     | '/admin/logistics'
     | '/admin/partnerships'
     | '/admin/reports'
@@ -317,6 +327,7 @@ export interface FileRouteTypes {
     | '/admin/content'
     | '/admin/fnb'
     | '/admin/geographic'
+    | '/admin/image-viewer'
     | '/admin/logistics'
     | '/admin/partnerships'
     | '/admin/reports'
@@ -347,6 +358,7 @@ export interface FileRouteTypes {
     | '/admin/content'
     | '/admin/fnb'
     | '/admin/geographic'
+    | '/admin/image-viewer'
     | '/admin/logistics'
     | '/admin/partnerships'
     | '/admin/reports'
@@ -497,6 +509,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLogisticsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/image-viewer': {
+      id: '/admin/image-viewer'
+      path: '/image-viewer'
+      fullPath: '/admin/image-viewer'
+      preLoaderRoute: typeof AdminImageViewerRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/geographic': {
       id: '/admin/geographic'
       path: '/geographic'
@@ -583,6 +602,7 @@ interface AdminRouteChildren {
   AdminContentRoute: typeof AdminContentRoute
   AdminFnbRoute: typeof AdminFnbRoute
   AdminGeographicRoute: typeof AdminGeographicRoute
+  AdminImageViewerRoute: typeof AdminImageViewerRoute
   AdminLogisticsRoute: typeof AdminLogisticsRoute
   AdminPartnershipsRoute: typeof AdminPartnershipsRoute
   AdminReportsRoute: typeof AdminReportsRoute
@@ -604,6 +624,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminContentRoute: AdminContentRoute,
   AdminFnbRoute: AdminFnbRoute,
   AdminGeographicRoute: AdminGeographicRoute,
+  AdminImageViewerRoute: AdminImageViewerRoute,
   AdminLogisticsRoute: AdminLogisticsRoute,
   AdminPartnershipsRoute: AdminPartnershipsRoute,
   AdminReportsRoute: AdminReportsRoute,
