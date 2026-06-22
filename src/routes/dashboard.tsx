@@ -7,7 +7,7 @@ import {
 import { SiteNav } from "@/components/site-nav";
 import {
   CATEGORIES, UNITS, formatRWF,
-  createProduct, deleteProduct, fileToDataUrl, listProducts, subscribe, updateProduct,
+  createProduct, deleteProduct, uploadProductImage, listProducts, subscribe, updateProduct,
   listRegistrations, listBookings, listPartnerships, updateBookingStatus,
   type Category, type Product, type ProductInput, type Unit, type TrainingRegistration, type ConsultancyBooking, type PartnershipApplication
 } from "@/lib/products-store";
@@ -24,9 +24,30 @@ export const Route = createFileRoute("/dashboard")({
   component: Dashboard,
 });
 
-const FARMER = { name: "Deacomart Ltd", farmName: "Deacomart Distribution" };
+const FARMER_KEY = "deacomart.farmer.profile.v1";
+type FarmerProfile = { name: string; farmName: string; location: string };
+const DEFAULT_FARMER: FarmerProfile = {
+  name: "Deacomart Ltd",
+  farmName: "Deacomart Distribution",
+  location: "Kigali, Rwanda",
+};
 
-function emptyDraft(): ProductInput {
+function loadFarmer(): FarmerProfile {
+  if (typeof window === "undefined") return DEFAULT_FARMER;
+  try {
+    const raw = window.localStorage.getItem(FARMER_KEY);
+    if (!raw) return DEFAULT_FARMER;
+    return { ...DEFAULT_FARMER, ...JSON.parse(raw) };
+  } catch {
+    return DEFAULT_FARMER;
+  }
+}
+function saveFarmer(p: FarmerProfile) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(FARMER_KEY, JSON.stringify(p));
+}
+
+function emptyDraft(farmer: FarmerProfile): ProductInput {
   return {
     name: "",
     category: "Fresh Produce",
@@ -34,9 +55,9 @@ function emptyDraft(): ProductInput {
     price: 0,
     quantity: 0,
     unit: "Kg",
-    location: "Kigali, Rwanda",
-    farmerName: FARMER.name,
-    farmName: FARMER.farmName,
+    location: farmer.location,
+    farmerName: farmer.name,
+    farmName: farmer.farmName,
     harvestDate: new Date().toISOString().slice(0, 10),
     image: "",
     organicStatus: false,
@@ -56,10 +77,12 @@ function Dashboard() {
   
   const [editing, setEditing] = useState<Product | null>(null);
   const [creating, setCreating] = useState(false);
+  const [farmer, setFarmer] = useState<FarmerProfile>(DEFAULT_FARMER);
 
   useEffect(() => {
     // Initial load
     setProducts(listProducts());
+    setFarmer(loadFarmer());
     setRegistrations(listRegistrations());
     setBookings(listBookings());
     setPartnerships(listPartnerships());
@@ -321,12 +344,22 @@ function Dashboard() {
       {/* Product Form Modals */}
       {(creating || editing) && (
         <ProductForm
-          initial={editing ?? emptyDraft()}
+          initial={editing ?? emptyDraft(farmer)}
           mode={editing ? "edit" : "create"}
           onCancel={() => { setCreating(false); setEditing(null); }}
           onSubmit={(data) => {
-            if (editing) updateProduct(editing.id, data);
-            else createProduct(data);
+            if (editing) {
+              updateProduct(editing.id, data);
+            } else {
+              createProduct(data);
+              const next = {
+                name: data.farmerName,
+                farmName: data.farmName,
+                location: data.location,
+              };
+              setFarmer(next);
+              saveFarmer(next);
+            }
             setCreating(false);
             setEditing(null);
           }}
@@ -423,13 +456,18 @@ function ProductForm({
   async function handleImage(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 1.5 * 1024 * 1024) {
-      setError("Image must be under 1.5 MB.");
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image must be under 5 MB.");
       return;
     }
     setError(null);
-    const url = await fileToDataUrl(file);
-    set("image", url);
+    try {
+      const url = await uploadProductImage(file);
+      set("image", url);
+    } catch (err) {
+      console.error(err);
+      setError("Image upload failed. Please try again.");
+    }
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -439,6 +477,8 @@ function ProductForm({
     if (form.quantity < 0) return setError("Quantity cannot be negative.");
     if (!form.image) return setError("Please upload a product image.");
     if (!form.location.trim()) return setError("Location is required.");
+    if (!form.farmerName.trim()) return setError("Farmer name is required.");
+    if (!form.farmName.trim()) return setError("Farm or cooperative name is required.");
     onSubmit(form);
   }
 
@@ -553,6 +593,28 @@ function ProductForm({
             </Field>
           </div>
 
+          {/* Farmer + Farm */}
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Field label="Farmer name">
+              <input
+                value={form.farmerName}
+                onChange={(e) => set("farmerName", e.target.value)}
+                maxLength={80}
+                placeholder="e.g. Habimana Joseph"
+                className="input"
+              />
+            </Field>
+            <Field label="Farm / cooperative">
+              <input
+                value={form.farmName}
+                onChange={(e) => set("farmName", e.target.value)}
+                maxLength={80}
+                placeholder="e.g. Volcanoes Apiary"
+                className="input"
+              />
+            </Field>
+          </div>
+
           {/* Certifications (New) */}
           <div className="pt-4 border-t border-border">
             <span className="text-sm font-semibold text-foreground">Certifications & Food Safety Badges</span>
@@ -587,6 +649,7 @@ function ProductForm({
                 Quality Verified
               </label>
             </div>
+          </div>
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}

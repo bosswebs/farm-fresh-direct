@@ -1,9 +1,7 @@
-// Product image constants - served from public/images/ (no bundling needed)
-const IMG_PRODUCE = "/images/fresh-produce.png";
-const IMG_FARMER = "/images/farmer.png";
-const IMG_HONEY = "/images/beekeeper.png";
-const IMG_TEA = "/images/tea-plantation.png";
-const IMG_MARKET = "/images/village-market.png";
+import heroFarm from "@/assets/hero-farm.jpg";
+import produceFlatlay from "@/assets/produce-flatlay.jpg";
+import farmerPortrait from "@/assets/farmer-portrait.jpg";
+import { supabase } from "@/integrations/supabase/client";
 
 export type Category =
   | "Juices & Beverages"
@@ -53,8 +51,14 @@ export type Product = {
   foodSafetyStatus?: boolean;
 };
 
-const STORAGE_KEY = "deacomart.products.v1";
-const SEEDED_KEY = "deacomart.seeded.v1";
+const STORAGE_KEY = "deacomart.products.v2";
+const SEEDED_KEY = "deacomart.seeded.v2";
+const LEGACY_KEYS = [
+  "agrimarket.products.v1",
+  "agrimarket.seeded.v1",
+  "deacomart.products.v1",
+  "deacomart.seeded.v1",
+];
 
 function uid() {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
@@ -80,7 +84,7 @@ const SEED: Product[] = [
     farmerName: "Deacomart Ltd",
     farmName: "Deacomart Distribution",
     harvestDate: today(-1),
-    image: IMG_PRODUCE,
+    image: produceFlatlay,
     rating: 4.9,
     createdAt: Date.now() - 1000 * 60 * 60 * 24,
     organicStatus: true,
@@ -100,7 +104,7 @@ const SEED: Product[] = [
     farmerName: "Nyagatare Farmers Cooperative",
     farmName: "Cyabayaga Tea Growers",
     harvestDate: today(-10),
-    image: IMG_TEA,
+    image: heroFarm,
     rating: 4.8,
     createdAt: Date.now() - 1000 * 60 * 60 * 6,
     organicStatus: true,
@@ -120,7 +124,7 @@ const SEED: Product[] = [
     farmerName: "Habimana Joseph",
     farmName: "Volcanoes Apiary",
     harvestDate: today(-30),
-    image: IMG_HONEY,
+    image: farmerPortrait,
     rating: 5.0,
     createdAt: Date.now() - 1000 * 60 * 60 * 2,
     organicStatus: true,
@@ -139,7 +143,7 @@ const SEED: Product[] = [
     farmerName: "Southern Growers Group",
     farmName: "Huye Avocado Farm",
     harvestDate: today(-2),
-    image: IMG_FARMER,
+    image: produceFlatlay,
     rating: 4.7,
     createdAt: Date.now() - 1000 * 60 * 60 * 48,
     organicStatus: true,
@@ -158,7 +162,7 @@ const SEED: Product[] = [
     farmerName: "Eastern Oilseed Coop",
     farmName: "Bugesera Sesame Farm",
     harvestDate: today(-25),
-    image: IMG_MARKET,
+    image: heroFarm,
     rating: 4.6,
     createdAt: Date.now() - 1000 * 60 * 60 * 72,
     organicStatus: false,
@@ -177,7 +181,7 @@ const SEED: Product[] = [
     farmerName: "Deacomart Poultry Partners",
     farmName: "Hilltop Poultry",
     harvestDate: today(0),
-    image: IMG_FARMER,
+    image: farmerPortrait,
     rating: 4.9,
     createdAt: Date.now() - 1000 * 60 * 30,
     organicStatus: false,
@@ -196,7 +200,7 @@ const SEED: Product[] = [
     farmerName: "Highland Tea Growers",
     farmName: "Nyabihu Tea Estate",
     harvestDate: today(-7),
-    image: IMG_TEA,
+    image: produceFlatlay,
     rating: 4.8,
     createdAt: Date.now() - 1000 * 60 * 60 * 30,
     organicStatus: true,
@@ -215,10 +219,48 @@ const SEED: Product[] = [
     farmerName: "Deacomart Ltd",
     farmName: "Deacomart Kitchen",
     harvestDate: today(-3),
-    image: IMG_PRODUCE,
+    image: heroFarm,
     rating: 4.7,
     createdAt: Date.now() - 1000 * 60 * 60 * 40,
     organicStatus: false,
+    qualityStatus: true,
+    foodSafetyStatus: true,
+  },
+  {
+    id: "seed-9",
+    name: "Black Tea Leaves",
+    category: "Teas & Herbal",
+    description: "Full-bodied Rwandan black tea from highland estates — rich, malty and aromatic. Wholesale and retail.",
+    price: 2800,
+    quantity: 100,
+    unit: "Pack",
+    location: "Nyabihu, Rwanda",
+    farmerName: "Highland Tea Growers",
+    farmName: "Nyabihu Tea Estate",
+    harvestDate: today(-9),
+    image: heroFarm,
+    rating: 4.8,
+    createdAt: Date.now() - 1000 * 60 * 60 * 50,
+    organicStatus: true,
+    qualityStatus: true,
+    foodSafetyStatus: true,
+  },
+  {
+    id: "seed-10",
+    name: "Ginger Herbal Tea",
+    category: "Teas & Herbal",
+    description: "Warming ginger infusion blended with Rwandan herbs — naturally caffeine-free and soothing.",
+    price: 3500,
+    quantity: 70,
+    unit: "Pack",
+    location: "Musanze, Rwanda",
+    farmerName: "Volcanoes Herb Coop",
+    farmName: "Musanze Herbal Gardens",
+    harvestDate: today(-12),
+    image: produceFlatlay,
+    rating: 4.7,
+    createdAt: Date.now() - 1000 * 60 * 60 * 60,
+    organicStatus: true,
     qualityStatus: true,
     foodSafetyStatus: true,
   },
@@ -243,8 +285,12 @@ function safeWrite(items: Product[]) {
 
 export function ensureSeeded() {
   if (typeof window === "undefined") return;
+  // Purge legacy keys
+  LEGACY_KEYS.forEach((k) => {
+    try { window.localStorage.removeItem(k); } catch { /* ignore */ }
+  });
   if (window.localStorage.getItem(SEEDED_KEY)) return;
-  if (safeRead().length === 0) safeWrite(SEED);
+  safeWrite(SEED);
   window.localStorage.setItem(SEEDED_KEY, "1");
 }
 
@@ -286,6 +332,23 @@ export function fileToDataUrl(file: File): Promise<string> {
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+}
+
+const BUCKET = "product-images";
+const SIGNED_URL_TTL = 60 * 60 * 24 * 365 * 10;
+
+export async function uploadProductImage(file: File): Promise<string> {
+  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const path = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
+  const { error: upErr } = await supabase.storage
+    .from(BUCKET)
+    .upload(path, file, { contentType: file.type, upsert: false });
+  if (upErr) throw upErr;
+  const { data, error: signErr } = await supabase.storage
+    .from(BUCKET)
+    .createSignedUrl(path, SIGNED_URL_TTL);
+  if (signErr || !data?.signedUrl) throw signErr ?? new Error("Failed to sign URL");
+  return data.signedUrl;
 }
 
 export function subscribe(cb: () => void) {
@@ -426,4 +489,4 @@ export function applyForPartnership(app: Omit<PartnershipApplication, "id" | "ap
     window.dispatchEvent(new CustomEvent("agrimarket:partnerships-changed"));
   }
   return newApp;
-}
+}

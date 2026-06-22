@@ -30,9 +30,13 @@ export type SiteContent = {
   contact: ContactInfo;
 };
 
-const CONTENT_STORAGE_KEY = "deacomart.sitecontent.v1";
+const PUBLISHED_KEY = "deacomart.sitecontent.v1"; // live content shown on landing
+const DRAFT_KEY = "deacomart.sitecontent.draft.v1"; // edits in admin, not yet live
+const EVENT = "deacomart:content-changed";
 
-const SEED_CONTENT: SiteContent = {
+export type ContentMode = "published" | "draft";
+
+export const SEED_CONTENT: SiteContent = {
   services: [
     {
       id: "s-1",
@@ -88,17 +92,17 @@ const SEED_CONTENT: SiteContent = {
   }
 };
 
-export function getSiteContent(): SiteContent {
+function readKey(key: string): SiteContent {
   if (typeof window === "undefined") return SEED_CONTENT;
   try {
-    const raw = window.localStorage.getItem(CONTENT_STORAGE_KEY);
+    const raw = window.localStorage.getItem(key);
     if (!raw) {
-      // Seed initial data
-      window.localStorage.setItem(CONTENT_STORAGE_KEY, JSON.stringify(SEED_CONTENT));
+      if (key === PUBLISHED_KEY) {
+        window.localStorage.setItem(PUBLISHED_KEY, JSON.stringify(SEED_CONTENT));
+      }
       return SEED_CONTENT;
     }
-    const parsed = JSON.parse(raw) as SiteContent;
-    // Fallback/fill missing values to prevent errors
+    const parsed = JSON.parse(raw) as Partial<SiteContent>;
     return {
       services: parsed.services || SEED_CONTENT.services,
       team: parsed.team || SEED_CONTENT.team,
@@ -110,18 +114,114 @@ export function getSiteContent(): SiteContent {
   }
 }
 
+export function getSiteContent(mode: ContentMode = "published"): SiteContent {
+  return readKey(mode === "draft" ? DRAFT_KEY : PUBLISHED_KEY);
+}
+
+export function getContent(mode: ContentMode = "published"): SiteContent {
+  return getSiteContent(mode);
+}
+
 export function updateSiteContent(content: SiteContent) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(CONTENT_STORAGE_KEY, JSON.stringify(content));
-  window.dispatchEvent(new CustomEvent("deacomart:content-changed"));
+  window.localStorage.setItem(PUBLISHED_KEY, JSON.stringify(content));
+  window.dispatchEvent(new CustomEvent(EVENT));
+}
+
+export function getDraft(): SiteContent {
+  if (typeof window === "undefined") return SEED_CONTENT;
+  const raw = window.localStorage.getItem(DRAFT_KEY);
+  if (raw) return readKey(DRAFT_KEY);
+  return readKey(PUBLISHED_KEY);
+}
+
+export function saveDraft(c: SiteContent) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(DRAFT_KEY, JSON.stringify(c));
+  window.dispatchEvent(new CustomEvent(EVENT));
+}
+
+export function publishDraft(c: SiteContent) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(PUBLISHED_KEY, JSON.stringify(c));
+  window.localStorage.removeItem(DRAFT_KEY);
+  window.dispatchEvent(new CustomEvent(EVENT));
+}
+
+export function discardDraft() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(DRAFT_KEY);
+  window.dispatchEvent(new CustomEvent(EVENT));
+}
+
+export function resetContent() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(PUBLISHED_KEY);
+  window.localStorage.removeItem(DRAFT_KEY);
+  window.dispatchEvent(new CustomEvent(EVENT));
+}
+
+export function hasDraftChanges(): boolean {
+  if (typeof window === "undefined") return false;
+  const draft = window.localStorage.getItem(DRAFT_KEY);
+  if (!draft) return false;
+  const published = window.localStorage.getItem(PUBLISHED_KEY) ?? JSON.stringify(SEED_CONTENT);
+  return draft !== published;
 }
 
 export function subscribeContent(cb: () => void) {
   const handler = () => cb();
-  window.addEventListener("deacomart:content-changed", handler);
+  window.addEventListener(EVENT, handler);
   window.addEventListener("storage", handler);
   return () => {
-    window.removeEventListener("deacomart:content-changed", handler);
+    window.removeEventListener(EVENT, handler);
     window.removeEventListener("storage", handler);
   };
+}
+
+// ----- Simple local admin auth (local-only backend) -----
+const ADMIN_PASS_KEY = "deacomart.admin.pass.v1";
+const ADMIN_SESSION_KEY = "deacomart.admin.session.v1";
+export const DEFAULT_ADMIN_PASSWORD = "deacomart2026";
+
+async function hash(s: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+export async function getStoredPasswordHash(): Promise<string> {
+  if (typeof window === "undefined") return "";
+  const existing = window.localStorage.getItem(ADMIN_PASS_KEY);
+  if (existing) return existing;
+  const h = await hash(DEFAULT_ADMIN_PASSWORD);
+  window.localStorage.setItem(ADMIN_PASS_KEY, h);
+  return h;
+}
+
+export async function verifyAdminPassword(password: string): Promise<boolean> {
+  const stored = await getStoredPasswordHash();
+  const candidate = await hash(password);
+  const ok = candidate === stored;
+  if (ok && typeof window !== "undefined") {
+    window.sessionStorage.setItem(ADMIN_SESSION_KEY, "1");
+  }
+  return ok;
+}
+
+export function isAdminAuthed(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.sessionStorage.getItem(ADMIN_SESSION_KEY) === "1";
+}
+
+export function adminSignOut() {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.removeItem(ADMIN_SESSION_KEY);
+}
+
+export async function changeAdminPassword(current: string, next: string): Promise<boolean> {
+  const ok = await verifyAdminPassword(current);
+  if (!ok) return false;
+  const h = await hash(next);
+  window.localStorage.setItem(ADMIN_PASS_KEY, h);
+  return true;
 }

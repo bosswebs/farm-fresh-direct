@@ -14,7 +14,7 @@ const FRESH_PRODUCE_IMAGE = "/images/fresh-produce.png";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { WHATSAPP_LINK, WHATSAPP_NUMBER, CONTACT_EMAIL } from "@/lib/products-store";
-import { getSiteContent, subscribeContent } from "@/lib/content-store";
+import { getSiteContent, subscribeContent, type SiteContent, type ContentMode } from "@/lib/content-store";
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   GraduationCap,
@@ -29,6 +29,20 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   HelpCircle,
 };
 
+function useSiteContent(): { content: SiteContent; mode: ContentMode } {
+  const [mode, setMode] = useState<ContentMode>("published");
+  const [c, setC] = useState<SiteContent>(() => getSiteContent("published"));
+  useEffect(() => {
+    const isPreview =
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("preview") === "1";
+    const m: ContentMode = isPreview ? "draft" : "published";
+    setMode(m);
+    setC(getSiteContent(m));
+    return subscribeContent(() => setC(getSiteContent(m)));
+  }, []);
+  return { content: c, mode };
+}
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -44,16 +58,10 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const [content, setContent] = useState(() => getSiteContent());
-
-  useEffect(() => {
-    return subscribeContent(() => {
-      setContent(getSiteContent());
-    });
-  }, []);
-
+  const { content, mode } = useSiteContent();
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {mode === "draft" && <PreviewBanner />}
       <SiteNav />
       <Hero />
       <Partners partners={content.partners} />
@@ -72,11 +80,22 @@ function Index() {
 }
 
 const HERO_IMAGES = [
-  "/images/hero.png",
-  "/images/hero1.png",
-  "/images/hero2.png",
-  "/images/hero3.png",
+  "/images/SLIDER6.jpeg",
+  "/images/Tea1.jpeg",
+  "/images/3green-tea.jpeg",
 ];
+
+function PreviewBanner() {
+  return (
+    <div className="sticky top-0 z-50 bg-amber-500 text-black text-sm font-semibold px-4 py-2 flex items-center justify-between gap-3">
+      <span>Preview mode — showing unpublished draft changes.</span>
+      <div className="flex items-center gap-3">
+        <a href="/" className="underline hover:no-underline">Exit preview</a>
+        <Link to="/admin" className="underline hover:no-underline">Back to admin</Link>
+      </div>
+    </div>
+  );
+}
 
 function Hero() {
   const [activeIndex, setActiveIndex] = useState(0);

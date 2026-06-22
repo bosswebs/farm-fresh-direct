@@ -1,6 +1,5 @@
-import { useState } from "react";
-import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { createFileRoute } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
+import { Link, Outlet, useRouterState, createFileRoute } from "@tanstack/react-router";
 import {
   LayoutDashboard, Users, ShoppingBag, Coffee, GraduationCap,
   Briefcase, Truck, MessageSquare, Handshake, MapPin, FileText,
@@ -8,7 +7,7 @@ import {
   Bell, Search, LogOut, User, Leaf, Package, CreditCard, Star,
   UserCheck, UserCog, DollarSign, BookOpen, Award, ClipboardList,
   Building2, Landmark, Globe, Newspaper, Megaphone, Shield,
-  Home, TrendingUp, Activity
+  Home, TrendingUp, Activity, Lock, ArrowLeft, KeyRound
 } from "lucide-react";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -17,6 +16,10 @@ import {
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu";
 import { adminStats } from "../lib/admin-data";
+import {
+  verifyAdminPassword, isAdminAuthed, adminSignOut, changeAdminPassword,
+  DEFAULT_ADMIN_PASSWORD
+} from "@/lib/content-store";
 
 export const Route = createFileRoute("/admin")({
   component: AdminLayout,
@@ -271,7 +274,15 @@ function AdminSidebar({
   );
 }
 
-function AdminHeader({ currentPath }: { currentPath: string }) {
+function AdminHeader({
+  currentPath,
+  onSignOut,
+  onChangePassword,
+}: {
+  currentPath: string;
+  onSignOut: () => void;
+  onChangePassword: () => void;
+}) {
   const breadcrumb = getBreadcrumb(currentPath);
 
   return (
@@ -343,7 +354,7 @@ function AdminHeader({ currentPath }: { currentPath: string }) {
         {/* User Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-2 pl-3 border-l border-gray-100">
+            <button className="flex items-center gap-2 pl-3 border-l border-gray-100 font-sans">
               <div className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xs font-bold">
                 SA
               </div>
@@ -356,14 +367,11 @@ function AdminHeader({ currentPath }: { currentPath: string }) {
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer">
-              <User className="mr-2 h-4 w-4" /> Profile
-            </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer">
-              <Settings className="mr-2 h-4 w-4" /> Settings
+            <DropdownMenuItem className="cursor-pointer" onClick={onChangePassword}>
+              <KeyRound className="mr-2 h-4 w-4" /> Change Password
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer text-red-600">
+            <DropdownMenuItem className="cursor-pointer text-red-600" onClick={onSignOut}>
               <LogOut className="mr-2 h-4 w-4" /> Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -397,10 +405,106 @@ function getBreadcrumb(path: string): string[] {
   return map[path] ?? [path.split("/").filter(Boolean).pop() ?? ""];
 }
 
-// ─── Admin Layout ─────────────────────────────────────────────────
-function AdminLayout() {
+// ─── Authentication Gate ──────────────────────────────────────────
+function AuthGate({ onAuthed }: { onAuthed: () => void }) {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true); setError(null);
+    const ok = await verifyAdminPassword(password);
+    setBusy(false);
+    if (ok) onAuthed();
+    else setError("Incorrect password.");
+  }
+
+  return (
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+      <div className="mx-auto max-w-md px-6 py-20 w-full">
+        <div className="rounded-2xl border border-border bg-card p-8 shadow-sm">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary text-xs font-semibold mb-4 text-emerald-700">
+            <Lock className="w-3.5 h-3.5" /> Admin access
+          </div>
+          <h1 className="text-2xl font-bold mb-2 font-display">Sign in to Admin Portal</h1>
+          <p className="text-sm text-muted-foreground mb-6">
+            Only authorized administrators can access the Deacomart Admin Portal. Default password is{" "}
+            <code className="px-1.5 py-0.5 rounded bg-secondary text-foreground">{DEFAULT_ADMIN_PASSWORD}</code>{" "}
+            on first use.
+          </p>
+          <form onSubmit={submit} className="space-y-3">
+            <input
+              type="password"
+              autoFocus
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              placeholder="Admin password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            {error && <p className="text-sm text-destructive">{error}</p>}
+            <button
+              type="submit"
+              disabled={busy || !password}
+              className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+            >
+              {busy ? "Checking…" : "Unlock admin"}
+            </button>
+          </form>
+          <div className="mt-6 border-t border-border pt-4">
+            <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+              <ArrowLeft className="w-4 h-4" /> Back to site
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [confirmPwd, setConfirmPwd] = useState("");
+  const [msg, setMsg] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setMsg(null);
+    if (next.length < 6) { setMsg("New password must be at least 6 characters."); return; }
+    if (next !== confirmPwd) { setMsg("New passwords do not match."); return; }
+    setBusy(true);
+    const ok = await changeAdminPassword(current, next);
+    setBusy(false);
+    if (!ok) { setMsg("Current password is incorrect."); return; }
+    setMsg("Password updated successfully.");
+    setTimeout(onClose, 800);
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4" onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg">
+        <h3 className="text-lg font-bold mb-4 flex items-center gap-2 font-display"><KeyRound className="w-4 h-4" /> Change admin password</h3>
+        <form onSubmit={submit} className="space-y-3">
+          <input className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" type="password" placeholder="Current password" value={current} onChange={(e) => setCurrent(e.target.value)} />
+          <input className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" type="password" placeholder="New password (min 6 chars)" value={next} onChange={(e) => setNext(e.target.value)} />
+          <input className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" type="password" placeholder="Confirm new password" value={confirmPwd} onChange={(e) => setConfirmPwd(e.target.value)} />
+          {msg && <p className="text-sm text-emerald-600 font-medium">{msg}</p>}
+          <div className="flex justify-end gap-2 pt-2">
+            <button type="button" onClick={onClose} className="px-3 py-2 rounded-lg border border-border text-sm font-semibold hover:bg-secondary transition-colors">Cancel</button>
+            <button type="submit" disabled={busy} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-all">Update</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function AdminLayoutMain({ onSignOut }: { onSignOut: () => void }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [showPwd, setShowPwd] = useState(false);
   const router = useRouterState();
   const currentPath = router.location.pathname;
 
@@ -461,14 +565,33 @@ function AdminLayout() {
 
         {/* Desktop Header */}
         <div className="hidden lg:block">
-          <AdminHeader currentPath={currentPath} />
+          <AdminHeader
+            currentPath={currentPath}
+            onSignOut={onSignOut}
+            onChangePassword={() => setShowPwd(true)}
+          />
         </div>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto bg-gray-50">
           <Outlet />
         </main>
       </div>
+
+      {showPwd && <ChangePasswordDialog onClose={() => setShowPwd(false)} />}
     </div>
   );
+}
+
+function AdminLayout() {
+  const [authed, setAuthed] = useState(false);
+  useEffect(() => {
+    setAuthed(isAdminAuthed());
+  }, []);
+
+  if (!authed) {
+    return <AuthGate onAuthed={() => setAuthed(true)} />;
+  }
+
+  return <AdminLayoutMain onSignOut={() => { adminSignOut(); setAuthed(false); }} />;
 }
