@@ -1,10 +1,16 @@
 import os
+import json
 
 img_dir = "public/images"
-images = [f for f in os.listdir(img_dir) if f.startswith("WhatsApp Image")]
+image_extensions = {".gif", ".jpeg", ".jpg", ".png", ".svg", ".webp"}
+images = [
+    f
+    for f in os.listdir(img_dir)
+    if os.path.splitext(f)[1].lower() in image_extensions
+]
 images.sort()
 
-images_js_array = "[\n" + ",\n".join([f'  "{img}"' for img in images]) + "\n]"
+images_js_array = json.dumps(images, indent=2)
 
 code = f"""import {{ createFileRoute }} from "@tanstack/react-router";
 
@@ -19,7 +25,7 @@ function ImageViewer() {{
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-xl font-bold text-gray-900 font-display">Agribusiness Real Photos Directory</h1>
-        <p className="text-sm text-gray-500">Please review the grid below and tell me which filenames map to beekeeper.png, farmer.png, tea-plantation.png, fresh-produce.png, hero.png, etc.</p>
+        <p className="text-sm text-gray-500">Current image files available from the public images directory.</p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {{IMAGES.map((img) => (
@@ -40,4 +46,4 @@ os.makedirs("src/routes/admin", exist_ok=True)
 with open("src/routes/admin/image-viewer.tsx", "w", encoding="utf-8") as f:
     f.write(code)
 
-print("Generated route successfully.")
+print(f"Generated route with {len(images)} images.")

@@ -1,9 +1,20 @@
 import { Link } from "@tanstack/react-router";
-import { Leaf, MessageCircle, ShoppingBag, Menu, X, MapPin, Award, Briefcase, BarChart3, Package, Truck } from "lucide-react";
+import {
+  Leaf,
+  MessageCircle,
+  ShoppingBag,
+  Menu,
+  X,
+  MapPin,
+  Award,
+  Briefcase,
+  BarChart3,
+  Package,
+  Truck,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { listCart, subscribeCart } from "@/lib/cart-store";
 import { WHATSAPP_LINK } from "@/lib/products-store";
-import deacomartLogo from "@/assets/logo.jpg";
 
 export function SiteNav() {
   const [cartCount, setCartCount] = useState(0);
@@ -40,7 +51,7 @@ export function SiteNav() {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
           <img
-            src={deacomartLogo}
+            src="/images/logo.jpg"
             alt="Deacomart Logo"
             className="h-10 w-auto object-contain rounded-lg bg-white p-0.5 border border-border"
           />

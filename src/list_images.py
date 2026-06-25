@@ -1,7 +1,12 @@
 import os
 
 img_dir = "public/images"
-images = [f for f in os.listdir(img_dir) if f.startswith("WhatsApp Image")]
+image_extensions = {".gif", ".jpeg", ".jpg", ".png", ".svg", ".webp"}
+images = [
+    f
+    for f in os.listdir(img_dir)
+    if os.path.splitext(f)[1].lower() in image_extensions
+]
 images.sort()
 
 html = """<!DOCTYPE html>

@@ -1,6 +1,3 @@
-import heroFarm from "@/assets/hero-farm.jpg";
-import produceFlatlay from "@/assets/produce-flatlay.jpg";
-import farmerPortrait from "@/assets/farmer-portrait.jpg";
 import { supabase } from "@/integrations/supabase/client";
 
 export type Category =
@@ -43,7 +40,7 @@ export type Product = {
   farmerName: string;
   farmName: string;
   harvestDate: string; // ISO date
-  image: string; // data URL or imported asset URL
+  image: string; // stable public image path, data URL, or uploaded image URL
   rating: number;
   createdAt: number;
   organicStatus?: boolean;
@@ -59,6 +56,19 @@ const LEGACY_KEYS = [
   "deacomart.products.v1",
   "deacomart.seeded.v1",
 ];
+
+const PRODUCT_IMAGES = {
+  passionJuice: "/images/JAMA FRUITS JUICE.jpeg",
+  hibiscusTea: "/images/HIBISCUS TEA.jpeg",
+  honey: "/images/detox.jpeg",
+  avocado: "/images/AVOCADO AIL.jpeg",
+  sesame: "/images/pumpkin seeds.jpeg",
+  eggs: "/images/stand-habiscuss.jpeg",
+  greenTea: "/images/green tea.jpeg",
+  salsa: "/images/AMBIANCE JUICES.jpeg",
+  blackTea: "/images/black tea.jpeg",
+  gingerTea: "/images/ginger tea.jpeg",
+} as const;
 
 function uid() {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
@@ -84,7 +94,7 @@ const SEED: Product[] = [
     farmerName: "Deacomart Ltd",
     farmName: "Deacomart Distribution",
     harvestDate: today(-1),
-    image: produceFlatlay,
+    image: PRODUCT_IMAGES.passionJuice,
     rating: 4.9,
     createdAt: Date.now() - 1000 * 60 * 60 * 24,
     organicStatus: true,
@@ -104,7 +114,7 @@ const SEED: Product[] = [
     farmerName: "Nyagatare Farmers Cooperative",
     farmName: "Cyabayaga Tea Growers",
     harvestDate: today(-10),
-    image: heroFarm,
+    image: PRODUCT_IMAGES.hibiscusTea,
     rating: 4.8,
     createdAt: Date.now() - 1000 * 60 * 60 * 6,
     organicStatus: true,
@@ -124,7 +134,7 @@ const SEED: Product[] = [
     farmerName: "Habimana Joseph",
     farmName: "Volcanoes Apiary",
     harvestDate: today(-30),
-    image: farmerPortrait,
+    image: PRODUCT_IMAGES.honey,
     rating: 5.0,
     createdAt: Date.now() - 1000 * 60 * 60 * 2,
     organicStatus: true,
@@ -143,7 +153,7 @@ const SEED: Product[] = [
     farmerName: "Southern Growers Group",
     farmName: "Huye Avocado Farm",
     harvestDate: today(-2),
-    image: produceFlatlay,
+    image: PRODUCT_IMAGES.avocado,
     rating: 4.7,
     createdAt: Date.now() - 1000 * 60 * 60 * 48,
     organicStatus: true,
@@ -162,7 +172,7 @@ const SEED: Product[] = [
     farmerName: "Eastern Oilseed Coop",
     farmName: "Bugesera Sesame Farm",
     harvestDate: today(-25),
-    image: heroFarm,
+    image: PRODUCT_IMAGES.sesame,
     rating: 4.6,
     createdAt: Date.now() - 1000 * 60 * 60 * 72,
     organicStatus: false,
@@ -181,7 +191,7 @@ const SEED: Product[] = [
     farmerName: "Deacomart Poultry Partners",
     farmName: "Hilltop Poultry",
     harvestDate: today(0),
-    image: farmerPortrait,
+    image: PRODUCT_IMAGES.eggs,
     rating: 4.9,
     createdAt: Date.now() - 1000 * 60 * 30,
     organicStatus: false,
@@ -200,7 +210,7 @@ const SEED: Product[] = [
     farmerName: "Highland Tea Growers",
     farmName: "Nyabihu Tea Estate",
     harvestDate: today(-7),
-    image: produceFlatlay,
+    image: PRODUCT_IMAGES.greenTea,
     rating: 4.8,
     createdAt: Date.now() - 1000 * 60 * 60 * 30,
     organicStatus: true,
@@ -219,7 +229,7 @@ const SEED: Product[] = [
     farmerName: "Deacomart Ltd",
     farmName: "Deacomart Kitchen",
     harvestDate: today(-3),
-    image: heroFarm,
+    image: PRODUCT_IMAGES.salsa,
     rating: 4.7,
     createdAt: Date.now() - 1000 * 60 * 60 * 40,
     organicStatus: false,
@@ -238,7 +248,7 @@ const SEED: Product[] = [
     farmerName: "Highland Tea Growers",
     farmName: "Nyabihu Tea Estate",
     harvestDate: today(-9),
-    image: heroFarm,
+    image: PRODUCT_IMAGES.blackTea,
     rating: 4.8,
     createdAt: Date.now() - 1000 * 60 * 60 * 50,
     organicStatus: true,
@@ -257,7 +267,7 @@ const SEED: Product[] = [
     farmerName: "Volcanoes Herb Coop",
     farmName: "Musanze Herbal Gardens",
     harvestDate: today(-12),
-    image: produceFlatlay,
+    image: PRODUCT_IMAGES.gingerTea,
     rating: 4.7,
     createdAt: Date.now() - 1000 * 60 * 60 * 60,
     organicStatus: true,
@@ -283,15 +293,36 @@ function safeWrite(items: Product[]) {
   window.dispatchEvent(new CustomEvent("agrimarket:products-changed"));
 }
 
+function refreshSeedProductImages(items: Product[]): Product[] {
+  const seedImageById = new Map(SEED.map((product) => [product.id, product.image]));
+  let changed = false;
+  const refreshed = items.map((product) => {
+    const seedImage = seedImageById.get(product.id);
+    if (!seedImage || product.image === seedImage) return product;
+    changed = true;
+    return { ...product, image: seedImage };
+  });
+  return changed ? refreshed : items;
+}
+
 export function ensureSeeded() {
   if (typeof window === "undefined") return;
   // Purge legacy keys
   LEGACY_KEYS.forEach((k) => {
     try { window.localStorage.removeItem(k); } catch { /* ignore */ }
   });
-  if (window.localStorage.getItem(SEEDED_KEY)) return;
-  safeWrite(SEED);
-  window.localStorage.setItem(SEEDED_KEY, "1");
+  const current = safeRead();
+  if (current.length === 0) {
+    safeWrite(SEED);
+    window.localStorage.setItem(SEEDED_KEY, "1");
+    return;
+  }
+
+  const refreshed = refreshSeedProductImages(current);
+  if (refreshed !== current) safeWrite(refreshed);
+  if (!window.localStorage.getItem(SEEDED_KEY)) {
+    window.localStorage.setItem(SEEDED_KEY, "1");
+  }
 }
 
 export function listProducts(): Product[] {
