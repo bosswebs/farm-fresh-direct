@@ -435,17 +435,29 @@ function About({ contact }: { contact: ContactInfo }) {
             <div>
               <h3 className="font-display font-bold text-foreground">Vision</h3>
               <p className="mt-2 text-muted-foreground leading-relaxed">
-                To become Rwanda's leading eco-conscious agribusiness enterprise, empowering farmers
-                and ensuring safe, nutritious food reaches every household.
+                To become Rwanda's most trusted eco-conscious agribusiness enterprise.
               </p>
             </div>
             <div>
               <h3 className="font-display font-bold text-foreground">Mission</h3>
               <p className="mt-2 text-muted-foreground leading-relaxed">
-                Train farmers in modern agricultural practices, facilitate value addition, ensure
-                food safety and quality, supply quality food and beverages, and provide expert
-                consultancy.
+                Empowering farmers, entrepreneurs, supplying quality food, and providing expert
+                agribusiness consultancy across all Districts of Rwanda.
               </p>
+            </div>
+            <div>
+              <h3 className="font-display font-bold text-foreground mb-3">Values</h3>
+              <div className="flex flex-wrap gap-2.5">
+                {["Excellency", "Integrity", "Transparency"].map((val) => (
+                  <span
+                    key={val}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-leaf/10 text-leaf text-sm font-semibold border border-leaf/25 animate-fade-in"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-leaf animate-pulse" />
+                    {val}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
 
