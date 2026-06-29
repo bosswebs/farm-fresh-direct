@@ -25,6 +25,7 @@ import {
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { WHATSAPP_LINK, WHATSAPP_NUMBER, CONTACT_EMAIL } from "@/lib/products-store";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   getSiteContent,
   subscribeContent,
@@ -92,6 +93,7 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const { content, mode } = useSiteContent();
+  const [termsOpen, setTermsOpen] = useState(false);
   return (
     <div className="min-h-screen bg-background text-foreground">
       {mode === "draft" && <PreviewBanner />}
@@ -104,10 +106,16 @@ function Index() {
       <About contact={content.contact} />
       <Team team={content.team} />
       <Outcomes />
-      <DeliveryPaymentTerms contact={content.contact} />
-      <Contact contact={content.contact} />
+      <TermsCTA onOpen={() => setTermsOpen(true)} />
+      <Contact contact={content.contact} onOpenTerms={() => setTermsOpen(true)} />
       <CTA />
       <SiteFooter />
+
+      <Dialog open={termsOpen} onOpenChange={setTermsOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-2 md:p-4 bg-transparent border-none shadow-none [&>button]:text-foreground [&>button]:bg-background/80 [&>button]:hover:bg-background [&>button]:p-2 [&>button]:rounded-full [&>button]:right-6 [&>button]:top-6 [&>button]:z-50 [&>button]:border [&>button]:border-border">
+          <DeliveryPaymentTerms contact={content.contact} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -416,7 +424,7 @@ function About({ contact }: { contact: ContactInfo }) {
           <div className="absolute -bottom-6 -right-4 md:-right-8 bg-background rounded-2xl p-5 shadow-[var(--shadow-soft)] border border-border max-w-[280px]">
             <ShieldCheck className="w-6 h-6 text-leaf" />
             <p className="mt-2 text-sm text-foreground font-semibold leading-snug">
-              Incorporated October 27, 2026 · TIN {contact.tin}
+              Incorporated October 27, 2025 · TIN {contact.tin}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               {contact.bankName} — Acc. {contact.bankAccount}
@@ -558,7 +566,7 @@ function Outcomes() {
   );
 }
 
-function Contact({ contact }: { contact: ContactInfo }) {
+function Contact({ contact, onOpenTerms }: { contact: ContactInfo; onOpenTerms: () => void }) {
   const whatsappLink = `https://wa.me/${contact.whatsapp.replace(/[^0-9]/g, "")}`;
   return (
     <section id="contact" className="py-20 md:py-28">
@@ -610,11 +618,17 @@ function Contact({ contact }: { contact: ContactInfo }) {
                 in Rwandan Francs (RWF).
               </li>
             </ul>
+            <button
+              onClick={onOpenTerms}
+              className="mt-6 inline-flex w-full items-center justify-center gap-2 px-5 py-3 rounded-xl border border-border text-foreground font-semibold hover:bg-secondary transition-colors cursor-pointer"
+            >
+              Detailed Operational Guidelines
+            </button>
             <a
               href={whatsappLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-8 inline-flex w-full items-center justify-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity"
+              className="mt-3 inline-flex w-full items-center justify-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity"
             >
               <MessageCircle className="w-5 h-5" /> Chat with Deacomart
             </a>
@@ -686,187 +700,195 @@ function CTA() {
   );
 }
 
-function DeliveryPaymentTerms({ contact }: { contact: ContactInfo }) {
+function TermsCTA({ onOpen }: { onOpen: () => void }) {
   return (
-    <section id="delivery-terms" className="py-20 md:py-28 bg-muted/30 border-t border-border">
-      <div className="mx-auto max-w-4xl px-6">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <p className="text-sm font-semibold text-leaf uppercase tracking-wider">
-            Operational Framework
-          </p>
-          <h2 className="mt-2 text-4xl md:text-5xl font-bold text-foreground">
-            Delivery & Payment Terms
-          </h2>
-          <p className="mt-4 text-muted-foreground">
-            Our official operational parameters, bank details, and payment instructions compiled as
-            a formal concept note.
+    <section className="py-16 bg-muted/20 border-t border-b border-border">
+      <div className="mx-auto max-w-4xl px-6 flex flex-col md:flex-row items-center justify-between gap-8">
+        <div className="space-y-2 text-center md:text-left max-w-xl">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold">
+            <Truck className="w-3.5 h-3.5" /> Logistics & Payments
+          </div>
+          <h3 className="text-2xl md:text-3xl font-bold text-foreground font-display">
+            Delivery & Payment Guidelines
+          </h3>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            We deliver daily to all 30 districts of Rwanda. View our official operational parameters, bank coordinates, and step-by-step purchasing process.
           </p>
         </div>
-
-        {/* The Concept Note Container */}
-        <div className="relative bg-card border-2 border-dashed border-primary/40 rounded-3xl p-8 md:p-12 shadow-[var(--shadow-glow)] overflow-hidden transition-all duration-300 hover:border-primary/70">
-          {/* Concept Note Stamp / Badge */}
-          <div className="absolute top-6 right-6 md:top-8 md:right-8 text-xs font-mono font-bold text-primary border-2 border-primary px-3 py-1 rounded-lg uppercase tracking-widest rotate-6 select-none bg-background/80 backdrop-blur-sm shadow-sm animate-pulse">
-            Concept Note
-          </div>
-
-          <div className="space-y-6 font-mono text-sm text-foreground/90">
-            {/* Header */}
-            <div className="text-center pb-6 border-b-2 border-border">
-              <h3 className="font-extrabold text-lg md:text-xl tracking-wider text-primary">
-                DEACOMART LTD OPERATIONAL GUIDELINES
-              </h3>
-              <p className="text-xs text-muted-foreground mt-1">
-                Kigali, Rwanda · TIN {contact.tin} · Be EcoWise
-              </p>
-            </div>
-
-            {/* Grid for Document Metadata */}
-            <div className="grid sm:grid-cols-2 gap-x-8 gap-y-2 text-xs border-b border-border/60 pb-4">
-              <div>
-                <strong>Document Reference:</strong> DM-OPS-2026-N01
-              </div>
-              <div>
-                <strong>Effective Date:</strong> October 27, 2026
-              </div>
-              <div>
-                <strong>Applicable Scope:</strong> All 30 Districts of Rwanda
-              </div>
-              <div>
-                <strong>Target Partners:</strong> Retailers, Hotels, Cooperatives, Consumers
-              </div>
-            </div>
-
-            {/* Section 1 */}
-            <div className="space-y-2">
-              <span className="font-extrabold text-primary text-base block">
-                1. Delivery Logistics & Districts
-              </span>
-              <p className="leading-relaxed text-muted-foreground text-xs">
-                Deacomart Ltd coordinates distributions daily from Kigali. We service all 30
-                districts of Rwanda (including Nyarugenge, Gasabo, Kicukiro, Musanze, Rubavu, Huye,
-                and Nyagatare).
-              </p>
-              <ul className="list-disc pl-5 space-y-1 text-xs text-muted-foreground">
-                <li>
-                  <strong>Kigali Deliveries:</strong> Dispatched within 2-4 hours of payment
-                  confirmation/LPO receipt.
-                </li>
-                <li>
-                  <strong>Upcountry Districts:</strong> Dispatched via partner transport routes
-                  within 24 hours.
-                </li>
-                <li>
-                  <strong>LPO Requirement:</strong> Institutions/Hotels must submit a valid Local
-                  Purchase Order at least 2 hours before the scheduled dispatch.
-                </li>
-              </ul>
-            </div>
-
-            {/* Section 2 */}
-            <div className="space-y-2 pt-2 border-t border-border/40">
-              <span className="font-extrabold text-primary text-base block">
-                2. Payment Channels & Terms
-              </span>
-              <p className="leading-relaxed text-muted-foreground text-xs">
-                To guarantee organic freshness, maintain supply chain traceabilities, and eliminate
-                unnecessary middlemen costs, all transactions must adhere to the following payment
-                channels:
-              </p>
-              <ul className="list-disc pl-5 space-y-1 text-xs text-muted-foreground">
-                <li>
-                  <strong>Bank Transfers:</strong> Accepted directly into the company account (see
-                  Banking Coordinates below).
-                </li>
-                <li>
-                  <strong>Mobile Payments:</strong> Integrated MTN Mobile Money and Airtel Money
-                  channels are supported for retail transactions via WhatsApp Commerce.
-                </li>
-                <li>
-                  <strong>Currency:</strong> All invoices and payments are strictly denominated and
-                  cleared in Rwandan Francs (RWF).
-                </li>
-              </ul>
-            </div>
-
-            {/* Section 3 */}
-            <div className="space-y-2 pt-2 border-t border-border/40">
-              <span className="font-extrabold text-primary text-base block">
-                3. Banking Coordinates
-              </span>
-              <div className="bg-secondary/40 border border-border p-4 rounded-xl space-y-1 text-xs font-mono text-foreground">
-                <div>
-                  <strong>Beneficiary:</strong> {contact.bankHolder}
-                </div>
-                <div>
-                  <strong>Bank Name:</strong> {contact.bankName}
-                </div>
-                <div>
-                  <strong>Account Number:</strong>{" "}
-                  <span className="text-primary font-bold">{contact.bankAccount}</span>
-                </div>
-                <div>
-                  <strong>Corporate TIN:</strong> {contact.tin}
-                </div>
-                <div className="text-[10px] text-muted-foreground mt-2 italic">
-                  *Please forward your transfer confirmation slip to our WhatsApp or email for
-                  prompt clearing.
-                </div>
-              </div>
-            </div>
-
-            {/* Section 4 */}
-            <div className="space-y-2 pt-2 border-t border-border/40">
-              <span className="font-extrabold text-primary text-base block">
-                4. Step-by-Step Purchasing Process
-              </span>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center mt-3">
-                <div className="p-3 bg-secondary/20 rounded-xl border border-border/60">
-                  <div className="w-6 h-6 rounded-full bg-primary/15 text-primary flex items-center justify-center font-bold text-xs mx-auto mb-2">
-                    1
-                  </div>
-                  <div className="font-bold text-[11px]">Select Products</div>
-                  <p className="text-[10px] text-muted-foreground mt-1 leading-snug">
-                    Browse catalog or request service estimate
-                  </p>
-                </div>
-                <div className="p-3 bg-secondary/20 rounded-xl border border-border/60">
-                  <div className="w-6 h-6 rounded-full bg-primary/15 text-primary flex items-center justify-center font-bold text-xs mx-auto mb-2">
-                    2
-                  </div>
-                  <div className="font-bold text-[11px]">Submit Details</div>
-                  <p className="text-[10px] text-muted-foreground mt-1 leading-snug">
-                    Submit order via Cart or WhatsApp
-                  </p>
-                </div>
-                <div className="p-3 bg-secondary/20 rounded-xl border border-border/60">
-                  <div className="w-6 h-6 rounded-full bg-primary/15 text-primary flex items-center justify-center font-bold text-xs mx-auto mb-2">
-                    3
-                  </div>
-                  <div className="font-bold text-[11px]">Send Payment</div>
-                  <p className="text-[10px] text-muted-foreground mt-1 leading-snug">
-                    Pay via Bank or MoMo, or send official LPO
-                  </p>
-                </div>
-                <div className="p-3 bg-secondary/20 rounded-xl border border-border/60">
-                  <div className="w-6 h-6 rounded-full bg-primary/15 text-primary flex items-center justify-center font-bold text-xs mx-auto mb-2">
-                    4
-                  </div>
-                  <div className="font-bold text-[11px]">Dispatch</div>
-                  <p className="text-[10px] text-muted-foreground mt-1 leading-snug">
-                    Order verified and shipped to your location
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Footer Notice */}
-            <div className="text-center pt-6 border-t-2 border-border text-[10px] text-muted-foreground italic">
-              "Be EcoWise" — Supporting Rwandan Smallholders and Securing Healthy Supply Chains.
-            </div>
-          </div>
-        </div>
+        <button
+          onClick={onOpen}
+          className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity cursor-pointer whitespace-nowrap shadow-md shadow-primary/20"
+        >
+          View operational guidelines <ArrowRight className="w-4 h-4" />
+        </button>
       </div>
     </section>
+  );
+}
+
+function DeliveryPaymentTerms({ contact }: { contact: ContactInfo }) {
+  return (
+    <div className="relative bg-card border-2 border-dashed border-primary/40 rounded-3xl p-8 md:p-12 shadow-[var(--shadow-glow)] overflow-hidden transition-all duration-300 hover:border-primary/70">
+      {/* Concept Note Stamp / Badge */}
+      <div className="absolute top-6 right-6 md:top-8 md:right-8 text-xs font-mono font-bold text-primary border-2 border-primary px-3 py-1 rounded-lg uppercase tracking-widest rotate-6 select-none bg-background/80 backdrop-blur-sm shadow-sm animate-pulse">
+        Concept Note
+      </div>
+
+      <div className="space-y-6 font-mono text-sm text-foreground/90">
+        {/* Header */}
+        <div className="text-center pb-6 border-b-2 border-border">
+          <h3 className="font-extrabold text-lg md:text-xl tracking-wider text-primary">
+            DEACOMART LTD OPERATIONAL GUIDELINES
+          </h3>
+          <p className="text-xs text-muted-foreground mt-1">
+            Kigali, Rwanda · TIN {contact.tin} · Be EcoWise
+          </p>
+        </div>
+
+        {/* Grid for Document Metadata */}
+        <div className="grid sm:grid-cols-2 gap-x-8 gap-y-2 text-xs border-b border-border/60 pb-4">
+          <div>
+            <strong>Document Reference:</strong> DM-OPS-2026-N01
+          </div>
+          <div>
+            <strong>Effective Date:</strong> October 27, 2025
+          </div>
+          <div>
+            <strong>Applicable Scope:</strong> All 30 Districts of Rwanda
+          </div>
+          <div>
+            <strong>Target Partners:</strong> Retailers, Hotels, Cooperatives, Consumers
+          </div>
+        </div>
+
+        {/* Section 1 */}
+        <div className="space-y-2">
+          <span className="font-extrabold text-primary text-base block">
+            1. Delivery Logistics & Districts
+          </span>
+          <p className="leading-relaxed text-muted-foreground text-xs">
+            Deacomart Ltd coordinates distributions daily from Kigali. We service all 30
+            districts of Rwanda (including Nyarugenge, Gasabo, Kicukiro, Musanze, Rubavu, Huye,
+            and Nyagatare).
+          </p>
+          <ul className="list-disc pl-5 space-y-1 text-xs text-muted-foreground text-left">
+            <li>
+              <strong>Kigali Deliveries:</strong> Dispatched within 2-4 hours of payment
+              confirmation/LPO receipt.
+            </li>
+            <li>
+              <strong>Upcountry Districts:</strong> Dispatched via partner transport routes
+              within 24 hours.
+            </li>
+            <li>
+              <strong>LPO Requirement:</strong> Institutions/Hotels must submit a valid Local
+              Purchase Order at least 2 hours before the scheduled dispatch.
+            </li>
+          </ul>
+        </div>
+
+        {/* Section 2 */}
+        <div className="space-y-2 pt-2 border-t border-border/40">
+          <span className="font-extrabold text-primary text-base block">
+            2. Payment Channels & Terms
+          </span>
+          <p className="leading-relaxed text-muted-foreground text-xs">
+            To guarantee organic freshness, maintain supply chain traceabilities, and eliminate
+            unnecessary middlemen costs, all transactions must adhere to the following payment
+            channels:
+          </p>
+          <ul className="list-disc pl-5 space-y-1 text-xs text-muted-foreground text-left">
+            <li>
+              <strong>Bank Transfers:</strong> Accepted directly into the company account (see
+              Banking Coordinates below).
+            </li>
+            <li>
+              <strong>Mobile Payments:</strong> Integrated MTN Mobile Money and Airtel Money
+              channels are supported for retail transactions via WhatsApp Commerce.
+            </li>
+            <li>
+              <strong>Currency:</strong> All invoices and payments are strictly denominated and
+              cleared in Rwandan Francs (RWF).
+            </li>
+          </ul>
+        </div>
+
+        {/* Section 3 */}
+        <div className="space-y-2 pt-2 border-t border-border/40">
+          <span className="font-extrabold text-primary text-base block">
+            3. Banking Coordinates
+          </span>
+          <div className="bg-secondary/40 border border-border p-4 rounded-xl space-y-1 text-xs font-mono text-foreground">
+            <div>
+              <strong>Beneficiary:</strong> {contact.bankHolder}
+            </div>
+            <div>
+              <strong>Bank Name:</strong> {contact.bankName}
+            </div>
+            <div>
+              <strong>Account Number:</strong>{" "}
+              <span className="text-primary font-bold">{contact.bankAccount}</span>
+            </div>
+            <div>
+              <strong>Corporate TIN:</strong> {contact.tin}
+            </div>
+            <div className="text-[10px] text-muted-foreground mt-2 italic">
+              *Please forward your transfer confirmation slip to our WhatsApp or email for
+              prompt clearing.
+            </div>
+          </div>
+        </div>
+
+        {/* Section 4 */}
+        <div className="space-y-2 pt-2 border-t border-border/40">
+          <span className="font-extrabold text-primary text-base block">
+            4. Step-by-Step Purchasing Process
+          </span>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center mt-3">
+            <div className="p-3 bg-secondary/20 rounded-xl border border-border/60">
+              <div className="w-6 h-6 rounded-full bg-primary/15 text-primary flex items-center justify-center font-bold text-xs mx-auto mb-2">
+                1
+              </div>
+              <div className="font-bold text-[11px]">Select Products</div>
+              <p className="text-[10px] text-muted-foreground mt-1 leading-snug">
+                Browse catalog or request service estimate
+              </p>
+            </div>
+            <div className="p-3 bg-secondary/20 rounded-xl border border-border/60">
+              <div className="w-6 h-6 rounded-full bg-primary/15 text-primary flex items-center justify-center font-bold text-xs mx-auto mb-2">
+                2
+              </div>
+              <div className="font-bold text-[11px]">Submit Details</div>
+              <p className="text-[10px] text-muted-foreground mt-1 leading-snug">
+                Submit order via Cart or WhatsApp
+              </p>
+            </div>
+            <div className="p-3 bg-secondary/20 rounded-xl border border-border/60">
+              <div className="w-6 h-6 rounded-full bg-primary/15 text-primary flex items-center justify-center font-bold text-xs mx-auto mb-2">
+                3
+              </div>
+              <div className="font-bold text-[11px]">Send Payment</div>
+              <p className="text-[10px] text-muted-foreground mt-1 leading-snug">
+                Pay via Bank or MoMo, or send official LPO
+              </p>
+            </div>
+            <div className="p-3 bg-secondary/20 rounded-xl border border-border/60">
+              <div className="w-6 h-6 rounded-full bg-primary/15 text-primary flex items-center justify-center font-bold text-xs mx-auto mb-2">
+                4
+              </div>
+              <div className="font-bold text-[11px]">Dispatch</div>
+              <p className="text-[10px] text-muted-foreground mt-1 leading-snug">
+                Order verified and shipped to your location
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer Notice */}
+        <div className="text-center pt-6 border-t-2 border-border text-[10px] text-muted-foreground italic">
+          "Be EcoWise" — Supporting Rwandan Smallholders and Securing Healthy Supply Chains.
+        </div>
+      </div>
+    </div>
   );
 }

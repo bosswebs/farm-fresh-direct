@@ -103,9 +103,9 @@ export function SiteFooter() {
           </div>
           <ul className="space-y-3 text-muted-foreground">
             <li>
-              <a href="/#about" className="hover:text-foreground transition-colors">
+              <Link to="/about" className="hover:text-foreground transition-colors">
                 About Deacomart
-              </a>
+              </Link>
             </li>
             <li>
               <a href="/#services" className="hover:text-foreground transition-colors">

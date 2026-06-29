@@ -63,7 +63,7 @@ const PRODUCT_IMAGES = {
   honey: "/images/detox.jpeg",
   avocado: "/images/AVOCADO AIL.jpeg",
   sesame: "/images/pumpkin seeds.jpeg",
-  eggs: "/images/stand-habiscuss.jpeg",
+  eggs: "/images/amagi.jpg",
   greenTea: "/images/green tea.jpeg",
   salsa: "/images/AMBIANCE JUICES.jpeg",
   blackTea: "/images/black tea.jpeg",
@@ -274,6 +274,25 @@ const SEED: Product[] = [
     qualityStatus: true,
     foodSafetyStatus: true,
   },
+  {
+    id: "seed-11",
+    name: "Premium Organic Eggs Tray",
+    category: "Poultry & Eggs",
+    description: "Farm fresh organic eggs, high in protein, harvested from pasture-fed chickens. Packed carefully in a tray of 30 eggs.",
+    price: 4500,
+    quantity: 60,
+    unit: "Tray",
+    location: "Musanze, Rwanda",
+    farmerName: "EcoWise Poultry Farm",
+    farmName: "Musanze Poultry Partners",
+    harvestDate: today(-1),
+    image: "/images/page_30_eggs.width-610.jpg",
+    rating: 4.9,
+    createdAt: Date.now() - 1000 * 60 * 60 * 12,
+    organicStatus: true,
+    qualityStatus: true,
+    foodSafetyStatus: true,
+  },
 ];
 
 function safeRead(): Product[] {
@@ -311,11 +330,19 @@ export function ensureSeeded() {
   LEGACY_KEYS.forEach((k) => {
     try { window.localStorage.removeItem(k); } catch { /* ignore */ }
   });
-  const current = safeRead();
+  let current = safeRead();
   if (current.length === 0) {
     safeWrite(SEED);
     window.localStorage.setItem(SEEDED_KEY, "1");
     return;
+  }
+
+  // Merge any missing seed products
+  const currentIds = new Set(current.map((p) => p.id));
+  const missingSeeds = SEED.filter((p) => !currentIds.has(p.id));
+  if (missingSeeds.length > 0) {
+    current = [...current, ...missingSeeds];
+    safeWrite(current);
   }
 
   const refreshed = refreshSeedProductImages(current);

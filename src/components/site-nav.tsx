@@ -11,6 +11,7 @@ import {
   BarChart3,
   Package,
   Truck,
+  Info,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { listCart, subscribeCart } from "@/lib/cart-store";
@@ -36,6 +37,7 @@ export function SiteNav() {
 
   const navLinks = [
     { to: "/", label: "Home" },
+    { to: "/about", label: "About Us", icon: Info },
     { to: "/browse", label: "Shop", icon: ShoppingBag },
     { to: "/map", label: "Market Map", icon: MapPin },
     { to: "/training", label: "Academy", icon: Award },
