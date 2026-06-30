@@ -1,6 +1,5 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  Leaf,
   MessageCircle,
   ShoppingBag,
   Menu,
@@ -9,17 +8,66 @@ import {
   Award,
   Briefcase,
   BarChart3,
-  Package,
   Truck,
   Info,
+  ChevronDown,
+  House,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { listCart, subscribeCart } from "@/lib/cart-store";
 import { WHATSAPP_LINK } from "@/lib/products-store";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+const PRIMARY_NAV_LINKS = [
+  { to: "/", label: "Home", icon: House },
+  { to: "/about", label: "About Us", icon: Info },
+  { to: "/impact", label: "Impact", icon: BarChart3 },
+] as const;
+
+const SERVICE_NAV_LINKS = [
+  {
+    to: "/browse",
+    label: "Shop",
+    description: "Browse food and beverage products",
+    icon: ShoppingBag,
+  },
+  {
+    to: "/map",
+    label: "Market Map",
+    description: "Find producers and market locations",
+    icon: MapPin,
+  },
+  {
+    to: "/training",
+    label: "Academy",
+    description: "Explore practical agribusiness training",
+    icon: Award,
+  },
+  {
+    to: "/consultancy",
+    label: "Consultancy",
+    description: "Request professional advisory support",
+    icon: Briefcase,
+  },
+  {
+    to: "/tracking",
+    label: "Track Order",
+    description: "Check the progress of a delivery",
+    icon: Truck,
+  },
+] as const;
 
 export function SiteNav() {
   const [cartCount, setCartCount] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileServicesOpen, setIsMobileServicesOpen] = useState(false);
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const isServicesRoute = SERVICE_NAV_LINKS.some((link) => pathname.startsWith(link.to));
 
   useEffect(() => {
     const updateCount = () => {
@@ -35,17 +83,10 @@ export function SiteNav() {
     window.dispatchEvent(new CustomEvent("agrimarket:open-cart"));
   }
 
-  const navLinks = [
-    { to: "/", label: "Home" },
-    { to: "/about", label: "About Us", icon: Info },
-    { to: "/browse", label: "Shop", icon: ShoppingBag },
-    { to: "/map", label: "Market Map", icon: MapPin },
-    { to: "/training", label: "Academy", icon: Award },
-    { to: "/consultancy", label: "Consultancy", icon: Briefcase },
-    { to: "/tracking", label: "Track Order", icon: Truck },
-    { to: "/impact", label: "Impact", icon: BarChart3 },
-    { to: "/dashboard", label: "Inventory", icon: Package },
-  ];
+  function closeMobileMenu() {
+    setIsMobileMenuOpen(false);
+    setIsMobileServicesOpen(false);
+  }
 
   return (
     <header className="sticky top-0 z-40 backdrop-blur-md bg-background/75 border-b border-border/60">
@@ -60,14 +101,68 @@ export function SiteNav() {
         </Link>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden xl:flex items-center gap-6 text-sm font-medium text-muted-foreground">
-          {navLinks.map((link) => (
+        <nav
+          aria-label="Primary navigation"
+          className="hidden xl:flex items-center gap-5 text-sm font-medium text-muted-foreground"
+        >
+          {PRIMARY_NAV_LINKS.slice(0, 2).map((link) => (
             <Link
               key={link.to}
               to={link.to}
               activeOptions={{ exact: link.to === "/" }}
               activeProps={{ className: "text-primary font-semibold border-b-2 border-leaf pb-1" }}
               className="hover:text-foreground transition-colors pb-1"
+            >
+              {link.label}
+            </Link>
+          ))}
+
+          <DropdownMenu modal={false}>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className={`group flex items-center gap-1 pb-1 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 ${
+                  isServicesRoute
+                    ? "border-b-2 border-leaf font-semibold text-primary"
+                    : "text-muted-foreground"
+                }`}
+              >
+                Services
+                <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center" sideOffset={12} className="w-80 p-2">
+              {SERVICE_NAV_LINKS.map((link) => {
+                const Icon = link.icon;
+                return (
+                  <DropdownMenuItem key={link.to} asChild className="p-0">
+                    <Link
+                      to={link.to}
+                      activeProps={{ className: "bg-secondary text-primary" }}
+                      className="group flex cursor-pointer items-start gap-3 rounded-md px-3 py-2.5 outline-none transition-colors focus:bg-secondary"
+                    >
+                      <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-md bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                        <Icon className="h-4 w-4" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block font-semibold text-foreground">{link.label}</span>
+                        <span className="mt-0.5 block text-xs leading-5 text-muted-foreground">
+                          {link.description}
+                        </span>
+                      </span>
+                    </Link>
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {PRIMARY_NAV_LINKS.slice(2).map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
+              className="pb-1 transition-colors hover:text-foreground"
+              activeProps={{ className: "border-b-2 border-leaf pb-1 font-semibold text-primary" }}
             >
               {link.label}
             </Link>
@@ -118,9 +213,14 @@ export function SiteNav() {
 
           {/* Mobile Menu Button */}
           <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            type="button"
+            onClick={() => {
+              setIsMobileMenuOpen((isOpen) => !isOpen);
+              setIsMobileServicesOpen(false);
+            }}
             className="xl:hidden p-2 rounded-xl border border-border bg-card hover:border-leaf text-foreground transition-all"
             aria-label="Toggle navigation menu"
+            aria-expanded={isMobileMenuOpen}
           >
             {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -130,12 +230,12 @@ export function SiteNav() {
       {/* Mobile Menu Dropdown */}
       {isMobileMenuOpen && (
         <div className="xl:hidden bg-card border-b border-border shadow-[var(--shadow-soft)] animate-in slide-in-from-top duration-200">
-          <nav className="px-6 py-4 flex flex-col gap-4">
-            {navLinks.map((link) => (
+          <nav aria-label="Mobile navigation" className="px-6 py-4 flex flex-col gap-2">
+            {PRIMARY_NAV_LINKS.slice(0, 2).map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
-                onClick={() => setIsMobileMenuOpen(false)}
+                onClick={closeMobileMenu}
                 activeOptions={{ exact: link.to === "/" }}
                 activeProps={{ className: "text-primary font-bold bg-secondary/50" }}
                 className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-secondary text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -145,11 +245,69 @@ export function SiteNav() {
               </Link>
             ))}
 
-            <hr className="border-border/60" />
+            <div>
+              <button
+                type="button"
+                onClick={() => setIsMobileServicesOpen((isOpen) => !isOpen)}
+                className={`flex w-full items-center gap-3 rounded-xl p-2.5 text-left text-sm font-medium transition-colors hover:bg-secondary hover:text-foreground ${
+                  isServicesRoute
+                    ? "bg-secondary/50 font-bold text-primary"
+                    : "text-muted-foreground"
+                }`}
+                aria-expanded={isMobileServicesOpen}
+                aria-controls="mobile-services-menu"
+              >
+                <Briefcase className="h-4 w-4 shrink-0 text-leaf" />
+                <span className="flex-1">Services</span>
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform duration-200 ${
+                    isMobileServicesOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {isMobileServicesOpen && (
+                <div
+                  id="mobile-services-menu"
+                  className="ml-5 mt-1 space-y-1 border-l border-border pl-3"
+                >
+                  {SERVICE_NAV_LINKS.map((link) => {
+                    const Icon = link.icon;
+                    return (
+                      <Link
+                        key={link.to}
+                        to={link.to}
+                        onClick={closeMobileMenu}
+                        activeProps={{ className: "bg-secondary text-primary font-semibold" }}
+                        className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                      >
+                        <Icon className="h-4 w-4 shrink-0 text-leaf" />
+                        {link.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {PRIMARY_NAV_LINKS.slice(2).map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                onClick={closeMobileMenu}
+                activeProps={{ className: "text-primary font-bold bg-secondary/50" }}
+                className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-secondary text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {link.icon && <link.icon className="w-4 h-4 text-leaf shrink-0" />}
+                {link.label}
+              </Link>
+            ))}
+
+            <hr className="my-2 border-border/60" />
 
             <Link
               to="/dashboard"
-              onClick={() => setIsMobileMenuOpen(false)}
+              onClick={closeMobileMenu}
               className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-emerald-600/20 text-emerald-800 bg-emerald-500/5 font-semibold text-sm hover:bg-emerald-500/10 transition-colors"
             >
               Farmer Portal
@@ -157,7 +315,7 @@ export function SiteNav() {
 
             <Link
               to="/admin"
-              onClick={() => setIsMobileMenuOpen(false)}
+              onClick={closeMobileMenu}
               className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-border text-gray-700 bg-gray-50 font-semibold text-sm hover:bg-gray-100 transition-colors"
             >
               Admin Portal
