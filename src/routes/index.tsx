@@ -41,6 +41,11 @@ const PRODUCT_SHOWCASE_IMAGE = "/images/SLIDER6.jpeg";
 const TEA_PRODUCT_IMAGE = "/images/Tea1.jpeg";
 const HERBAL_PRODUCT_IMAGE = "/images/3green-tea.jpeg";
 const JUICE_PRODUCT_IMAGE = "/images/JAMA FRUITS JUICE.jpeg";
+const TEAM_IMAGE_BY_ID: Record<string, string> = {
+  "t-1": "/images/staff/DUKUZUMUREMYI Eric.jpeg",
+  "t-3": "/images/staff/Accountant - TURIMASO Innocent.jpeg",
+  "t-4": "/images/staff/HABIMANA Jpseph.jpeg",
+};
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   GraduationCap,
@@ -120,7 +125,44 @@ function Index() {
   );
 }
 
-const HERO_IMAGES = ["/images/SLIDER6.jpeg", "/images/Tea1.jpeg", "/images/3green-tea.jpeg"];
+const HERO_SLIDES = [
+  {
+    src: "/images/slider/SLIDER6.jpeg",
+    alt: "Deacomart agricultural products made in Rwanda",
+  },
+  {
+    src: "/images/slider/AMBIANCE JUICES.jpeg",
+    alt: "Ambiance fruit juice selection",
+  },
+  {
+    src: "/images/slider/JAMA FRUITS JUICE.jpeg",
+    alt: "Jama Fruits bottled juice products",
+  },
+  {
+    src: "/images/slider/3green-tea.jpeg",
+    alt: "Green tea products from Rwanda",
+  },
+  {
+    src: "/images/slider/black tea.jpeg",
+    alt: "Rwandan black tea product selection",
+  },
+  {
+    src: "/images/slider/black-tea new.jpeg",
+    alt: "Packaged black tea products",
+  },
+  {
+    src: "/images/slider/coffee-beans.jpeg",
+    alt: "Fresh roasted coffee beans",
+  },
+  {
+    src: "/images/slider/page_30_eggs.width-610.jpg",
+    alt: "Fresh eggs supplied by local farmers",
+  },
+  {
+    src: "/images/slider/ZIMA COOKIES.jpeg",
+    alt: "Zima packaged cookies",
+  },
+] as const;
 
 function PreviewBanner() {
   return (
@@ -143,7 +185,7 @@ function Hero() {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % HERO_IMAGES.length);
+      setActiveIndex((prev) => (prev + 1) % HERO_SLIDES.length);
     }, 5000);
     return () => clearInterval(timer);
   }, []);
@@ -155,41 +197,39 @@ function Hero() {
     >
       {/* Slider Images Stack — z-0 keeps them inside this section's stacking context */}
       <div className="absolute inset-0" style={{ zIndex: 0 }}>
-        {HERO_IMAGES.map((img, idx) => (
+        {HERO_SLIDES.map((slide, idx) => (
           <img
-            key={img}
-            src={img}
-            alt={`Rwandan Farm Slide ${idx + 1}`}
+            key={slide.src}
+            src={slide.src}
+            alt={slide.alt}
+            loading={idx === 0 ? "eager" : "lazy"}
+            fetchPriority={idx === 0 ? "high" : "auto"}
+            aria-hidden={idx !== activeIndex}
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${
               idx === activeIndex ? "opacity-100" : "opacity-0"
             }`}
           />
         ))}
         {/* Overlay gradients for text contrast */}
-        <div className="absolute inset-0 bg-black/50" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-black/25" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/15 to-transparent" />
       </div>
 
       <div
-        className="mx-auto max-w-7xl px-6 py-20 md:py-28 text-primary-foreground w-full"
+        className="mx-auto max-w-7xl px-6 py-16 md:py-20 text-primary-foreground w-full"
         style={{ position: "relative", zIndex: 10 }}
       >
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-xs font-medium backdrop-blur-sm">
           <Sprout className="w-3.5 h-3.5 text-sun" />
-          Be EcoWise · Kigali, Rwanda · Incorporated 2026
+          Be EcoWise
         </div>
-        <h1 className="mt-6 max-w-3xl text-5xl md:text-7xl font-extrabold leading-[0.95] tracking-tight">
-          Empowering farmers.
+        <h1 className="mt-5 max-w-xl text-4xl md:text-6xl font-extrabold leading-none tracking-tight">
+          Rwanda grown.
           <br />
-          <span className="text-sun">Delivering quality food.</span>
+          <span className="text-sun">Quality delivered.</span>
         </h1>
-        <p className="mt-6 max-w-xl text-lg text-white/85 leading-relaxed">
-          Deacomart Ltd is an eco-conscious agribusiness in Rwanda — training smallholder farmers,
-          supplying juices, teas, honey, sesame and eggs, and providing consultancy across all
-          Districts.
-        </p>
 
-        <div className="mt-10 flex flex-wrap gap-3">
+        <div className="mt-8 flex flex-wrap gap-3">
           <Link
             to="/browse"
             className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-sun text-sun-foreground font-semibold hover:opacity-90 transition-opacity"
@@ -205,18 +245,6 @@ function Hero() {
             <MessageCircle className="w-5 h-5" /> Order on WhatsApp
           </a>
         </div>
-
-        <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-white/70">
-          <span className="inline-flex items-center gap-1.5">
-            <CircleCheck className="w-4 h-4 text-sun" /> All Districts of Rwanda
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <CircleCheck className="w-4 h-4 text-sun" /> Food safety compliant
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <CircleCheck className="w-4 h-4 text-sun" /> WhatsApp ordering
-          </span>
-        </div>
       </div>
 
       {/* Dots Indicator */}
@@ -224,14 +252,16 @@ function Hero() {
         className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2"
         style={{ zIndex: 20 }}
       >
-        {HERO_IMAGES.map((_, idx) => (
+        {HERO_SLIDES.map((slide, idx) => (
           <button
-            key={idx}
+            key={slide.src}
+            type="button"
             onClick={() => setActiveIndex(idx)}
             className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${
               idx === activeIndex ? "bg-sun w-6" : "bg-white/30 hover:bg-white/60"
             }`}
             aria-label={`Go to slide ${idx + 1}`}
+            aria-current={idx === activeIndex ? "true" : undefined}
           />
         ))}
       </div>
@@ -507,21 +537,38 @@ function Team({ team }: { team: TeamItem[] }) {
           </p>
         </div>
         <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {team.map((m) => (
-            <div
-              key={m.id || m.role}
-              className="p-6 rounded-2xl bg-card border border-border hover:border-leaf transition-colors"
-            >
-              <div className="grid place-items-center w-12 h-12 rounded-full bg-[image:var(--gradient-leaf)] text-primary-foreground font-bold">
-                {m.name.charAt(0)}
+          {team.map((m) => {
+            const imageSrc = TEAM_IMAGE_BY_ID[m.id];
+            return (
+              <div
+                key={m.id || m.role}
+                className="overflow-hidden rounded-2xl bg-card border border-border hover:border-leaf transition-colors"
+              >
+                <div className="aspect-square overflow-hidden bg-muted">
+                  {imageSrc ? (
+                    <img
+                      src={imageSrc}
+                      alt={`${m.name}, ${m.role}`}
+                      className="h-full w-full object-cover object-top"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  ) : (
+                    <div className="grid h-full w-full place-items-center bg-[image:var(--gradient-leaf)] text-5xl font-bold text-primary-foreground">
+                      {m.name.charAt(0)}
+                    </div>
+                  )}
+                </div>
+                <div className="p-5">
+                  <div className="text-xs font-semibold text-leaf uppercase tracking-wider">
+                    {m.role}
+                  </div>
+                  <div className="mt-1 font-bold text-foreground">{m.name}</div>
+                  <div className="mt-1 text-sm text-muted-foreground">{m.expertise}</div>
+                </div>
               </div>
-              <div className="mt-4 text-xs font-semibold text-leaf uppercase tracking-wider">
-                {m.role}
-              </div>
-              <div className="mt-1 font-bold text-foreground">{m.name}</div>
-              <div className="mt-1 text-sm text-muted-foreground">{m.expertise}</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
