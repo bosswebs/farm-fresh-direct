@@ -1,19 +1,62 @@
 import { useState, useEffect } from "react";
 import { Link, Outlet, useRouterState, createFileRoute } from "@tanstack/react-router";
 import {
-  LayoutDashboard, Users, ShoppingBag, Coffee, GraduationCap,
-  Briefcase, Truck, MessageSquare, Handshake, MapPin, FileText,
-  BarChart3, Mail, Settings, ChevronDown, ChevronRight, Menu, X,
-  Bell, Search, LogOut, User, Leaf, Package, CreditCard, Star,
-  UserCheck, UserCog, DollarSign, BookOpen, Award, ClipboardList,
-  Building2, Landmark, Globe, Newspaper, Megaphone, Shield,
-  Home, TrendingUp, Activity, Lock, ArrowLeft, KeyRound
+  LayoutDashboard,
+  Users,
+  ShoppingBag,
+  Coffee,
+  GraduationCap,
+  Briefcase,
+  Truck,
+  MessageSquare,
+  Handshake,
+  MapPin,
+  FileText,
+  BarChart3,
+  Mail,
+  Settings,
+  ChevronDown,
+  ChevronRight,
+  Menu,
+  X,
+  Bell,
+  Search,
+  LogOut,
+  User,
+  Leaf,
+  Package,
+  CreditCard,
+  Star,
+  UserCheck,
+  UserCog,
+  DollarSign,
+  BookOpen,
+  Award,
+  ClipboardList,
+  Building2,
+  Landmark,
+  Globe,
+  Newspaper,
+  Megaphone,
+  Shield,
+  Home,
+  TrendingUp,
+  Activity,
+  Lock,
+  ArrowLeft,
+  KeyRound,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu";
 import { adminStats } from "../lib/admin-data";
 import {
@@ -21,6 +64,7 @@ import {
   getAdminSession,
   loginAdmin,
   logoutAdmin,
+  resetAdminPassword,
 } from "@/lib/auth.functions";
 
 type AdminUser = NonNullable<Awaited<ReturnType<typeof getAdminSession>>>;
@@ -33,9 +77,7 @@ export const Route = createFileRoute("/admin")({
 const navGroups = [
   {
     label: "Overview",
-    items: [
-      { label: "Dashboard", icon: LayoutDashboard, path: "/admin" },
-    ],
+    items: [{ label: "Dashboard", icon: LayoutDashboard, path: "/admin" }],
   },
   {
     label: "Users",
@@ -92,9 +134,7 @@ const navGroups = [
   },
   {
     label: "System",
-    items: [
-      { label: "System Settings", icon: Settings, path: "/admin/settings" },
-    ],
+    items: [{ label: "System Settings", icon: Settings, path: "/admin/settings" }],
   },
 ];
 
@@ -117,9 +157,7 @@ function SidebarItem({
   const hasChildren = "children" in item && item.children;
   const childActive =
     hasChildren &&
-    item.children!.some(
-      (c) => "path" in c && currentPath.startsWith(c.path as string)
-    );
+    item.children!.some((c) => "path" in c && currentPath.startsWith(c.path as string));
   const [open, setOpen] = useState(childActive || false);
 
   if (hasChildren) {
@@ -128,9 +166,10 @@ function SidebarItem({
         <button
           onClick={() => setOpen(!open)}
           className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 group
-            ${childActive
-              ? "bg-[oklch(0.4_0.14_148)] text-white"
-              : "text-[oklch(0.78_0.06_148)] hover:bg-[oklch(0.28_0.07_148)] hover:text-white"
+            ${
+              childActive
+                ? "bg-[oklch(0.4_0.14_148)] text-white"
+                : "text-[oklch(0.78_0.06_148)] hover:bg-[oklch(0.28_0.07_148)] hover:text-white"
             }`}
         >
           <item.icon
@@ -150,16 +189,16 @@ function SidebarItem({
         {!collapsed && open && (
           <div className="ml-4 mt-1 space-y-0.5 border-l border-[oklch(0.35_0.06_148)] pl-3">
             {item.children!.map((child) => {
-              const childIsActive =
-                "path" in child && currentPath.startsWith(child.path as string);
+              const childIsActive = "path" in child && currentPath.startsWith(child.path as string);
               return (
                 <Link
                   key={child.path}
                   to={child.path as string}
                   className={`flex items-center gap-2.5 px-2 py-1.5 rounded-md text-xs font-medium transition-all duration-150
-                    ${childIsActive
-                      ? "bg-[oklch(0.55_0.18_145)] text-white shadow-sm"
-                      : "text-[oklch(0.72_0.07_148)] hover:bg-[oklch(0.3_0.07_148)] hover:text-white"
+                    ${
+                      childIsActive
+                        ? "bg-[oklch(0.55_0.18_145)] text-white shadow-sm"
+                        : "text-[oklch(0.72_0.07_148)] hover:bg-[oklch(0.3_0.07_148)] hover:text-white"
                     }`}
                 >
                   <child.icon className="w-3.5 h-3.5 flex-shrink-0" />
@@ -177,9 +216,10 @@ function SidebarItem({
     <Link
       to={"path" in item ? item.path : "#"}
       className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 group
-        ${isActive
-          ? "bg-[oklch(0.55_0.18_145)] text-white shadow-md shadow-[oklch(0.55_0.18_145/0.4)]"
-          : "text-[oklch(0.78_0.06_148)] hover:bg-[oklch(0.28_0.07_148)] hover:text-white"
+        ${
+          isActive
+            ? "bg-[oklch(0.55_0.18_145)] text-white shadow-md shadow-[oklch(0.55_0.18_145/0.4)]"
+            : "text-[oklch(0.78_0.06_148)] hover:bg-[oklch(0.28_0.07_148)] hover:text-white"
         }`}
     >
       <item.icon
@@ -201,9 +241,16 @@ function AdminSidebar({
   currentPath: string;
   user: AdminUser;
 }) {
-  const roleLabel = user.role.split("_").map((part) =>
-    part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
-  const initials = user.displayName.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+  const roleLabel = user.role
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+  const initials = user.displayName
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
   return (
     <aside
       className={`flex flex-col h-full transition-all duration-300 ease-in-out
@@ -295,9 +342,16 @@ function AdminHeader({
   user: AdminUser;
 }) {
   const breadcrumb = getBreadcrumb(currentPath);
-  const roleLabel = user.role.split("_").map((part) =>
-    part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
-  const initials = user.displayName.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+  const roleLabel = user.role
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+  const initials = user.displayName
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <header className="h-14 bg-white border-b border-gray-100 flex items-center justify-between px-6 flex-shrink-0">
@@ -311,9 +365,7 @@ function AdminHeader({
             <ChevronRight className="w-3 h-3 text-gray-300" />
             <span
               className={
-                i === breadcrumb.length - 1
-                  ? "text-gray-900 font-medium"
-                  : "text-gray-400"
+                i === breadcrumb.length - 1 ? "text-gray-900 font-medium" : "text-gray-400"
               }
             >
               {crumb}
@@ -345,14 +397,20 @@ function AdminHeader({
           <DropdownMenuContent align="end" className="w-80">
             <DropdownMenuLabel className="flex items-center justify-between">
               <span>Notifications</span>
-              <Badge className="bg-red-100 text-red-700 text-xs">{adminStats.pendingApprovals}</Badge>
+              <Badge className="bg-red-100 text-red-700 text-xs">
+                {adminStats.pendingApprovals}
+              </Badge>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             {[
               { msg: "38 farmer products pending approval", time: "Just now", dot: "bg-amber-400" },
               { msg: "New order from Nakumatt Rwanda", time: "5 min ago", dot: "bg-emerald-400" },
               { msg: "DEL002 delivery in progress", time: "15 min ago", dot: "bg-blue-400" },
-              { msg: "Consultancy request from Rwanda Coop", time: "1 hr ago", dot: "bg-purple-400" },
+              {
+                msg: "Consultancy request from Rwanda Coop",
+                time: "1 hr ago",
+                dot: "bg-purple-400",
+              },
             ].map((n, i) => (
               <DropdownMenuItem key={i} className="flex items-start gap-3 py-3 cursor-pointer">
                 <span className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${n.dot}`} />
@@ -423,20 +481,67 @@ function getBreadcrumb(path: string): string[] {
 function AuthGate({ onAuthed }: { onAuthed: () => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetCode, setResetCode] = useState("");
+  const [resetPassword, setResetPassword] = useState("");
+  const [resetConfirm, setResetConfirm] = useState("");
+  const [showResetPassword, setShowResetPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resetMessage, setResetMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [resetBusy, setResetBusy] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    setBusy(true); setError(null);
+    setBusy(true);
+    setError(null);
     try {
       const user = await loginAdmin({ data: { email, password } });
       if (user) onAuthed();
-      else setError("Invalid email or password. Please try again later if access is temporarily locked.");
+      else
+        setError(
+          "Invalid email or password. Please try again later if access is temporarily locked.",
+        );
     } catch {
       setError("Sign-in is temporarily unavailable. Please try again.");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function submitReset(e: React.FormEvent) {
+    e.preventDefault();
+    setResetMessage(null);
+    if (resetPassword.length < 10) {
+      setResetMessage("New password must be at least 10 characters.");
+      return;
+    }
+    if (resetPassword !== resetConfirm) {
+      setResetMessage("New passwords do not match.");
+      return;
+    }
+
+    setResetBusy(true);
+    try {
+      const result = await resetAdminPassword({
+        data: { email, resetCode, nextPassword: resetPassword },
+      });
+      if (!result.success) {
+        setResetMessage("Reset failed. Check the email and reset code.");
+        return;
+      }
+      setPassword("");
+      setResetCode("");
+      setResetPassword("");
+      setResetConfirm("");
+      setResetOpen(false);
+      setError(null);
+      setResetMessage("Password reset. Sign in with your new password.");
+    } catch {
+      setResetMessage("Password reset is temporarily unavailable.");
+    } finally {
+      setResetBusy(false);
     }
   }
 
@@ -463,16 +568,27 @@ function AuthGate({ onAuthed }: { onAuthed: () => void }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
-            <input
-              type="password"
-              autoComplete="current-password"
-              maxLength={128}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              placeholder="Admin password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                maxLength={128}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                placeholder="Admin password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((value) => !value)}
+                className="absolute inset-y-0 right-0 grid w-10 place-items-center text-muted-foreground hover:text-foreground"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
+            {resetMessage && <p className="text-sm text-emerald-700">{resetMessage}</p>}
             <button
               type="submit"
               disabled={busy || !email || !password}
@@ -481,8 +597,76 @@ function AuthGate({ onAuthed }: { onAuthed: () => void }) {
               {busy ? "Checking…" : "Unlock admin"}
             </button>
           </form>
+          <button
+            type="button"
+            onClick={() => {
+              setResetOpen((value) => !value);
+              setResetMessage(null);
+            }}
+            className="mt-3 text-sm font-medium text-emerald-700 hover:text-emerald-800"
+          >
+            Reset password
+          </button>
+
+          {resetOpen && (
+            <form
+              onSubmit={submitReset}
+              className="mt-4 space-y-3 rounded-xl border border-border bg-background/70 p-4"
+            >
+              <input
+                type="text"
+                autoComplete="one-time-code"
+                maxLength={128}
+                required
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                placeholder="Reset code"
+                value={resetCode}
+                onChange={(e) => setResetCode(e.target.value)}
+              />
+              <div className="relative">
+                <input
+                  type={showResetPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  maxLength={128}
+                  required
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  placeholder="New password (min 10 chars)"
+                  value={resetPassword}
+                  onChange={(e) => setResetPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowResetPassword((value) => !value)}
+                  className="absolute inset-y-0 right-0 grid w-10 place-items-center text-muted-foreground hover:text-foreground"
+                  aria-label={showResetPassword ? "Hide new password" : "Show new password"}
+                >
+                  {showResetPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <input
+                type="password"
+                autoComplete="new-password"
+                maxLength={128}
+                required
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                placeholder="Confirm new password"
+                value={resetConfirm}
+                onChange={(e) => setResetConfirm(e.target.value)}
+              />
+              <button
+                type="submit"
+                disabled={resetBusy || !email || !resetCode || !resetPassword || !resetConfirm}
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-emerald-600 text-emerald-700 text-sm font-semibold hover:bg-emerald-50 disabled:opacity-50 transition-colors"
+              >
+                {resetBusy ? "Resetting..." : "Set new password"}
+              </button>
+            </form>
+          )}
           <div className="mt-6 border-t border-border pt-4">
-            <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+            >
               <ArrowLeft className="w-4 h-4" /> Back to site
             </Link>
           </div>
@@ -502,14 +686,23 @@ function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setMsg(null);
-    if (next.length < 10) { setMsg("New password must be at least 10 characters."); return; }
-    if (next !== confirmPwd) { setMsg("New passwords do not match."); return; }
+    if (next.length < 10) {
+      setMsg("New password must be at least 10 characters.");
+      return;
+    }
+    if (next !== confirmPwd) {
+      setMsg("New passwords do not match.");
+      return;
+    }
     setBusy(true);
     try {
       const result = await changeAdminPassword({
         data: { currentPassword: current, nextPassword: next },
       });
-      if (!result.success) { setMsg("Current password is incorrect."); return; }
+      if (!result.success) {
+        setMsg("Current password is incorrect.");
+        return;
+      }
       setMsg("Password updated successfully.");
       setTimeout(onClose, 800);
     } catch {
@@ -521,16 +714,55 @@ function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg">
-        <h3 className="text-lg font-bold mb-4 flex items-center gap-2 font-display"><KeyRound className="w-4 h-4" /> Change admin password</h3>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg"
+      >
+        <h3 className="text-lg font-bold mb-4 flex items-center gap-2 font-display">
+          <KeyRound className="w-4 h-4" /> Change admin password
+        </h3>
         <form onSubmit={submit} className="space-y-3">
-          <input autoComplete="current-password" maxLength={128} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" type="password" placeholder="Current password" value={current} onChange={(e) => setCurrent(e.target.value)} />
-          <input autoComplete="new-password" maxLength={128} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" type="password" placeholder="New password (min 10 chars)" value={next} onChange={(e) => setNext(e.target.value)} />
-          <input className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" type="password" placeholder="Confirm new password" value={confirmPwd} onChange={(e) => setConfirmPwd(e.target.value)} />
+          <input
+            autoComplete="current-password"
+            maxLength={128}
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            type="password"
+            placeholder="Current password"
+            value={current}
+            onChange={(e) => setCurrent(e.target.value)}
+          />
+          <input
+            autoComplete="new-password"
+            maxLength={128}
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            type="password"
+            placeholder="New password (min 10 chars)"
+            value={next}
+            onChange={(e) => setNext(e.target.value)}
+          />
+          <input
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            type="password"
+            placeholder="Confirm new password"
+            value={confirmPwd}
+            onChange={(e) => setConfirmPwd(e.target.value)}
+          />
           {msg && <p className="text-sm text-emerald-600 font-medium">{msg}</p>}
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="px-3 py-2 rounded-lg border border-border text-sm font-semibold hover:bg-secondary transition-colors">Cancel</button>
-            <button type="submit" disabled={busy} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-all">Update</button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-3 py-2 rounded-lg border border-border text-sm font-semibold hover:bg-secondary transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={busy}
+              className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-all"
+            >
+              Update
+            </button>
           </div>
         </form>
       </div>
@@ -638,13 +870,24 @@ function AdminLayout() {
   }
 
   if (!user) {
-    return <AuthGate onAuthed={() => {
-      setChecking(true);
-      getAdminSession().then(setUser).finally(() => setChecking(false));
-    }} />;
+    return (
+      <AuthGate
+        onAuthed={() => {
+          setChecking(true);
+          getAdminSession()
+            .then(setUser)
+            .finally(() => setChecking(false));
+        }}
+      />
+    );
   }
 
-  return <AdminLayoutMain user={user} onSignOut={() => {
-    logoutAdmin().finally(() => setUser(null));
-  }} />;
+  return (
+    <AdminLayoutMain
+      user={user}
+      onSignOut={() => {
+        logoutAdmin().finally(() => setUser(null));
+      }}
+    />
+  );
 }

@@ -102,10 +102,10 @@ export async function login(email: string, password: string): Promise<Authentica
 
   let validPassword = false;
   if (account) {
-    const verified = await pool.query<{ valid: boolean }>(
-      "SELECT crypt($1, $2) = $2 AS valid",
-      [password, account.password_hash],
-    );
+    const verified = await pool.query<{ valid: boolean }>("SELECT crypt($1, $2) = $2 AS valid", [
+      password,
+      account.password_hash,
+    ]);
     validPassword = verified.rows[0]?.valid === true;
   } else {
     // Equalize missing-account work to reduce account enumeration timing signals.
@@ -116,9 +116,8 @@ export async function login(email: string, password: string): Promise<Authentica
     const windowExpired =
       !state || now - state.window_started_at.getTime() > ATTEMPT_WINDOW_MINUTES * 60_000;
     const failedCount = windowExpired ? 1 : state.failed_count + 1;
-    const blockedUntil = failedCount >= MAX_FAILED_ATTEMPTS
-      ? new Date(now + ATTEMPT_WINDOW_MINUTES * 60_000)
-      : null;
+    const blockedUntil =
+      failedCount >= MAX_FAILED_ATTEMPTS ? new Date(now + ATTEMPT_WINDOW_MINUTES * 60_000) : null;
 
     await pool.query(
       `INSERT INTO authentication_attempts(identifier_hash, failed_count, window_started_at, blocked_until)
@@ -194,7 +193,10 @@ export async function logout(): Promise<void> {
   clearSessionCookie();
 }
 
-export async function changePassword(currentPassword: string, nextPassword: string): Promise<boolean> {
+export async function changePassword(
+  currentPassword: string,
+  nextPassword: string,
+): Promise<boolean> {
   assertSameOrigin();
   const user = await getCurrentUser();
   if (!user) return false;
@@ -224,6 +226,55 @@ export async function changePassword(currentPassword: string, nextPassword: stri
     );
     await client.query("COMMIT");
     await recordEvent("password_change", "success", user.id);
+    return true;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function resetPasswordWithCode(
+  email: string,
+  resetCode: string,
+  nextPassword: string,
+): Promise<boolean> {
+  assertSameOrigin();
+  const expectedCode = process.env.ADMIN_PASSWORD_RESET_CODE;
+  if (!expectedCode || resetCode !== expectedCode) {
+    await recordEvent("password_reset", "failure");
+    return false;
+  }
+
+  const pool = getDatabasePool();
+  const normalizedEmail = email.trim().toLowerCase();
+  const result = await pool.query<{ id: string }>(
+    "SELECT id FROM application_users WHERE email = $1 AND status = 'active' LIMIT 1",
+    [normalizedEmail],
+  );
+  const userId = result.rows[0]?.id;
+  if (!userId) {
+    await recordEvent("password_reset", "failure");
+    return false;
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query(
+      "UPDATE application_users SET password_hash = crypt($1, gen_salt('bf', 12)) WHERE id = $2",
+      [nextPassword, userId],
+    );
+    await client.query(
+      "UPDATE application_sessions SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL",
+      [userId],
+    );
+    await client.query("DELETE FROM authentication_attempts WHERE identifier_hash = $1", [
+      requestFingerprint(normalizedEmail),
+    ]);
+    await client.query("COMMIT");
+    await recordEvent("password_reset", "success", userId);
     return true;
   } catch (error) {
     await client.query("ROLLBACK");
