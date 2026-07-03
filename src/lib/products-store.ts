@@ -1,5 +1,3 @@
-import { supabase } from "@/integrations/supabase/client";
-
 export type Category =
   | "Juices & Beverages"
   | "Teas & Herbal"
@@ -145,7 +143,8 @@ const SEED: Product[] = [
     id: "seed-4",
     name: "Hass Avocado",
     category: "Fresh Produce",
-    description: "Buttery, ripe Hass avocados delivered the day after harvest. Perfect for hotels and restaurants.",
+    description:
+      "Buttery, ripe Hass avocados delivered the day after harvest. Perfect for hotels and restaurants.",
     price: 1800,
     quantity: 150,
     unit: "Kg",
@@ -164,7 +163,8 @@ const SEED: Product[] = [
     id: "seed-5",
     name: "Roasted Sesame Seeds",
     category: "Natural Health",
-    description: "Sun-dried, lightly roasted sesame — high in calcium and protein. Ideal for bakeries and home kitchens.",
+    description:
+      "Sun-dried, lightly roasted sesame — high in calcium and protein. Ideal for bakeries and home kitchens.",
     price: 4200,
     quantity: 18,
     unit: "Kg",
@@ -183,7 +183,8 @@ const SEED: Product[] = [
     id: "seed-6",
     name: "Free-Range Eggs",
     category: "Poultry & Eggs",
-    description: "Pasture-raised eggs from happy hens. Delivered daily to Kigali partners and households.",
+    description:
+      "Pasture-raised eggs from happy hens. Delivered daily to Kigali partners and households.",
     price: 3600,
     quantity: 90,
     unit: "Tray",
@@ -202,7 +203,8 @@ const SEED: Product[] = [
     id: "seed-7",
     name: "Green Tea Leaves",
     category: "Teas & Herbal",
-    description: "Premium loose-leaf green tea from Rwanda's highland plantations. Smooth, grassy and clean.",
+    description:
+      "Premium loose-leaf green tea from Rwanda's highland plantations. Smooth, grassy and clean.",
     price: 3000,
     quantity: 120,
     unit: "Pack",
@@ -221,7 +223,8 @@ const SEED: Product[] = [
     id: "seed-8",
     name: "House-Made Salsa",
     category: "Condiments & Staples",
-    description: "Fresh tomato salsa with onion, coriander and chilli — produced under Deacomart food safety standards.",
+    description:
+      "Fresh tomato salsa with onion, coriander and chilli — produced under Deacomart food safety standards.",
     price: 2800,
     quantity: 45,
     unit: "Jar",
@@ -240,7 +243,8 @@ const SEED: Product[] = [
     id: "seed-9",
     name: "Black Tea Leaves",
     category: "Teas & Herbal",
-    description: "Full-bodied Rwandan black tea from highland estates — rich, malty and aromatic. Wholesale and retail.",
+    description:
+      "Full-bodied Rwandan black tea from highland estates — rich, malty and aromatic. Wholesale and retail.",
     price: 2800,
     quantity: 100,
     unit: "Pack",
@@ -259,7 +263,8 @@ const SEED: Product[] = [
     id: "seed-10",
     name: "Ginger Herbal Tea",
     category: "Teas & Herbal",
-    description: "Warming ginger infusion blended with Rwandan herbs — naturally caffeine-free and soothing.",
+    description:
+      "Warming ginger infusion blended with Rwandan herbs — naturally caffeine-free and soothing.",
     price: 3500,
     quantity: 70,
     unit: "Pack",
@@ -278,7 +283,8 @@ const SEED: Product[] = [
     id: "seed-11",
     name: "Premium Organic Eggs Tray",
     category: "Poultry & Eggs",
-    description: "Farm fresh organic eggs, high in protein, harvested from pasture-fed chickens. Packed carefully in a tray of 30 eggs.",
+    description:
+      "Farm fresh organic eggs, high in protein, harvested from pasture-fed chickens. Packed carefully in a tray of 30 eggs.",
     price: 4500,
     quantity: 60,
     unit: "Tray",
@@ -328,7 +334,11 @@ export function ensureSeeded() {
   if (typeof window === "undefined") return;
   // Purge legacy keys
   LEGACY_KEYS.forEach((k) => {
-    try { window.localStorage.removeItem(k); } catch { /* ignore */ }
+    try {
+      window.localStorage.removeItem(k);
+    } catch {
+      /* ignore */
+    }
   });
   let current = safeRead();
   if (current.length === 0) {
@@ -410,14 +420,23 @@ export async function uploadProductImage(file: File): Promise<string> {
 
   const bytes = new Uint8Array(await file.slice(0, 12).arrayBuffer());
   const isJpeg = bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
-  const isPng = bytes.slice(0, 8).every((value, index) =>
-    value === [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a][index]);
-  const isWebp = String.fromCharCode(...bytes.slice(0, 4)) === "RIFF"
-    && String.fromCharCode(...bytes.slice(8, 12)) === "WEBP";
+  const isPng = bytes
+    .slice(0, 8)
+    .every((value, index) => value === [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a][index]);
+  const isWebp =
+    String.fromCharCode(...bytes.slice(0, 4)) === "RIFF" &&
+    String.fromCharCode(...bytes.slice(8, 12)) === "WEBP";
   if ((ext === "jpg" && !isJpeg) || (ext === "png" && !isPng) || (ext === "webp" && !isWebp)) {
     throw new Error("The uploaded file content does not match its image type.");
   }
 
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  if (!supabaseUrl || !supabaseKey) {
+    return fileToDataUrl(file);
+  }
+
+  const { supabase } = await import("@/integrations/supabase/client");
   const path = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
   const { error: upErr } = await supabase.storage
     .from(BUCKET)
@@ -463,13 +482,15 @@ export function listRegistrations(): TrainingRegistration[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = window.localStorage.getItem(REGISTRATIONS_KEY);
-    return raw ? JSON.parse(raw) as TrainingRegistration[] : [];
+    return raw ? (JSON.parse(raw) as TrainingRegistration[]) : [];
   } catch {
     return [];
   }
 }
 
-export function registerForTraining(reg: Omit<TrainingRegistration, "id" | "registeredAt">): TrainingRegistration {
+export function registerForTraining(
+  reg: Omit<TrainingRegistration, "id" | "registeredAt">,
+): TrainingRegistration {
   const newReg: TrainingRegistration = {
     ...reg,
     id: "reg-" + Math.random().toString(36).slice(2, 10),
@@ -503,13 +524,15 @@ export function listBookings(): ConsultancyBooking[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = window.localStorage.getItem(BOOKINGS_KEY);
-    return raw ? JSON.parse(raw) as ConsultancyBooking[] : [];
+    return raw ? (JSON.parse(raw) as ConsultancyBooking[]) : [];
   } catch {
     return [];
   }
 }
 
-export function bookConsultancy(booking: Omit<ConsultancyBooking, "id" | "bookedAt" | "status">): ConsultancyBooking {
+export function bookConsultancy(
+  booking: Omit<ConsultancyBooking, "id" | "bookedAt" | "status">,
+): ConsultancyBooking {
   const newBooking: ConsultancyBooking = {
     ...booking,
     id: "book-" + Math.random().toString(36).slice(2, 10),
@@ -550,13 +573,15 @@ export function listPartnerships(): PartnershipApplication[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = window.localStorage.getItem(PARTNERSHIPS_KEY);
-    return raw ? JSON.parse(raw) as PartnershipApplication[] : [];
+    return raw ? (JSON.parse(raw) as PartnershipApplication[]) : [];
   } catch {
     return [];
   }
 }
 
-export function applyForPartnership(app: Omit<PartnershipApplication, "id" | "appliedAt">): PartnershipApplication {
+export function applyForPartnership(
+  app: Omit<PartnershipApplication, "id" | "appliedAt">,
+): PartnershipApplication {
   const newApp: PartnershipApplication = {
     ...app,
     id: "part-" + Math.random().toString(36).slice(2, 10),
