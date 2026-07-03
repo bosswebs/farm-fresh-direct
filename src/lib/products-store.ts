@@ -396,7 +396,28 @@ const BUCKET = "product-images";
 const SIGNED_URL_TTL = 60 * 60 * 24 * 365 * 10;
 
 export async function uploadProductImage(file: File): Promise<string> {
-  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const MAX_IMAGE_BYTES = 1.5 * 1024 * 1024;
+  const allowedTypes = new Map([
+    ["image/jpeg", "jpg"],
+    ["image/png", "png"],
+    ["image/webp", "webp"],
+  ]);
+  const ext = allowedTypes.get(file.type);
+  if (!ext) throw new Error("Only JPG, PNG, and WebP images are supported.");
+  if (file.size <= 0 || file.size > MAX_IMAGE_BYTES) {
+    throw new Error("Image must be no larger than 1.5 MB.");
+  }
+
+  const bytes = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+  const isJpeg = bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+  const isPng = bytes.slice(0, 8).every((value, index) =>
+    value === [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a][index]);
+  const isWebp = String.fromCharCode(...bytes.slice(0, 4)) === "RIFF"
+    && String.fromCharCode(...bytes.slice(8, 12)) === "WEBP";
+  if ((ext === "jpg" && !isJpeg) || (ext === "png" && !isPng) || (ext === "webp" && !isWebp)) {
+    throw new Error("The uploaded file content does not match its image type.");
+  }
+
   const path = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
   const { error: upErr } = await supabase.storage
     .from(BUCKET)

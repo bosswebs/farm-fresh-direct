@@ -17,9 +17,13 @@ import {
 } from "../components/ui/dropdown-menu";
 import { adminStats } from "../lib/admin-data";
 import {
-  verifyAdminPassword, isAdminAuthed, adminSignOut, changeAdminPassword,
-  DEFAULT_ADMIN_PASSWORD
-} from "@/lib/content-store";
+  changeAdminPassword,
+  getAdminSession,
+  loginAdmin,
+  logoutAdmin,
+} from "@/lib/auth.functions";
+
+type AdminUser = NonNullable<Awaited<ReturnType<typeof getAdminSession>>>;
 
 export const Route = createFileRoute("/admin")({
   component: AdminLayout,
@@ -107,7 +111,7 @@ function SidebarItem({
     "path" in item
       ? item.path === "/admin"
         ? currentPath === "/admin"
-        : currentPath.startsWith(item.path)
+        : currentPath.startsWith(item.path ?? "")
       : false;
 
   const hasChildren = "children" in item && item.children;
@@ -150,8 +154,8 @@ function SidebarItem({
                 "path" in child && currentPath.startsWith(child.path as string);
               return (
                 <Link
-                  key={"path" in child ? child.path : child.label}
-                  to={"path" in child ? (child.path as string) : "#"}
+                  key={child.path}
+                  to={child.path as string}
                   className={`flex items-center gap-2.5 px-2 py-1.5 rounded-md text-xs font-medium transition-all duration-150
                     ${childIsActive
                       ? "bg-[oklch(0.55_0.18_145)] text-white shadow-sm"
@@ -190,11 +194,16 @@ function AdminSidebar({
   collapsed,
   onToggle,
   currentPath,
+  user,
 }: {
   collapsed: boolean;
   onToggle: () => void;
   currentPath: string;
+  user: AdminUser;
 }) {
+  const roleLabel = user.role.split("_").map((part) =>
+    part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
+  const initials = user.displayName.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
   return (
     <aside
       className={`flex flex-col h-full transition-all duration-300 ease-in-out
@@ -257,16 +266,16 @@ function AdminSidebar({
         {!collapsed ? (
           <div className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-[oklch(0.26_0.06_148)] cursor-pointer transition-colors group">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[oklch(0.55_0.18_145)] to-[oklch(0.42_0.14_152)] flex items-center justify-center text-white text-xs font-bold">
-              SA
+              {initials}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-white text-xs font-medium truncate">Super Admin</div>
-              <div className="text-[oklch(0.55_0.08_148)] text-[10px] truncate">admin@deacomart.rw</div>
+              <div className="text-white text-xs font-medium truncate">{roleLabel}</div>
+              <div className="text-[oklch(0.55_0.08_148)] text-[10px] truncate">{user.email}</div>
             </div>
           </div>
         ) : (
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[oklch(0.55_0.18_145)] to-[oklch(0.42_0.14_152)] flex items-center justify-center text-white text-xs font-bold mx-auto">
-            SA
+            {initials}
           </div>
         )}
       </div>
@@ -278,12 +287,17 @@ function AdminHeader({
   currentPath,
   onSignOut,
   onChangePassword,
+  user,
 }: {
   currentPath: string;
   onSignOut: () => void;
   onChangePassword: () => void;
+  user: AdminUser;
 }) {
   const breadcrumb = getBreadcrumb(currentPath);
+  const roleLabel = user.role.split("_").map((part) =>
+    part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
+  const initials = user.displayName.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
 
   return (
     <header className="h-14 bg-white border-b border-gray-100 flex items-center justify-between px-6 flex-shrink-0">
@@ -356,11 +370,11 @@ function AdminHeader({
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-2 pl-3 border-l border-gray-100 font-sans">
               <div className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xs font-bold">
-                SA
+                {initials}
               </div>
               <div className="hidden md:block text-left">
-                <div className="text-xs font-medium text-gray-800">Super Admin</div>
-                <div className="text-[10px] text-gray-400">admin@deacomart.rw</div>
+                <div className="text-xs font-medium text-gray-800">{roleLabel}</div>
+                <div className="text-[10px] text-gray-400">{user.email}</div>
               </div>
             </button>
           </DropdownMenuTrigger>
@@ -407,6 +421,7 @@ function getBreadcrumb(path: string): string[] {
 
 // ─── Authentication Gate ──────────────────────────────────────────
 function AuthGate({ onAuthed }: { onAuthed: () => void }) {
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -414,10 +429,15 @@ function AuthGate({ onAuthed }: { onAuthed: () => void }) {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true); setError(null);
-    const ok = await verifyAdminPassword(password);
-    setBusy(false);
-    if (ok) onAuthed();
-    else setError("Incorrect password.");
+    try {
+      const user = await loginAdmin({ data: { email, password } });
+      if (user) onAuthed();
+      else setError("Invalid email or password. Please try again later if access is temporarily locked.");
+    } catch {
+      setError("Sign-in is temporarily unavailable. Please try again.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -429,14 +449,24 @@ function AuthGate({ onAuthed }: { onAuthed: () => void }) {
           </div>
           <h1 className="text-2xl font-bold mb-2 font-display">Sign in to Admin Portal</h1>
           <p className="text-sm text-muted-foreground mb-6">
-            Only authorized administrators can access the Deacomart Admin Portal. Default password is{" "}
-            <code className="px-1.5 py-0.5 rounded bg-secondary text-foreground">{DEFAULT_ADMIN_PASSWORD}</code>{" "}
-            on first use.
+            Only authorized administrators can access the Deacomart Admin Portal.
           </p>
           <form onSubmit={submit} className="space-y-3">
             <input
-              type="password"
+              type="email"
+              autoComplete="username"
               autoFocus
+              required
+              maxLength={254}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              placeholder="Email address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <input
+              type="password"
+              autoComplete="current-password"
+              maxLength={128}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               placeholder="Admin password"
               value={password}
@@ -445,7 +475,7 @@ function AuthGate({ onAuthed }: { onAuthed: () => void }) {
             {error && <p className="text-sm text-destructive">{error}</p>}
             <button
               type="submit"
-              disabled={busy || !password}
+              disabled={busy || !email || !password}
               className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50 transition-colors"
             >
               {busy ? "Checking…" : "Unlock admin"}
@@ -472,14 +502,21 @@ function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setMsg(null);
-    if (next.length < 6) { setMsg("New password must be at least 6 characters."); return; }
+    if (next.length < 10) { setMsg("New password must be at least 10 characters."); return; }
     if (next !== confirmPwd) { setMsg("New passwords do not match."); return; }
     setBusy(true);
-    const ok = await changeAdminPassword(current, next);
-    setBusy(false);
-    if (!ok) { setMsg("Current password is incorrect."); return; }
-    setMsg("Password updated successfully.");
-    setTimeout(onClose, 800);
+    try {
+      const result = await changeAdminPassword({
+        data: { currentPassword: current, nextPassword: next },
+      });
+      if (!result.success) { setMsg("Current password is incorrect."); return; }
+      setMsg("Password updated successfully.");
+      setTimeout(onClose, 800);
+    } catch {
+      setMsg("Password update failed. Please try again.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -487,8 +524,8 @@ function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
       <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg">
         <h3 className="text-lg font-bold mb-4 flex items-center gap-2 font-display"><KeyRound className="w-4 h-4" /> Change admin password</h3>
         <form onSubmit={submit} className="space-y-3">
-          <input className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" type="password" placeholder="Current password" value={current} onChange={(e) => setCurrent(e.target.value)} />
-          <input className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" type="password" placeholder="New password (min 6 chars)" value={next} onChange={(e) => setNext(e.target.value)} />
+          <input autoComplete="current-password" maxLength={128} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" type="password" placeholder="Current password" value={current} onChange={(e) => setCurrent(e.target.value)} />
+          <input autoComplete="new-password" maxLength={128} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" type="password" placeholder="New password (min 10 chars)" value={next} onChange={(e) => setNext(e.target.value)} />
           <input className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" type="password" placeholder="Confirm new password" value={confirmPwd} onChange={(e) => setConfirmPwd(e.target.value)} />
           {msg && <p className="text-sm text-emerald-600 font-medium">{msg}</p>}
           <div className="flex justify-end gap-2 pt-2">
@@ -501,7 +538,7 @@ function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
   );
 }
 
-function AdminLayoutMain({ onSignOut }: { onSignOut: () => void }) {
+function AdminLayoutMain({ onSignOut, user }: { onSignOut: () => void; user: AdminUser }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [showPwd, setShowPwd] = useState(false);
@@ -528,6 +565,7 @@ function AdminLayoutMain({ onSignOut }: { onSignOut: () => void }) {
             collapsed={false}
             onToggle={() => setMobileSidebarOpen(false)}
             currentPath={currentPath}
+            user={user}
           />
           <button
             onClick={() => setMobileSidebarOpen(false)}
@@ -544,6 +582,7 @@ function AdminLayoutMain({ onSignOut }: { onSignOut: () => void }) {
           collapsed={sidebarCollapsed}
           onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
           currentPath={currentPath}
+          user={user}
         />
       </div>
 
@@ -569,6 +608,7 @@ function AdminLayoutMain({ onSignOut }: { onSignOut: () => void }) {
             currentPath={currentPath}
             onSignOut={onSignOut}
             onChangePassword={() => setShowPwd(true)}
+            user={user}
           />
         </div>
 
@@ -584,14 +624,27 @@ function AdminLayoutMain({ onSignOut }: { onSignOut: () => void }) {
 }
 
 function AdminLayout() {
-  const [authed, setAuthed] = useState(false);
+  const [user, setUser] = useState<AdminUser | null>(null);
+  const [checking, setChecking] = useState(true);
   useEffect(() => {
-    setAuthed(isAdminAuthed());
+    getAdminSession()
+      .then(setUser)
+      .catch(() => setUser(null))
+      .finally(() => setChecking(false));
   }, []);
 
-  if (!authed) {
-    return <AuthGate onAuthed={() => setAuthed(true)} />;
+  if (checking) {
+    return <div className="min-h-screen bg-background" aria-busy="true" />;
   }
 
-  return <AdminLayoutMain onSignOut={() => { adminSignOut(); setAuthed(false); }} />;
+  if (!user) {
+    return <AuthGate onAuthed={() => {
+      setChecking(true);
+      getAdminSession().then(setUser).finally(() => setChecking(false));
+    }} />;
+  }
+
+  return <AdminLayoutMain user={user} onSignOut={() => {
+    logoutAdmin().finally(() => setUser(null));
+  }} />;
 }

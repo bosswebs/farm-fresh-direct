@@ -2,12 +2,30 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { verifyDatabaseConnection } from "./lib/database.server";
+import {
+  applySecurityHeaders,
+  enforceRequestLimits,
+  safeErrorForLog,
+} from "./lib/security.server";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
 };
 
 let serverEntryPromise: Promise<ServerEntry> | undefined;
+let databaseConnectionPromise: Promise<void> | undefined;
+
+function ensureDatabaseConnection(): Promise<void> {
+  if (!databaseConnectionPromise) {
+    databaseConnectionPromise = verifyDatabaseConnection().catch((error) => {
+      databaseConnectionPromise = undefined;
+      throw error;
+    });
+  }
+
+  return databaseConnectionPromise;
+}
 
 async function getServerEntry(): Promise<ServerEntry> {
   if (!serverEntryPromise) {
@@ -30,25 +48,30 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
     return response;
   }
 
-  console.error(consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`));
-  return new Response(renderErrorPage(), {
+  console.error("[Server] Request failed", safeErrorForLog(
+    consumeLastCapturedError() ?? new Error(`SSR request failed with status ${response.status}`),
+  ));
+  return applySecurityHeaders(new Response(renderErrorPage(), {
     status: 500,
     headers: { "content-type": "text/html; charset=utf-8" },
-  });
+  }));
 }
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const limitedResponse = enforceRequestLimits(request);
+      if (limitedResponse) return applySecurityHeaders(limitedResponse);
+      await ensureDatabaseConnection();
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      return applySecurityHeaders(await normalizeCatastrophicSsrResponse(response));
     } catch (error) {
-      console.error(error);
-      return new Response(renderErrorPage(), {
+      console.error("[Server] Request failed", safeErrorForLog(error));
+      return applySecurityHeaders(new Response(renderErrorPage(), {
         status: 500,
         headers: { "content-type": "text/html; charset=utf-8" },
-      });
+      }));
     }
   },
 };

@@ -4,6 +4,7 @@ import { BarChart3, Users, Leaf, TrendingUp, ShieldCheck, MapPin, Heart, Landmar
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend, LineChart, Line, AreaChart, Area } from "recharts";
+import { formatRWF } from "@/lib/products-store";
 
 export const Route = createFileRoute("/impact")({
   head: () => ({
