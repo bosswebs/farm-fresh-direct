@@ -82,7 +82,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: "Agribusiness & Food Supply in Rwanda" },
       { name: "author", content: "Deacomart" },
       { property: "og:title", content: "Deacomart Ltd — Be EcoWise" },
-      { property: "og:description", content: "Agribusiness and food supply chain ecosystem in Rwanda" },
+      {
+        property: "og:description",
+        content: "Agribusiness and food supply chain ecosystem in Rwanda",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Deacomart" },
@@ -92,6 +95,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+      { rel: "shortcut icon", href: "/favicon.svg", type: "image/svg+xml" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
