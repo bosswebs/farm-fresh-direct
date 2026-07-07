@@ -13,7 +13,7 @@ export const loginAdmin = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       const auth = await import("./auth.server");
-      return await auth.login(data.email, data.password);
+      return { user: await auth.login(data.email, data.password) };
     } catch (error) {
       const { safeErrorForLog } = await import("./security.server");
       console.error("[Security] Login processing failed", safeErrorForLog(error));

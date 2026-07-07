@@ -5,21 +5,27 @@ import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { Input } from "../../components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
-import { consultancyRequests, getStatusColor, formatRWF, staff } from "../../lib/admin-data";
+import { getStatusColor, formatRWF } from "../../lib/admin-data";
+import { getConsultancyRequests, getStaff } from "../../lib/admin-data.server";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/consultancy")({
+  loader: async () => {
+    const [requests, staff] = await Promise.all([getConsultancyRequests(), getStaff()]);
+    return { requests, staff };
+  },
   component: ConsultancyPage,
 });
 
 function ConsultancyPage() {
-  const [requests, setRequests] = useState(consultancyRequests);
+  const { requests: loadedRequests, staff } = Route.useLoaderData();
+  const [requests, setRequests] = useState(loadedRequests);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
-  const [selectedRequest, setSelectedRequest] = useState<typeof consultancyRequests[0] | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<typeof loadedRequests[0] | null>(null);
 
-  const consultants = staff.filter(s => s.role === "consultant");
+  const consultants = staff.filter((s) => s.role === "consultant");
 
   const filteredRequests = requests.filter((req) => {
     const matchesSearch =
@@ -241,7 +247,7 @@ function ConsultancyPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Unassigned</SelectItem>
-                    {consultants.map(c => (
+                    {consultants.map((c) => (
                       <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
                     ))}
                   </SelectContent>

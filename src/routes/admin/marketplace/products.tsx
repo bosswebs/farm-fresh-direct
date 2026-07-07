@@ -9,9 +9,11 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from "../../../components/ui/dropdown-menu";
-import { products, formatRWF, getStatusColor, type Product } from "../../../lib/admin-data";
+import { formatRWF, getStatusColor, type Product, type ProductStatus } from "../../../lib/admin-data";
+import { getProducts } from "../../../lib/admin-data.server";
 
 export const Route = createFileRoute("/admin/marketplace/products")({
+  loader: () => getProducts(),
   component: ProductsPage,
 });
 
@@ -31,6 +33,7 @@ const statusActions: Record<Product["status"], { approve?: boolean; reject?: boo
 };
 
 function ProductsPage() {
+  const products = Route.useLoaderData();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -161,8 +164,8 @@ function ProductsPage() {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {filtered.map((product) => {
-                const quality = qualityBadge[product.qualityStatus];
-                const actions = statusActions[product.status];
+                const quality = qualityBadge[product.qualityStatus as keyof typeof qualityBadge];
+                const actions = statusActions[product.status as ProductStatus];
                 return (
                   <tr
                     key={product.id}

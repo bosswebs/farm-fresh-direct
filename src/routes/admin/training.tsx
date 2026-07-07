@@ -8,9 +8,11 @@ import { Button } from "../../components/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
-import { trainingCourses, getStatusColor } from "../../lib/admin-data";
+import { getStatusColor } from "../../lib/admin-data";
+import { getTrainingCourses } from "../../lib/admin-data.server";
 
 export const Route = createFileRoute("/admin/training")({
+  loader: () => getTrainingCourses(),
   component: TrainingPage,
 });
 
@@ -21,11 +23,14 @@ const topics = [
 ];
 
 function TrainingPage() {
+  const trainingCourses = Route.useLoaderData();
   const [activeTab, setActiveTab] = useState<"courses" | "sessions" | "reports">("courses");
 
   const totalParticipants = trainingCourses.reduce((s, c) => s + c.participants, 0);
   const completedCourses = trainingCourses.filter((c) => c.status === "completed").length;
-  const avgCompletion = Math.round(trainingCourses.reduce((s, c) => s + c.completionRate, 0) / trainingCourses.length);
+  const avgCompletion = trainingCourses.length > 0
+    ? Math.round(trainingCourses.reduce((s, c) => s + c.completionRate, 0) / trainingCourses.length)
+    : 0;
 
   return (
     <div className="p-6 space-y-6">

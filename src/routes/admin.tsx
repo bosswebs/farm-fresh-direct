@@ -58,7 +58,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu";
-import { adminStats } from "../lib/admin-data";
+
 import {
   changeAdminPassword,
   getAdminSession,
@@ -398,7 +398,7 @@ function AdminHeader({
             <DropdownMenuLabel className="flex items-center justify-between">
               <span>Notifications</span>
               <Badge className="bg-red-100 text-red-700 text-xs">
-                {adminStats.pendingApprovals}
+                {"—"}
               </Badge>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
@@ -497,8 +497,8 @@ function AuthGate({ onAuthed }: { onAuthed: () => void }) {
     setBusy(true);
     setError(null);
     try {
-      const user = await loginAdmin({ data: { email, password } });
-      if (user) onAuthed();
+      const result = await loginAdmin({ data: { email, password } });
+      if (result.user) onAuthed();
       else
         setError(
           "Invalid email or password. Please try again later if access is temporarily locked.",

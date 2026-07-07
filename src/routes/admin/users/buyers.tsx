@@ -3,9 +3,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Search, Building2, User, Hotel, ShoppingBag, Landmark, MoreHorizontal, TrendingUp, Eye, Ban, Download } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../../../components/ui/dropdown-menu";
-import { buyers, formatRWF, getStatusColor, type Buyer } from "../../../lib/admin-data";
+import { formatRWF, getStatusColor, type Buyer } from "../../../lib/admin-data";
+import { getBuyers } from "../../../lib/admin-data.server";
 
 export const Route = createFileRoute("/admin/users/buyers")({
+  loader: () => getBuyers(),
   component: BuyersPage,
 });
 
@@ -26,6 +28,7 @@ const typeColors: Record<Buyer["type"], string> = {
 };
 
 function BuyersPage() {
+  const buyers = Route.useLoaderData();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
 
@@ -94,17 +97,18 @@ function BuyersPage() {
       {/* Grid Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {filtered.map((buyer) => {
-          const Icon = typeIcons[buyer.type];
+          const typeKey = buyer.type as "hotel" | "supermarket" | "individual" | "restaurant" | "institution";
+          const Icon = typeIcons[typeKey];
           return (
             <div key={buyer.id} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center border ${typeColors[buyer.type]}`}>
+                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center border ${typeColors[typeKey]}`}>
                     <Icon className="w-5 h-5" />
                   </div>
                   <div>
                     <div className="text-sm font-semibold text-gray-900 leading-tight">{buyer.name}</div>
-                    <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border capitalize ${typeColors[buyer.type]}`}>
+                    <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border capitalize ${typeColors[typeKey]}`}>
                       {buyer.type}
                     </span>
                   </div>

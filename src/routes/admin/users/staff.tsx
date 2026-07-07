@@ -3,9 +3,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Search, UserCog, Briefcase, Truck, HeadphonesIcon, GraduationCap, Crown, MoreHorizontal, Phone, Mail, MapPin, Eye, UserX, UserCheck } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../../../components/ui/dropdown-menu";
-import { staff, getStatusColor, type StaffMember } from "../../../lib/admin-data";
+import { getStatusColor, type StaffMember } from "../../../lib/admin-data";
+import { getStaff } from "../../../lib/admin-data.server";
 
 export const Route = createFileRoute("/admin/users/staff")({
+  loader: () => getStaff(),
   component: StaffPage,
 });
 
@@ -24,6 +26,7 @@ const statusConfig: Record<string, string> = {
 };
 
 function StaffPage() {
+  const staff = Route.useLoaderData();
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
 
@@ -92,7 +95,9 @@ function StaffPage() {
       {/* Staff Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {filtered.map((member) => {
-          const cfg = roleConfig[member.role];
+          const roleKey = member.role as "consultant" | "driver" | "trainer" | "admin" | "support";
+          const statusKey = member.status as "active" | "on_leave" | "inactive";
+          const cfg = roleConfig[roleKey];
           return (
             <div key={member.id} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all">
               <div className="flex items-start justify-between">
@@ -109,7 +114,7 @@ function StaffPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${statusConfig[member.status]}`}>
+                  <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${statusConfig[statusKey]}`}>
                     {member.status === "on_leave" ? "On Leave" : member.status}
                   </span>
                   <DropdownMenu>

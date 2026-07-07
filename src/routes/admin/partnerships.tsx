@@ -5,15 +5,18 @@ import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { Input } from "../../components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
-import { partners, getStatusColor, formatRWF } from "../../lib/admin-data";
+import { getStatusColor, formatRWF } from "../../lib/admin-data";
+import { getPartners } from "../../lib/admin-data.server";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/partnerships")({
+  loader: () => getPartners(),
   component: PartnershipsPage,
 });
 
 function PartnershipsPage() {
-  const [partnerList, setPartnerList] = useState(partners);
+  const loaded = Route.useLoaderData();
+  const [partnerList, setPartnerList] = useState(loaded);
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
 

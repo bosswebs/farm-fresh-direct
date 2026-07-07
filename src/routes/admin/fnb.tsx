@@ -2,15 +2,17 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Coffee, Package, AlertTriangle, CheckCircle, XCircle, Plus, Edit } from "lucide-react";
 import { Button } from "../../components/ui/button";
-import { fnbCategories } from "../../lib/admin-data";
+import { getFnbData } from "../../lib/admin-data.server";
 
 export const Route = createFileRoute("/admin/fnb")({
+  loader: () => getFnbData(),
   component: FnBPage,
 });
 
 function FnBPage() {
-  const [activeCategory, setActiveCategory] = useState(fnbCategories[0].name);
-  const category = fnbCategories.find((c) => c.name === activeCategory)!;
+  const fnbCategories = Route.useLoaderData();
+  const [activeCategory, setActiveCategory] = useState(fnbCategories[0]?.name ?? "");
+  const category = fnbCategories.find((c) => c.name === activeCategory);
 
   const statusIcon = (status: string) => {
     if (status === "active") return <CheckCircle className="w-4 h-4 text-emerald-500" />;
@@ -87,7 +89,7 @@ function FnBPage() {
 
       {/* Products Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {category.products.map((product, i) => (
+        {category?.products.map((product, i) => (
           <div key={i} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">

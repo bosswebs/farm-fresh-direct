@@ -10,9 +10,11 @@ import { Button } from "../../../components/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "../../../components/ui/dropdown-menu";
-import { farmers, formatRWF, getStatusColor, type Farmer } from "../../../lib/admin-data";
+import { formatRWF, getStatusColor, type Farmer } from "../../../lib/admin-data";
+import { getFarmers } from "../../../lib/admin-data.server";
 
 export const Route = createFileRoute("/admin/users/farmers")({
+  loader: () => getFarmers(),
   component: FarmersPage,
 });
 
@@ -42,6 +44,7 @@ function QualityBar({ score }: { score: number }) {
 }
 
 function FarmersPage() {
+  const farmers = Route.useLoaderData();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -68,6 +71,17 @@ function FarmersPage() {
     pending: farmers.filter((f) => f.status === "pending").length,
     suspended: farmers.filter((f) => f.status === "suspended").length,
   };
+
+  if (farmers.length === 0) {
+    return (
+      <div className="p-6">
+        <h1 className="text-xl font-bold text-gray-900 font-display mb-2">Farmer Management</h1>
+        <div className="bg-white rounded-2xl p-12 text-center border border-gray-100 shadow-sm">
+          <p className="text-gray-400 text-sm">No farmers registered yet.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -273,7 +287,7 @@ function FarmersPage() {
         {/* Footer */}
         <div className="flex items-center justify-between px-6 py-3 border-t border-gray-100 bg-gray-50/50">
           <span className="text-xs text-gray-400">
-            Showing {filtered.length} of {farmers.length} farmers
+            Showing {filtered.length} of {farmers.length} farmer{farmers.length !== 1 ? "s" : ""}
           </span>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" className="h-7 text-xs">Previous</Button>

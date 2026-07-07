@@ -4,15 +4,18 @@ import { MessageSquare, Search, Send, User, Clock, CheckCircle, RefreshCw, Plus,
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { Input } from "../../components/ui/input";
-import { whatsappOrders, getStatusColor, formatRWF } from "../../lib/admin-data";
+import { getStatusColor, formatRWF } from "../../lib/admin-data";
+import { getWhatsappOrders } from "../../lib/admin-data.server";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/whatsapp")({
+  loader: () => getWhatsappOrders(),
   component: WhatsAppCommercePage,
 });
 
 function WhatsAppCommercePage() {
-  const [orders, setOrders] = useState(whatsappOrders);
+  const loaded = Route.useLoaderData();
+  const [orders, setOrders] = useState(loaded);
   const [searchTerm, setSearchTerm] = useState("");
   const [botActive, setBotActive] = useState(true);
 

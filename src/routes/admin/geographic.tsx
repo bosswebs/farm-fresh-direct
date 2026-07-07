@@ -1,19 +1,58 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Globe, MapPin, Search, ChevronRight, Activity, Leaf, GraduationCap, Building2 } from "lucide-react";
-import { rwandaProvinces } from "../../lib/admin-data";
+import { Globe, MapPin, Leaf } from "lucide-react";
+import { getGeographicStats } from "../../lib/admin-data.server";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 
 export const Route = createFileRoute("/admin/geographic")({
+  loader: () => getGeographicStats(),
   component: GeographicCoveragePage,
 });
 
-function GeographicCoveragePage() {
-  const [selectedProvince, setSelectedProvince] = useState<typeof rwandaProvinces[0] | null>(rwandaProvinces[0]);
-  const [activeLayer, setActiveLayer] = useState<"farmers" | "logistics" | "centers">("farmers");
+// Static structure — Rwanda provinces and their districts
+const PROVINCES = [
+  {
+    name: "Kigali City",
+    color: "from-emerald-500 to-emerald-700",
+    districts: ["Gasabo", "Kicukiro", "Nyarugenge"],
+  },
+  {
+    name: "Northern Province",
+    color: "from-teal-500 to-teal-700",
+    districts: ["Burera", "Gakenke", "Gicumbi", "Musanze", "Rulindo"],
+  },
+  {
+    name: "Southern Province",
+    color: "from-blue-500 to-blue-700",
+    districts: ["Gisagara", "Huye", "Kamonyi", "Muhanga", "Nyamagabe", "Nyanza", "Nyaruguru", "Ruhango"],
+  },
+  {
+    name: "Eastern Province",
+    color: "from-violet-500 to-violet-700",
+    districts: ["Bugesera", "Gatsibo", "Kayonza", "Kirehe", "Ngoma", "Nyagatare", "Rwamagana"],
+  },
+  {
+    name: "Western Province",
+    color: "from-orange-500 to-orange-700",
+    districts: ["Karongi", "Ngororero", "Nyabihu", "Nyamasheke", "Rubavu", "Rutsiro", "Rusizi"],
+  },
+];
 
-  const totalFarmers = rwandaProvinces.reduce((acc, curr) => acc + curr.farmers, 0);
+function GeographicCoveragePage() {
+  const geoStats = Route.useLoaderData();
+  const farmersByDistrict = new Map(geoStats.map((g) => [g.district, g.farmers]));
+
+  const provinces = PROVINCES.map((p) => ({
+    ...p,
+    farmers: p.districts.reduce((sum, d) => sum + (farmersByDistrict.get(d) ?? 0), 0),
+  }));
+
+  const [selectedProvince, setSelectedProvince] = useState(provinces[0]);
+  const [activeLayer, setActiveLayer] = useState<"farmers" | "logistics">("farmers");
+
+  const totalFarmers = geoStats.reduce((sum, g) => sum + g.farmers, 0);
+  const coveredDistricts = new Set(geoStats.map((g) => g.district)).size;
 
   return (
     <div className="p-6 space-y-6">
@@ -41,20 +80,21 @@ function GeographicCoveragePage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left column: Interactive SVG / Coverage Map representation */}
+        {/* Map representation */}
         <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
-              <Globe className="w-4 h-4 text-emerald-600" /> Rwanda Operational Map Representation
+              <Globe className="w-4 h-4 text-emerald-600" /> Rwanda Operational Map
             </h2>
-            <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100 text-[10px]">Active in all 30 Districts</Badge>
+            <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100 text-[10px]">
+              {coveredDistricts} Districts with Farmers
+            </Badge>
           </div>
 
-          {/* Simple visual interactive map mockup */}
           <div className="h-80 bg-emerald-50/20 rounded-2xl border border-emerald-100 flex items-center justify-center relative overflow-hidden">
             <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#10b981_1.5px,transparent_1.5px)] [background-size:16px_16px]" />
             <div className="grid grid-cols-5 gap-3 p-4 w-full max-w-md relative z-10">
-              {rwandaProvinces.map((prov) => (
+              {provinces.map((prov) => (
                 <button
                   key={prov.name}
                   onClick={() => setSelectedProvince(prov)}
@@ -76,8 +116,8 @@ function GeographicCoveragePage() {
 
           <div className="mt-4 grid grid-cols-3 gap-4 text-center">
             <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
-              <div className="text-xl font-bold text-gray-900 font-display">{totalFarmers}</div>
-              <div className="text-[10px] text-gray-400">Total Covered Farmers</div>
+              <div className="text-xl font-bold text-gray-900 font-display">{totalFarmers.toLocaleString()}</div>
+              <div className="text-[10px] text-gray-400">Total Registered Farmers</div>
             </div>
             <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
               <div className="text-xl font-bold text-gray-900 font-display">5</div>
@@ -85,49 +125,60 @@ function GeographicCoveragePage() {
             </div>
             <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
               <div className="text-xl font-bold text-gray-900 font-display">30</div>
-              <div className="text-[10px] text-gray-400">Districts Active</div>
+              <div className="text-[10px] text-gray-400">Districts Targeted</div>
             </div>
           </div>
         </div>
 
-        {/* Right column: Selected province breakdown */}
+        {/* Selected province breakdown */}
         <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm space-y-4">
           {selectedProvince ? (
             <>
               <div>
                 <h2 className="text-lg font-bold text-gray-950 font-display">{selectedProvince.name}</h2>
-                <p className="text-xs text-gray-400">Operational Breakdown & Density</p>
+                <p className="text-xs text-gray-400">Farmer Density by District</p>
               </div>
 
-              <div className="space-y-3 pt-3 border-t border-gray-100">
-                <div>
-                  <span className="text-[10px] text-gray-400 block uppercase font-bold">Covered Districts ({selectedProvince.districts.length})</span>
-                  <div className="flex flex-wrap gap-1.5 mt-1.5">
-                    {selectedProvince.districts.map(d => (
-                      <Badge key={d} variant="outline" className="text-[10px] font-medium text-gray-700">
-                        {d}
-                      </Badge>
-                    ))}
-                  </div>
+              <div className="space-y-2 pt-3 border-t border-gray-100">
+                <span className="text-[10px] text-gray-400 block uppercase font-bold">Districts ({selectedProvince.districts.length})</span>
+                <div className="space-y-2">
+                  {selectedProvince.districts.map((d) => {
+                    const count = farmersByDistrict.get(d) ?? 0;
+                    const max = Math.max(...selectedProvince.districts.map((x) => farmersByDistrict.get(x) ?? 0), 1);
+                    return (
+                      <div key={d} className="space-y-1">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-gray-700 font-medium">{d}</span>
+                          <span className="text-emerald-700 font-bold">{count}</span>
+                        </div>
+                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-emerald-500 rounded-full transition-all"
+                            style={{ width: `${(count / max) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
+              </div>
 
-                <div className="pt-2">
-                  <span className="text-[10px] text-gray-400 block uppercase font-bold">Primary Hub Centers</span>
-                  <div className="space-y-1.5 mt-2">
-                    <div className="flex items-center justify-between text-xs p-2 bg-gray-50 rounded-lg">
-                      <span className="font-semibold text-gray-800">{selectedProvince.name.split(" ")[0]} Main Warehouse</span>
-                      <Badge className="bg-emerald-50 text-emerald-700 text-[9px]">Active</Badge>
-                    </div>
-                    <div className="flex items-center justify-between text-xs p-2 bg-gray-50 rounded-lg">
-                      <span className="font-semibold text-gray-800">Seed Distribution Center</span>
-                      <Badge className="bg-emerald-50 text-emerald-700 text-[9px]">Active</Badge>
-                    </div>
+              <div className="pt-2 border-t border-gray-100">
+                <span className="text-[10px] text-gray-400 block uppercase font-bold">Hub Centers</span>
+                <div className="space-y-1.5 mt-2">
+                  <div className="flex items-center justify-between text-xs p-2 bg-gray-50 rounded-lg">
+                    <span className="font-semibold text-gray-800">{selectedProvince.name.split(" ")[0]} Warehouse</span>
+                    <Badge className="bg-emerald-50 text-emerald-700 text-[9px]">Active</Badge>
+                  </div>
+                  <div className="flex items-center justify-between text-xs p-2 bg-gray-50 rounded-lg">
+                    <span className="font-semibold text-gray-800">Seed Distribution Center</span>
+                    <Badge className="bg-emerald-50 text-emerald-700 text-[9px]">Active</Badge>
                   </div>
                 </div>
               </div>
             </>
           ) : (
-            <div className="text-center text-gray-400 py-10">Select a province to view district and warehouse details.</div>
+            <div className="text-center text-gray-400 py-10">Select a province to view details.</div>
           )}
         </div>
       </div>

@@ -8,9 +8,11 @@ import { Button } from "../../../components/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "../../../components/ui/dropdown-menu";
-import { orders, formatRWF, getStatusColor, type Order } from "../../../lib/admin-data";
+import { formatRWF, getStatusColor, type Order } from "../../../lib/admin-data";
+import { getOrders } from "../../../lib/admin-data.server";
 
 export const Route = createFileRoute("/admin/marketplace/orders")({
+  loader: () => getOrders(),
   component: OrdersPage,
 });
 
@@ -38,6 +40,7 @@ const statusPipeline = [
 ];
 
 function OrdersPage() {
+  const orders = Route.useLoaderData();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 

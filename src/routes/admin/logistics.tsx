@@ -5,21 +5,28 @@ import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { Input } from "../../components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
-import { deliveries, vehicles, staff, getStatusColor } from "../../lib/admin-data";
+import { getStatusColor } from "../../lib/admin-data";
+import { getDeliveries, getVehicles, getStaff } from "../../lib/admin-data.server";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/logistics")({
+  loader: async () => ({
+    deliveries: await getDeliveries(),
+    vehicles: await getVehicles(),
+    staff: await getStaff(),
+  }),
   component: LogisticsPage,
 });
 
 function LogisticsPage() {
+  const { deliveries: loadedDeliveries, vehicles: loadedVehicles, staff } = Route.useLoaderData();
   const [activeTab, setActiveTab] = useState<"deliveries" | "vehicles">("deliveries");
-  const [deliveryList, setDeliveryList] = useState(deliveries);
-  const [vehicleList, setVehicleList] = useState(vehicles);
+  const [deliveryList, setDeliveryList] = useState(loadedDeliveries);
+  const [vehicleList, setVehicleList] = useState(loadedVehicles);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const drivers = staff.filter(s => s.role === "driver");
+  const drivers = staff.filter((s) => s.role === "driver");
 
   const filteredDeliveries = deliveryList.filter((d) => {
     const matchesSearch =
@@ -167,7 +174,8 @@ function LogisticsPage() {
                         <SelectValue placeholder="Driver" />
                       </SelectTrigger>
                       <SelectContent>
-                        {drivers.map(d => (
+                        <SelectItem value="none">Unassigned</SelectItem>
+                        {drivers.map((d) => (
                           <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
                         ))}
                       </SelectContent>

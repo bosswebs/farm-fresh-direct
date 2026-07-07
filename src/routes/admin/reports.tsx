@@ -4,15 +4,18 @@ import { BarChart3, Download, Calendar, TrendingUp, DollarSign, Target, Award, A
 import { Button } from "../../components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from "recharts";
-import { revenueData, impactMetrics, formatRWF } from "../../lib/admin-data";
+import { formatRWF } from "../../lib/admin-data";
+import { getReportData } from "../../lib/admin-data.server";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/reports")({
+  loader: () => getReportData(),
   component: ReportsPage,
 });
 
 function ReportsPage() {
-  const [dateRange, setDateRange] = useState("Jun 2026");
+  const { revenueData, impactMetrics } = Route.useLoaderData();
+  const [dateRange, setDateRange] = useState("Last 12 Months");
 
   const totalRevenue = revenueData.reduce((sum, item) => sum + item.revenue, 0);
   const totalOrders = revenueData.reduce((sum, item) => sum + item.orders, 0);
