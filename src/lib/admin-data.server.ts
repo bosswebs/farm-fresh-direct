@@ -1,5 +1,6 @@
 // Admin portal — server-side data access layer (real database queries)
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 
 import { getDatabasePool } from "./database.server";
 
@@ -9,6 +10,43 @@ async function requireAdmin() {
   return requireRole(["super_admin", "marketplace_manager", "finance_manager",
     "training_manager", "consultancy_manager", "logistics_manager",
     "content_manager", "support_officer"]);
+}
+
+const staffRoleSchema = z.enum(["trainer", "consultant", "driver", "admin", "support"]);
+const staffStatusSchema = z.enum(["active", "on_leave", "inactive"]);
+const staffPayloadSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  role: staffRoleSchema,
+  department: z.string().trim().min(2).max(120),
+  phone: z.string().trim().min(3).max(40),
+  email: z.string().trim().email().max(254),
+  district: z.string().trim().min(2).max(80),
+  status: staffStatusSchema.default("active"),
+  joinDate: z.string().trim().min(1).max(20),
+});
+const staffIdSchema = z.object({ id: z.string().trim().min(1).max(80) });
+
+type StaffRow = {
+  id: string;
+  name: string;
+  role: string;
+  department: string;
+  phone: string;
+  email: string;
+  district: string;
+  status: string;
+  join_date: string;
+  assigned_tasks: number;
+};
+
+function mapStaffRow(row: StaffRow) {
+  return {
+    ...row,
+    role: row.role as "trainer" | "consultant" | "driver" | "admin" | "support",
+    status: row.status as "active" | "on_leave" | "inactive",
+    joinDate: row.join_date,
+    assignedTasks: row.assigned_tasks,
+  };
 }
 
 // ─── Dashboard Stats ───────────────────────────────────────────────
@@ -218,20 +256,149 @@ export const getBuyers = createServerFn({ method: "GET" }).handler(async () => {
 export const getStaff = createServerFn({ method: "GET" }).handler(async () => {
   await requireAdmin();
   const pool = getDatabasePool();
-  const result = await pool.query<{
-    id: string; name: string; role: string; department: string;
-    phone: string; email: string; district: string;
-    status: string; join_date: string; assigned_tasks: number;
-  }>(
+  const result = await pool.query<StaffRow>(
     `SELECT id, name, role, department, phone, email, district, status,
             join_date::text, assigned_tasks
      FROM staff ORDER BY created_at DESC`
   );
-  return result.rows.map((r) => ({
-    ...r,
-    joinDate: r.join_date,
-    assignedTasks: r.assigned_tasks,
-  }));
+  return result.rows.map(mapStaffRow);
+});
+
+export const createStaffMember = createServerFn({ method: "POST" })
+  .validator(staffPayloadSchema)
+  .handler(async ({ data }) => {
+    await requireAdmin();
+    const pool = getDatabasePool();
+    const result = await pool.query<StaffRow>(
+      `INSERT INTO staff(id, name, role, department, phone, email, district, status, join_date)
+       VALUES ('STF-' || upper(substr(gen_random_uuid()::text, 1, 8)), $1, $2, $3, $4, $5, $6, $7, $8::date)
+       RETURNING id, name, role, department, phone, email, district, status, join_date::text, assigned_tasks`,
+      [
+        data.name,
+        data.role,
+        data.department,
+        data.phone,
+        data.email.toLowerCase(),
+        data.district,
+        data.status,
+        data.joinDate,
+      ],
+    );
+    await pool.query(
+      "INSERT INTO activity_feed(type, message, icon) VALUES ($1, $2, $3)",
+      ["staff", `Added ${data.name} to ${data.department}`, "user-plus"],
+    );
+    return mapStaffRow(result.rows[0]);
+  });
+
+export const updateStaffMember = createServerFn({ method: "POST" })
+  .validator(staffPayloadSchema.extend({ id: z.string().trim().min(1).max(80) }))
+  .handler(async ({ data }) => {
+    await requireAdmin();
+    const pool = getDatabasePool();
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const previous = await client.query<{ name: string; role: string }>(
+        "SELECT name, role FROM staff WHERE id = $1 FOR UPDATE",
+        [data.id],
+      );
+      if (!previous.rows[0]) throw new Error("Staff member not found.");
+
+      const result = await client.query<StaffRow>(
+        `UPDATE staff
+            SET name = $2,
+                role = $3,
+                department = $4,
+                phone = $5,
+                email = $6,
+                district = $7,
+                status = $8,
+                join_date = $9::date
+          WHERE id = $1
+          RETURNING id, name, role, department, phone, email, district, status, join_date::text, assigned_tasks`,
+        [
+          data.id,
+          data.name,
+          data.role,
+          data.department,
+          data.phone,
+          data.email.toLowerCase(),
+          data.district,
+          data.status,
+          data.joinDate,
+        ],
+      );
+
+      if (previous.rows[0].name !== data.name) {
+        await client.query("UPDATE training_courses SET trainer = $2 WHERE trainer_id = $1", [
+          data.id,
+          data.name,
+        ]);
+        await client.query("UPDATE consultancy_requests SET consultant = $2 WHERE consultant_id = $1", [
+          data.id,
+          data.name,
+        ]);
+        await client.query("UPDATE vehicles SET driver_name = $2 WHERE driver_id = $1", [
+          data.id,
+          data.name,
+        ]);
+        await client.query("UPDATE deliveries SET driver_name = $2 WHERE driver_id = $1", [
+          data.id,
+          data.name,
+        ]);
+      }
+
+      await client.query(
+        "INSERT INTO activity_feed(type, message, icon) VALUES ($1, $2, $3)",
+        ["staff", `Updated staff profile for ${data.name}`, "user-cog"],
+      );
+      await client.query("COMMIT");
+      return mapStaffRow(result.rows[0]);
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  });
+
+export const updateStaffStatus = createServerFn({ method: "POST" })
+  .validator(staffIdSchema.extend({ status: staffStatusSchema }))
+  .handler(async ({ data }) => {
+    await requireAdmin();
+    const pool = getDatabasePool();
+    const result = await pool.query<StaffRow>(
+      `UPDATE staff SET status = $2
+        WHERE id = $1
+        RETURNING id, name, role, department, phone, email, district, status, join_date::text, assigned_tasks`,
+      [data.id, data.status],
+    );
+    if (!result.rows[0]) throw new Error("Staff member not found.");
+    await pool.query(
+      "INSERT INTO activity_feed(type, message, icon) VALUES ($1, $2, $3)",
+      ["staff", `Set ${result.rows[0].name} status to ${data.status.replace("_", " ")}`, "user-check"],
+    );
+    return mapStaffRow(result.rows[0]);
+  });
+
+export const assignStaffTask = createServerFn({ method: "POST" })
+  .validator(staffIdSchema)
+  .handler(async ({ data }) => {
+    await requireAdmin();
+    const pool = getDatabasePool();
+    const result = await pool.query<StaffRow>(
+      `UPDATE staff SET assigned_tasks = assigned_tasks + 1
+        WHERE id = $1
+        RETURNING id, name, role, department, phone, email, district, status, join_date::text, assigned_tasks`,
+      [data.id],
+    );
+    if (!result.rows[0]) throw new Error("Staff member not found.");
+    await pool.query(
+      "INSERT INTO activity_feed(type, message, icon) VALUES ($1, $2, $3)",
+      ["staff", `Assigned a new task to ${result.rows[0].name}`, "clipboard-list"],
+    );
+    return mapStaffRow(result.rows[0]);
 });
 
 // ─── Products ─────────────────────────────────────────────────────

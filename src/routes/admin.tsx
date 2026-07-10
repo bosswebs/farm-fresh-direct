@@ -1,5 +1,13 @@
 import { useState, useEffect } from "react";
-import { Link, Outlet, useRouterState, createFileRoute } from "@tanstack/react-router";
+import {
+  Link,
+  Outlet,
+  createFileRoute,
+  redirect,
+  useNavigate,
+  useRouter,
+  useRouterState,
+} from "@tanstack/react-router";
 import {
   LayoutDashboard,
   Users,
@@ -70,6 +78,20 @@ import {
 type AdminUser = NonNullable<Awaited<ReturnType<typeof getAdminSession>>>;
 
 export const Route = createFileRoute("/admin")({
+  beforeLoad: async ({ location }) => {
+    const user = await getAdminSession();
+    const isLoginRoute = location.pathname === "/admin/login";
+
+    if (!user && !isLoginRoute) {
+      throw redirect({ to: "/admin/login", replace: true });
+    }
+
+    if (user && isLoginRoute) {
+      throw redirect({ to: "/admin", replace: true });
+    }
+
+    return { user };
+  },
   component: AdminLayout,
 });
 
@@ -478,7 +500,7 @@ function getBreadcrumb(path: string): string[] {
 }
 
 // ─── Authentication Gate ──────────────────────────────────────────
-function AuthGate({ onAuthed }: { onAuthed: () => void }) {
+function AuthGate({ onAuthed }: { onAuthed: () => void | Promise<void> }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -856,14 +878,15 @@ function AdminLayoutMain({ onSignOut, user }: { onSignOut: () => void; user: Adm
 }
 
 function AdminLayout() {
-  const [user, setUser] = useState<AdminUser | null>(null);
-  const [checking, setChecking] = useState(true);
+  const navigate = useNavigate();
+  const router = useRouter();
+  const { user: routeUser } = Route.useRouteContext() as { user: AdminUser | null };
+  const [user, setUser] = useState<AdminUser | null>(routeUser);
+  const [checking, setChecking] = useState(false);
+
   useEffect(() => {
-    getAdminSession()
-      .then(setUser)
-      .catch(() => setUser(null))
-      .finally(() => setChecking(false));
-  }, []);
+    setUser(routeUser);
+  }, [routeUser]);
 
   if (checking) {
     return <div className="min-h-screen bg-background" aria-busy="true" />;
@@ -875,7 +898,14 @@ function AdminLayout() {
         onAuthed={() => {
           setChecking(true);
           getAdminSession()
-            .then(setUser)
+            .then((session) => {
+              setUser(session);
+              if (session) {
+                void router.invalidate().finally(() => {
+                  void navigate({ to: "/admin", replace: true });
+                });
+              }
+            })
             .finally(() => setChecking(false));
         }}
       />
@@ -886,7 +916,12 @@ function AdminLayout() {
     <AdminLayoutMain
       user={user}
       onSignOut={() => {
-        logoutAdmin().finally(() => setUser(null));
+        logoutAdmin().finally(() => {
+          setUser(null);
+          void router.invalidate().finally(() => {
+            void navigate({ to: "/admin/login", replace: true });
+          });
+        });
       }}
     />
   );
