@@ -27,6 +27,7 @@ import {
   UserCog,
   UserX,
   X,
+  Key,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -51,7 +52,6 @@ export const Route = createFileRoute("/admin/users/staff")({
   loader: () => getStaff(),
   component: StaffPage,
 });
-
 type StaffRole = StaffMember["role"];
 type StaffStatus = StaffMember["status"];
 type StaffFormState = {
@@ -63,6 +63,9 @@ type StaffFormState = {
   district: string;
   status: StaffStatus;
   joinDate: string;
+  enableLogin: boolean;
+  loginPassword?: string;
+  loginRole?: string;
 };
 
 const roles: StaffRole[] = ["trainer", "consultant", "driver", "admin", "support"];
@@ -104,6 +107,23 @@ function todayDate() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function defaultLoginRoleFor(role: StaffRole): string {
+  switch (role) {
+    case "admin":
+      return "super_admin";
+    case "trainer":
+      return "training_manager";
+    case "consultant":
+      return "consultancy_manager";
+    case "driver":
+      return "logistics_manager";
+    case "support":
+      return "support_officer";
+    default:
+      return "manager";
+  }
+}
+
 function emptyForm(): StaffFormState {
   return {
     name: "",
@@ -114,6 +134,9 @@ function emptyForm(): StaffFormState {
     district: "",
     status: "active",
     joinDate: todayDate(),
+    enableLogin: false,
+    loginPassword: "",
+    loginRole: "training_manager",
   };
 }
 
@@ -127,6 +150,9 @@ function formFromMember(member: StaffMember): StaffFormState {
     district: member.district,
     status: member.status,
     joinDate: member.joinDate,
+    enableLogin: !!member.authUserId,
+    loginPassword: "",
+    loginRole: member.loginRole || defaultLoginRoleFor(member.role),
   };
 }
 
@@ -158,7 +184,9 @@ function StaffPage() {
     setStaff(loadedStaff);
   }, [loadedStaff]);
 
-  const selectedMember = selectedId ? staff.find((member) => member.id === selectedId) ?? null : null;
+  const selectedMember = selectedId
+    ? (staff.find((member) => member.id === selectedId) ?? null)
+    : null;
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -232,7 +260,9 @@ function StaffPage() {
       await refreshStaff();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unable to save staff member.";
-      setFormError(message.includes("duplicate") ? "A staff member with this email already exists." : message);
+      setFormError(
+        message.includes("duplicate") ? "A staff member with this email already exists." : message,
+      );
     } finally {
       setSaving(false);
     }
@@ -285,10 +315,30 @@ function StaffPage() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <SummaryCard label="Total Staff" value={staff.length} icon={UserCog} color="from-emerald-500 to-emerald-700" />
-        <SummaryCard label="Active Staff" value={activeStaff} icon={UserCheck} color="from-teal-500 to-teal-700" />
-        <SummaryCard label="Assigned Tasks" value={totalTasks} icon={ClipboardCheck} color="from-blue-500 to-blue-700" />
-        <SummaryCard label="Administrators" value={roleCounts.admin} icon={Crown} color="from-violet-500 to-violet-700" />
+        <SummaryCard
+          label="Total Staff"
+          value={staff.length}
+          icon={UserCog}
+          color="from-emerald-500 to-emerald-700"
+        />
+        <SummaryCard
+          label="Active Staff"
+          value={activeStaff}
+          icon={UserCheck}
+          color="from-teal-500 to-teal-700"
+        />
+        <SummaryCard
+          label="Assigned Tasks"
+          value={totalTasks}
+          icon={ClipboardCheck}
+          color="from-blue-500 to-blue-700"
+        />
+        <SummaryCard
+          label="Administrators"
+          value={roleCounts.admin}
+          icon={Crown}
+          color="from-violet-500 to-violet-700"
+        />
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -430,7 +480,17 @@ function StaffCard({
             {initialsFor(member.name)}
           </div>
           <div className="min-w-0">
-            <div className="text-sm font-semibold text-gray-900 truncate">{member.name}</div>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <div className="text-sm font-semibold text-gray-900 truncate">{member.name}</div>
+              {member.authUserId && (
+                <span
+                  title={`Login enabled (${member.loginRole?.replace("_", " ")})`}
+                  className="flex-shrink-0"
+                >
+                  <Key className="w-3.5 h-3.5 text-emerald-600" />
+                </span>
+              )}
+            </div>
             <span
               className={`text-[10px] font-medium px-2 py-0.5 rounded-full border flex items-center gap-1 w-fit mt-1 ${cfg.color}`}
             >
@@ -461,24 +521,36 @@ function StaffCard({
                 Edit Details
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="gap-2 cursor-pointer text-emerald-700" onClick={onAssignTask}>
+              <DropdownMenuItem
+                className="gap-2 cursor-pointer text-emerald-700"
+                onClick={onAssignTask}
+              >
                 <ClipboardCheck className="w-3.5 h-3.5" />
                 Assign Task
               </DropdownMenuItem>
               {member.status !== "active" && (
-                <DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => onStatusChange("active")}>
+                <DropdownMenuItem
+                  className="gap-2 cursor-pointer"
+                  onClick={() => onStatusChange("active")}
+                >
                   <UserCheck className="w-3.5 h-3.5" />
                   Mark Active
                 </DropdownMenuItem>
               )}
               {member.status !== "on_leave" && (
-                <DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => onStatusChange("on_leave")}>
+                <DropdownMenuItem
+                  className="gap-2 cursor-pointer"
+                  onClick={() => onStatusChange("on_leave")}
+                >
                   <CalendarDays className="w-3.5 h-3.5" />
                   Mark On Leave
                 </DropdownMenuItem>
               )}
               {member.status !== "inactive" && (
-                <DropdownMenuItem className="gap-2 cursor-pointer text-red-600" onClick={() => onStatusChange("inactive")}>
+                <DropdownMenuItem
+                  className="gap-2 cursor-pointer text-red-600"
+                  onClick={() => onStatusChange("inactive")}
+                >
                   <StatusIcon className="w-3.5 h-3.5" />
                   Deactivate
                 </DropdownMenuItem>
@@ -547,10 +619,18 @@ function StaffFormModal({
               {mode === "create" ? "Add Staff Member" : "Edit Staff Member"}
             </h2>
             <p className="text-sm text-gray-500 mt-1">
-              {mode === "create" ? "Create a team profile and assign an operational role." : "Update contact, role, and status details."}
+              {mode === "create"
+                ? "Create a team profile and assign an operational role."
+                : "Update contact, role, and status details."}
             </p>
           </div>
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={onClose} disabled={saving}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={onClose}
+            disabled={saving}
+          >
             <X className="w-4 h-4" />
           </Button>
         </div>
@@ -579,7 +659,16 @@ function StaffFormModal({
             <Field label="Role">
               <select
                 value={form.role}
-                onChange={(event) => onChange({ ...form, role: event.target.value as StaffRole })}
+                onChange={(event) => {
+                  const selectedRole = event.target.value as StaffRole;
+                  onChange({
+                    ...form,
+                    role: selectedRole,
+                    loginRole: form.enableLogin
+                      ? defaultLoginRoleFor(selectedRole)
+                      : form.loginRole,
+                  });
+                }}
                 className={inputClass}
               >
                 {roles.map((role) => (
@@ -619,7 +708,9 @@ function StaffFormModal({
             <Field label="Status">
               <select
                 value={form.status}
-                onChange={(event) => onChange({ ...form, status: event.target.value as StaffStatus })}
+                onChange={(event) =>
+                  onChange({ ...form, status: event.target.value as StaffStatus })
+                }
                 className={inputClass}
               >
                 {statuses.map((status) => (
@@ -640,6 +731,66 @@ function StaffFormModal({
             </Field>
           </div>
 
+          {/* Login Credentials Section */}
+          <div className="border-t border-gray-100 pt-4 space-y-4">
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-900 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.enableLogin}
+                onChange={(event) => {
+                  const enable = event.target.checked;
+                  onChange({
+                    ...form,
+                    enableLogin: enable,
+                    loginRole: enable
+                      ? form.loginRole || defaultLoginRoleFor(form.role)
+                      : undefined,
+                  });
+                }}
+                className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4"
+              />
+              Enable Portal Login Access
+            </label>
+
+            {form.enableLogin && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50/50 p-4 rounded-xl border border-gray-100">
+                <Field
+                  label={mode === "create" ? "Login Password" : "Change Login Password (optional)"}
+                >
+                  <input
+                    required={mode === "create"}
+                    type="password"
+                    minLength={10}
+                    maxLength={128}
+                    placeholder={
+                      mode === "create" ? "At least 10 characters" : "Leave blank to keep current"
+                    }
+                    value={form.loginPassword || ""}
+                    onChange={(event) => onChange({ ...form, loginPassword: event.target.value })}
+                    className={inputClass}
+                  />
+                </Field>
+                <Field label="Portal Login Role">
+                  <select
+                    value={form.loginRole || "manager"}
+                    onChange={(event) => onChange({ ...form, loginRole: event.target.value })}
+                    className={inputClass}
+                  >
+                    <option value="super_admin">Super Admin</option>
+                    <option value="manager">Manager</option>
+                    <option value="marketplace_manager">Marketplace Manager</option>
+                    <option value="finance_manager">Finance Manager</option>
+                    <option value="training_manager">Training Manager</option>
+                    <option value="consultancy_manager">Consultancy Manager</option>
+                    <option value="logistics_manager">Logistics Manager</option>
+                    <option value="content_manager">Content Manager</option>
+                    <option value="support_officer">Support Officer</option>
+                  </select>
+                </Field>
+              </div>
+            )}
+          </div>
+
           {error && (
             <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
               {error}
@@ -650,7 +801,11 @@ function StaffFormModal({
             <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
               Cancel
             </Button>
-            <Button type="submit" disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+            <Button
+              type="submit"
+              disabled={saving}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
               {saving ? "Saving..." : mode === "create" ? "Add Staff Member" : "Save Changes"}
             </Button>
           </div>
@@ -698,13 +853,19 @@ function StaffProfileModal({
               {initialsFor(member.name)}
             </div>
             <div className="min-w-0">
-              <h2 className="text-lg font-bold text-gray-900 font-display truncate">{member.name}</h2>
+              <h2 className="text-lg font-bold text-gray-900 font-display truncate">
+                {member.name}
+              </h2>
               <div className="mt-1 flex flex-wrap gap-2">
-                <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border flex items-center gap-1 ${cfg.color}`}>
+                <span
+                  className={`text-[10px] font-medium px-2 py-0.5 rounded-full border flex items-center gap-1 ${cfg.color}`}
+                >
                   <cfg.icon className="w-3 h-3" />
                   {cfg.label}
                 </span>
-                <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${getStatusColor(member.status)}`}>
+                <span
+                  className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${getStatusColor(member.status)}`}
+                >
                   {statusLabel[member.status]}
                 </span>
               </div>
@@ -721,7 +882,18 @@ function StaffProfileModal({
           <ProfileField icon={Phone} label="Phone" value={member.phone} />
           <ProfileField icon={Mail} label="Email" value={member.email} />
           <ProfileField icon={CalendarDays} label="Joined" value={member.joinDate} />
-          <ProfileField icon={ClipboardCheck} label="Assigned Tasks" value={member.assignedTasks.toString()} />
+          <ProfileField
+            icon={ClipboardCheck}
+            label="Assigned Tasks"
+            value={member.assignedTasks.toString()}
+          />
+          <ProfileField
+            icon={Key}
+            label="Portal Login Access"
+            value={
+              member.authUserId ? `Enabled (${member.loginRole?.replace("_", " ")})` : "Disabled"
+            }
+          />
         </div>
 
         <div className="mt-6 flex flex-wrap justify-end gap-2">
@@ -734,13 +906,23 @@ function StaffProfileModal({
             Assign Task
           </Button>
           {member.status !== "active" && (
-            <Button variant="outline" className="gap-2" onClick={() => onStatusChange("active")} disabled={busy}>
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => onStatusChange("active")}
+              disabled={busy}
+            >
               <UserCheck className="w-4 h-4" />
               Mark Active
             </Button>
           )}
           {member.status !== "inactive" && (
-            <Button variant="outline" className="gap-2 text-red-600 hover:text-red-700" onClick={() => onStatusChange("inactive")} disabled={busy}>
+            <Button
+              variant="outline"
+              className="gap-2 text-red-600 hover:text-red-700"
+              onClick={() => onStatusChange("inactive")}
+              disabled={busy}
+            >
               <UserX className="w-4 h-4" />
               Deactivate
             </Button>
@@ -751,7 +933,15 @@ function StaffProfileModal({
   );
 }
 
-function ProfileField({ icon: Icon, label, value }: { icon: ElementType; label: string; value: string }) {
+function ProfileField({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: ElementType;
+  label: string;
+  value: string;
+}) {
   return (
     <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
       <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase text-gray-400">

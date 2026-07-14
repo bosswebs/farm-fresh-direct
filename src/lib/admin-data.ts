@@ -100,6 +100,8 @@ export interface StaffMember {
   status: "active" | "on_leave" | "inactive";
   joinDate: string;
   assignedTasks: number;
+  authUserId?: string | null;
+  loginRole?: string | null;
 }
 
 // ─── Training Course ──────────────────────────────────────────────

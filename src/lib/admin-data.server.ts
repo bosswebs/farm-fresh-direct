@@ -14,6 +14,18 @@ async function requireAdmin() {
 
 const staffRoleSchema = z.enum(["trainer", "consultant", "driver", "admin", "support"]);
 const staffStatusSchema = z.enum(["active", "on_leave", "inactive"]);
+const appUserRoleSchema = z.enum([
+  "super_admin",
+  "manager",
+  "marketplace_manager",
+  "finance_manager",
+  "training_manager",
+  "consultancy_manager",
+  "logistics_manager",
+  "content_manager",
+  "support_officer",
+]);
+
 const staffPayloadSchema = z.object({
   name: z.string().trim().min(2).max(120),
   role: staffRoleSchema,
@@ -23,6 +35,9 @@ const staffPayloadSchema = z.object({
   district: z.string().trim().min(2).max(80),
   status: staffStatusSchema.default("active"),
   joinDate: z.string().trim().min(1).max(20),
+  enableLogin: z.boolean().default(false),
+  loginPassword: z.string().min(10).max(128).optional().nullable(),
+  loginRole: appUserRoleSchema.optional().nullable(),
 });
 const staffIdSchema = z.object({ id: z.string().trim().min(1).max(80) });
 
@@ -37,15 +52,24 @@ type StaffRow = {
   status: string;
   join_date: string;
   assigned_tasks: number;
+  auth_user_id?: string | null;
+  login_role?: string | null;
 };
 
 function mapStaffRow(row: StaffRow) {
   return {
-    ...row,
+    id: row.id,
+    name: row.name,
     role: row.role as "trainer" | "consultant" | "driver" | "admin" | "support",
+    department: row.department,
+    phone: row.phone,
+    email: row.email,
+    district: row.district,
     status: row.status as "active" | "on_leave" | "inactive",
     joinDate: row.join_date,
     assignedTasks: row.assigned_tasks,
+    authUserId: row.auth_user_id ?? null,
+    loginRole: row.login_role ?? null,
   };
 }
 
@@ -257,9 +281,11 @@ export const getStaff = createServerFn({ method: "GET" }).handler(async () => {
   await requireAdmin();
   const pool = getDatabasePool();
   const result = await pool.query<StaffRow>(
-    `SELECT id, name, role, department, phone, email, district, status,
-            join_date::text, assigned_tasks
-     FROM staff ORDER BY created_at DESC`
+    `SELECT s.id, s.name, s.role, s.department, s.phone, s.email, s.district, s.status,
+            s.join_date::text, s.assigned_tasks, s.auth_user_id, u.role AS login_role
+     FROM staff s
+     LEFT JOIN application_users u ON s.auth_user_id = u.id
+     ORDER BY s.created_at DESC`
   );
   return result.rows.map(mapStaffRow);
 });
@@ -269,26 +295,60 @@ export const createStaffMember = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireAdmin();
     const pool = getDatabasePool();
-    const result = await pool.query<StaffRow>(
-      `INSERT INTO staff(id, name, role, department, phone, email, district, status, join_date)
-       VALUES ('STF-' || upper(substr(gen_random_uuid()::text, 1, 8)), $1, $2, $3, $4, $5, $6, $7, $8::date)
-       RETURNING id, name, role, department, phone, email, district, status, join_date::text, assigned_tasks`,
-      [
-        data.name,
-        data.role,
-        data.department,
-        data.phone,
-        data.email.toLowerCase(),
-        data.district,
-        data.status,
-        data.joinDate,
-      ],
-    );
-    await pool.query(
-      "INSERT INTO activity_feed(type, message, icon) VALUES ($1, $2, $3)",
-      ["staff", `Added ${data.name} to ${data.department}`, "user-plus"],
-    );
-    return mapStaffRow(result.rows[0]);
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      let authUserId: string | null = null;
+      if (data.enableLogin && data.loginPassword && data.loginRole) {
+        const userRes = await client.query<{ id: string }>(
+          `INSERT INTO application_users(email, password_hash, display_name, role, status)
+           VALUES ($1, crypt($2, gen_salt('bf', 12)), $3, $4, 'active')
+           RETURNING id`,
+          [data.email.toLowerCase(), data.loginPassword, data.name, data.loginRole]
+        );
+        authUserId = userRes.rows[0].id;
+      }
+
+      const result = await client.query<StaffRow>(
+        `INSERT INTO staff(id, auth_user_id, name, role, department, phone, email, district, status, join_date)
+         VALUES ('STF-' || upper(substr(gen_random_uuid()::text, 1, 8)), $1, $2, $3, $4, $5, $6, $7, $8, $9::date)
+         RETURNING id, auth_user_id, name, role, department, phone, email, district, status, join_date::text, assigned_tasks`,
+        [
+          authUserId,
+          data.name,
+          data.role,
+          data.department,
+          data.phone,
+          data.email.toLowerCase(),
+          data.district,
+          data.status,
+          data.joinDate,
+        ],
+      );
+
+      const mappedResult = await client.query<StaffRow>(
+        `SELECT s.id, s.name, s.role, s.department, s.phone, s.email, s.district, s.status,
+                s.join_date::text, s.assigned_tasks, s.auth_user_id, u.role AS login_role
+         FROM staff s
+         LEFT JOIN application_users u ON s.auth_user_id = u.id
+         WHERE s.id = $1`,
+        [result.rows[0].id]
+      );
+
+      await client.query(
+        "INSERT INTO activity_feed(type, message, icon) VALUES ($1, $2, $3)",
+        ["staff", `Added ${data.name} to ${data.department}`, "user-plus"],
+      );
+
+      await client.query("COMMIT");
+      return mapStaffRow(mappedResult.rows[0]);
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
   });
 
 export const updateStaffMember = createServerFn({ method: "POST" })
@@ -299,13 +359,52 @@ export const updateStaffMember = createServerFn({ method: "POST" })
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
-      const previous = await client.query<{ name: string; role: string }>(
-        "SELECT name, role FROM staff WHERE id = $1 FOR UPDATE",
+      
+      const previous = await client.query<{ name: string; role: string; auth_user_id: string | null }>(
+        "SELECT name, role, auth_user_id FROM staff WHERE id = $1 FOR UPDATE",
         [data.id],
       );
       if (!previous.rows[0]) throw new Error("Staff member not found.");
 
-      const result = await client.query<StaffRow>(
+      let authUserId = previous.rows[0].auth_user_id;
+
+      if (data.enableLogin) {
+        if (authUserId) {
+          // Already has login, update it
+          if (data.loginRole) {
+            await client.query(
+              `UPDATE application_users
+                  SET email = $2,
+                      display_name = $3,
+                      role = $4,
+                      password_hash = CASE WHEN $5::text IS NOT NULL THEN crypt($5, gen_salt('bf', 12)) ELSE password_hash END,
+                      updated_at = now()
+                WHERE id = $1`,
+              [authUserId, data.email.toLowerCase(), data.name, data.loginRole, data.loginPassword || null]
+            );
+          }
+        } else {
+          // Creating login credentials for the first time for this staff member
+          if (data.loginPassword && data.loginRole) {
+            const userRes = await client.query<{ id: string }>(
+              `INSERT INTO application_users(email, password_hash, display_name, role, status)
+               VALUES ($1, crypt($2, gen_salt('bf', 12)), $3, $4, 'active')
+               RETURNING id`,
+              [data.email.toLowerCase(), data.loginPassword, data.name, data.loginRole]
+            );
+            authUserId = userRes.rows[0].id;
+          }
+        }
+      } else {
+        // Disabled/Not enabled login
+        if (authUserId) {
+          // Remove login access - delete user login record
+          await client.query("DELETE FROM application_users WHERE id = $1", [authUserId]);
+          authUserId = null;
+        }
+      }
+
+      await client.query(
         `UPDATE staff
             SET name = $2,
                 role = $3,
@@ -314,9 +413,9 @@ export const updateStaffMember = createServerFn({ method: "POST" })
                 email = $6,
                 district = $7,
                 status = $8,
-                join_date = $9::date
-          WHERE id = $1
-          RETURNING id, name, role, department, phone, email, district, status, join_date::text, assigned_tasks`,
+                join_date = $9::date,
+                auth_user_id = $10
+          WHERE id = $1`,
         [
           data.id,
           data.name,
@@ -327,6 +426,7 @@ export const updateStaffMember = createServerFn({ method: "POST" })
           data.district,
           data.status,
           data.joinDate,
+          authUserId
         ],
       );
 
@@ -349,12 +449,21 @@ export const updateStaffMember = createServerFn({ method: "POST" })
         ]);
       }
 
+      const mappedResult = await client.query<StaffRow>(
+        `SELECT s.id, s.name, s.role, s.department, s.phone, s.email, s.district, s.status,
+                s.join_date::text, s.assigned_tasks, s.auth_user_id, u.role AS login_role
+         FROM staff s
+         LEFT JOIN application_users u ON s.auth_user_id = u.id
+         WHERE s.id = $1`,
+        [data.id]
+      );
+
       await client.query(
         "INSERT INTO activity_feed(type, message, icon) VALUES ($1, $2, $3)",
         ["staff", `Updated staff profile for ${data.name}`, "user-cog"],
       );
       await client.query("COMMIT");
-      return mapStaffRow(result.rows[0]);
+      return mapStaffRow(mappedResult.rows[0]);
     } catch (error) {
       await client.query("ROLLBACK");
       throw error;
