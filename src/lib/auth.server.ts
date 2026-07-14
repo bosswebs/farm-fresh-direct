@@ -44,9 +44,20 @@ function assertSameOrigin(): void {
   const host = xHost || request.headers.get("host") || new URL(request.url).host;
 
   const expected = `${proto}://${host}`;
-  if (origin !== expected) {
-    throw new Error(`Request origin is not allowed. Expected: ${expected}, Got: ${origin}`);
-  }
+  if (origin === expected) return;
+
+  // Fallback: Check if the origin matches our primary domain or localhost.
+  try {
+    const originUrl = new URL(origin);
+    const hostname = originUrl.hostname.toLowerCase();
+    const isLocal = hostname === "localhost" || hostname === "127.0.0.1";
+    const isPrimaryDomain = hostname === "deacomart.com" || hostname.endsWith(".deacomart.com");
+    if (isLocal || isPrimaryDomain) {
+      return;
+    }
+  } catch {}
+
+  throw new Error(`Request origin is not allowed. Expected: ${expected}, Got: ${origin}`);
 }
 
 function setSessionCookie(token: string): void {

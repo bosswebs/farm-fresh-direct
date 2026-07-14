@@ -16,8 +16,9 @@ export const loginAdmin = createServerFn({ method: "POST" })
       return { user: await auth.login(data.email, data.password) };
     } catch (error) {
       const { safeErrorForLog } = await import("./security.server");
-      console.error("[Security] Login processing failed", safeErrorForLog(error));
-      throw new Error("Unable to process sign-in.");
+      const err = safeErrorForLog(error);
+      console.error("[Security] Login processing failed", err);
+      throw new Error(`Unable to process sign-in: ${err.message}`);
     }
   });
 

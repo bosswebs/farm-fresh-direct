@@ -419,9 +419,7 @@ function AdminHeader({
           <DropdownMenuContent align="end" className="w-80">
             <DropdownMenuLabel className="flex items-center justify-between">
               <span>Notifications</span>
-              <Badge className="bg-red-100 text-red-700 text-xs">
-                {"—"}
-              </Badge>
+              <Badge className="bg-red-100 text-red-700 text-xs">{"—"}</Badge>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             {[
@@ -525,8 +523,8 @@ function AuthGate({ onAuthed }: { onAuthed: () => void | Promise<void> }) {
         setError(
           "Invalid email or password. Please try again later if access is temporarily locked.",
         );
-    } catch {
-      setError("Sign-in is temporarily unavailable. Please try again.");
+    } catch (err: any) {
+      setError(err?.message || "Sign-in is temporarily unavailable. Please try again.");
     } finally {
       setBusy(false);
     }
