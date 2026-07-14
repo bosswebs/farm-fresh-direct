@@ -37,8 +37,16 @@ function assertSameOrigin(): void {
   const origin = request.headers.get("origin");
   if (!origin) return;
 
-  const expected = new URL(request.url).origin;
-  if (origin !== expected) throw new Error("Request origin is not allowed.");
+  const xProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  const proto = xProto || new URL(request.url).protocol.replace(":", "");
+
+  const xHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+  const host = xHost || request.headers.get("host") || new URL(request.url).host;
+
+  const expected = `${proto}://${host}`;
+  if (origin !== expected) {
+    throw new Error(`Request origin is not allowed. Expected: ${expected}, Got: ${origin}`);
+  }
 }
 
 function setSessionCookie(token: string): void {
