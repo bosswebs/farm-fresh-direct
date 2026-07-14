@@ -7,9 +7,17 @@ import { getDatabasePool } from "./database.server";
 // ─── Auth guard helper ─────────────────────────────────────────────
 async function requireAdmin() {
   const { requireRole } = await import("./auth.server");
-  return requireRole(["super_admin", "marketplace_manager", "finance_manager",
-    "training_manager", "consultancy_manager", "logistics_manager",
-    "content_manager", "support_officer"]);
+  return requireRole([
+    "super_admin",
+    "manager",
+    "marketplace_manager",
+    "finance_manager",
+    "training_manager",
+    "consultancy_manager",
+    "logistics_manager",
+    "content_manager",
+    "support_officer",
+  ]);
 }
 
 const staffRoleSchema = z.enum(["trainer", "consultant", "driver", "admin", "support"]);
@@ -79,10 +87,18 @@ export const getDashboardData = createServerFn({ method: "GET" }).handler(async 
   const pool = getDatabasePool();
 
   const [
-    farmersRes, buyersRes, productsRes, ordersRes,
-    revenueRes, pendingFarmersRes, pendingProductsRes,
-    revenueChartRes, categoryRes, activityRes,
-    geoRes, staffRes,
+    farmersRes,
+    buyersRes,
+    productsRes,
+    ordersRes,
+    revenueRes,
+    pendingFarmersRes,
+    pendingProductsRes,
+    revenueChartRes,
+    categoryRes,
+    activityRes,
+    geoRes,
+    staffRes,
   ] = await Promise.all([
     pool.query<{ total: string; active: string; pending: string; suspended: string }>(
       `SELECT
@@ -90,39 +106,39 @@ export const getDashboardData = createServerFn({ method: "GET" }).handler(async 
          COUNT(*) FILTER (WHERE status = 'active')::text AS active,
          COUNT(*) FILTER (WHERE status = 'pending')::text AS pending,
          COUNT(*) FILTER (WHERE status = 'suspended')::text AS suspended
-       FROM farmers`
+       FROM farmers`,
     ),
     pool.query<{ total: string; active: string }>(
       `SELECT COUNT(*)::text AS total,
               COUNT(*) FILTER (WHERE status = 'active')::text AS active
-       FROM buyers`
+       FROM buyers`,
     ),
     pool.query<{ active: string; pending: string }>(
       `SELECT COUNT(*) FILTER (WHERE status IN ('active','featured'))::text AS active,
               COUNT(*) FILTER (WHERE status = 'pending')::text AS pending
-       FROM products`
+       FROM products`,
     ),
     pool.query<{ today: string; total: string }>(
       `SELECT COUNT(*) FILTER (WHERE order_date = CURRENT_DATE)::text AS today,
               COUNT(*)::text AS total
-       FROM orders`
+       FROM orders`,
     ),
     pool.query<{ monthly: string; paid_count: string; refunds: string }>(
       `SELECT COALESCE(SUM(total) FILTER (WHERE payment_status = 'paid'), 0)::text AS monthly,
               COUNT(*) FILTER (WHERE payment_status = 'paid')::text AS paid_count,
               COUNT(*) FILTER (WHERE payment_status = 'refunded')::text AS refunds
        FROM orders
-       WHERE order_date >= date_trunc('month', CURRENT_DATE)`
+       WHERE order_date >= date_trunc('month', CURRENT_DATE)`,
     ),
     // Pending farmers for approvals panel
     pool.query<{ id: string; name: string; district: string; registered_date: string }>(
       `SELECT id, name, district, registered_date::text
-       FROM farmers WHERE status = 'pending' ORDER BY created_at DESC LIMIT 5`
+       FROM farmers WHERE status = 'pending' ORDER BY created_at DESC LIMIT 5`,
     ),
     // Pending products for approvals panel
     pool.query<{ id: string; name: string; district: string; listed_date: string }>(
       `SELECT id, name, district, listed_date::text
-       FROM products WHERE status = 'pending' ORDER BY created_at DESC LIMIT 5`
+       FROM products WHERE status = 'pending' ORDER BY created_at DESC LIMIT 5`,
     ),
     // Monthly revenue for chart (last 6 months)
     pool.query<{ month: string; revenue: string; orders: string }>(
@@ -132,7 +148,7 @@ export const getDashboardData = createServerFn({ method: "GET" }).handler(async 
        FROM orders
        WHERE order_date >= date_trunc('month', CURRENT_DATE) - interval '5 months'
        GROUP BY date_trunc('month', order_date)
-       ORDER BY date_trunc('month', order_date)`
+       ORDER BY date_trunc('month', order_date)`,
     ),
     // Category performance from products
     pool.query<{ category: string; sales: string; products: string }>(
@@ -143,17 +159,17 @@ export const getDashboardData = createServerFn({ method: "GET" }).handler(async 
        WHERE status NOT IN ('rejected','suspended')
        GROUP BY category
        ORDER BY SUM(sales * price) DESC NULLS LAST
-       LIMIT 7`
+       LIMIT 7`,
     ),
     // Activity feed (latest 8)
     pool.query<{ id: string; type: string; message: string; icon: string; occurred_at: string }>(
       `SELECT id::text, type, message, icon,
               to_char(occurred_at, 'YYYY-MM-DD HH24:MI') AS occurred_at
-       FROM activity_feed ORDER BY occurred_at DESC LIMIT 8`
+       FROM activity_feed ORDER BY occurred_at DESC LIMIT 8`,
     ),
     // Geographic — farmers per district
     pool.query<{ district: string; total: string }>(
-      `SELECT district, COUNT(*)::text AS total FROM farmers GROUP BY district ORDER BY COUNT(*) DESC`
+      `SELECT district, COUNT(*)::text AS total FROM farmers GROUP BY district ORDER BY COUNT(*) DESC`,
     ),
     // Staff / consultancy counts
     pool.query<{ staff: string; consultancy: string; partners: string; deliveries_done: string }>(
@@ -161,7 +177,7 @@ export const getDashboardData = createServerFn({ method: "GET" }).handler(async 
          (SELECT COUNT(*)::text FROM staff WHERE status = 'active') AS staff,
          (SELECT COUNT(*)::text FROM consultancy_requests) AS consultancy,
          (SELECT COUNT(*)::text FROM partners WHERE status = 'active') AS partners,
-         (SELECT COUNT(*) FILTER (WHERE status = 'delivered')::text FROM deliveries) AS deliveries_done`
+         (SELECT COUNT(*) FILTER (WHERE status = 'delivered')::text FROM deliveries) AS deliveries_done`,
     ),
   ]);
 
@@ -215,13 +231,20 @@ export const getRecentOrders = createServerFn({ method: "GET" }).handler(async (
   await requireAdmin();
   const pool = getDatabasePool();
   const result = await pool.query<{
-    id: string; buyer_name: string; product_name: string; farmer_name: string;
-    total: string; status: string; payment_method: string; payment_status: string;
-    order_date: string; district: string;
+    id: string;
+    buyer_name: string;
+    product_name: string;
+    farmer_name: string;
+    total: string;
+    status: string;
+    payment_method: string;
+    payment_status: string;
+    order_date: string;
+    district: string;
   }>(
     `SELECT id, buyer_name, product_name, farmer_name, total::text, status,
             payment_method, payment_status, order_date::text, district
-     FROM orders ORDER BY created_at DESC LIMIT 10`
+     FROM orders ORDER BY created_at DESC LIMIT 10`,
   );
   return result.rows;
 });
@@ -231,16 +254,27 @@ export const getFarmers = createServerFn({ method: "GET" }).handler(async () => 
   await requireAdmin();
   const pool = getDatabasePool();
   const result = await pool.query<{
-    id: string; name: string; phone: string; email: string; district: string;
-    sector: string; farm_name: string; farm_size: string; products: string[];
-    status: string; kyc_status: string; registered_date: string;
-    total_sales: string; trainings_attended: number; performance_score: string;
+    id: string;
+    name: string;
+    phone: string;
+    email: string;
+    district: string;
+    sector: string;
+    farm_name: string;
+    farm_size: string;
+    products: string[];
+    status: string;
+    kyc_status: string;
+    registered_date: string;
+    total_sales: string;
+    trainings_attended: number;
+    performance_score: string;
     profile_image: string | null;
   }>(
     `SELECT id, name, phone, email, district, sector, farm_name, farm_size, products,
             status, kyc_status, registered_date::text, total_sales::text,
             trainings_attended, performance_score::text, profile_image
-     FROM farmers ORDER BY created_at DESC`
+     FROM farmers ORDER BY created_at DESC`,
   );
   return result.rows.map((r) => ({
     ...r,
@@ -260,13 +294,20 @@ export const getBuyers = createServerFn({ method: "GET" }).handler(async () => {
   await requireAdmin();
   const pool = getDatabasePool();
   const result = await pool.query<{
-    id: string; name: string; type: string; phone: string; email: string;
-    district: string; total_orders: number; total_spent: string;
-    status: string; join_date: string;
+    id: string;
+    name: string;
+    type: string;
+    phone: string;
+    email: string;
+    district: string;
+    total_orders: number;
+    total_spent: string;
+    status: string;
+    join_date: string;
   }>(
     `SELECT id, name, type, phone, email, district, total_orders,
             total_spent::text, status, join_date::text
-     FROM buyers ORDER BY created_at DESC`
+     FROM buyers ORDER BY created_at DESC`,
   );
   return result.rows.map((r) => ({
     ...r,
@@ -285,7 +326,7 @@ export const getStaff = createServerFn({ method: "GET" }).handler(async () => {
             s.join_date::text, s.assigned_tasks, s.auth_user_id, u.role AS login_role
      FROM staff s
      LEFT JOIN application_users u ON s.auth_user_id = u.id
-     ORDER BY s.created_at DESC`
+     ORDER BY s.created_at DESC`,
   );
   return result.rows.map(mapStaffRow);
 });
@@ -305,7 +346,7 @@ export const createStaffMember = createServerFn({ method: "POST" })
           `INSERT INTO application_users(email, password_hash, display_name, role, status)
            VALUES ($1, crypt($2, gen_salt('bf', 12)), $3, $4, 'active')
            RETURNING id`,
-          [data.email.toLowerCase(), data.loginPassword, data.name, data.loginRole]
+          [data.email.toLowerCase(), data.loginPassword, data.name, data.loginRole],
         );
         authUserId = userRes.rows[0].id;
       }
@@ -333,13 +374,14 @@ export const createStaffMember = createServerFn({ method: "POST" })
          FROM staff s
          LEFT JOIN application_users u ON s.auth_user_id = u.id
          WHERE s.id = $1`,
-        [result.rows[0].id]
+        [result.rows[0].id],
       );
 
-      await client.query(
-        "INSERT INTO activity_feed(type, message, icon) VALUES ($1, $2, $3)",
-        ["staff", `Added ${data.name} to ${data.department}`, "user-plus"],
-      );
+      await client.query("INSERT INTO activity_feed(type, message, icon) VALUES ($1, $2, $3)", [
+        "staff",
+        `Added ${data.name} to ${data.department}`,
+        "user-plus",
+      ]);
 
       await client.query("COMMIT");
       return mapStaffRow(mappedResult.rows[0]);
@@ -359,11 +401,12 @@ export const updateStaffMember = createServerFn({ method: "POST" })
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
-      
-      const previous = await client.query<{ name: string; role: string; auth_user_id: string | null }>(
-        "SELECT name, role, auth_user_id FROM staff WHERE id = $1 FOR UPDATE",
-        [data.id],
-      );
+
+      const previous = await client.query<{
+        name: string;
+        role: string;
+        auth_user_id: string | null;
+      }>("SELECT name, role, auth_user_id FROM staff WHERE id = $1 FOR UPDATE", [data.id]);
       if (!previous.rows[0]) throw new Error("Staff member not found.");
 
       let authUserId = previous.rows[0].auth_user_id;
@@ -380,7 +423,13 @@ export const updateStaffMember = createServerFn({ method: "POST" })
                       password_hash = CASE WHEN $5::text IS NOT NULL THEN crypt($5, gen_salt('bf', 12)) ELSE password_hash END,
                       updated_at = now()
                 WHERE id = $1`,
-              [authUserId, data.email.toLowerCase(), data.name, data.loginRole, data.loginPassword || null]
+              [
+                authUserId,
+                data.email.toLowerCase(),
+                data.name,
+                data.loginRole,
+                data.loginPassword || null,
+              ],
             );
           }
         } else {
@@ -390,7 +439,7 @@ export const updateStaffMember = createServerFn({ method: "POST" })
               `INSERT INTO application_users(email, password_hash, display_name, role, status)
                VALUES ($1, crypt($2, gen_salt('bf', 12)), $3, $4, 'active')
                RETURNING id`,
-              [data.email.toLowerCase(), data.loginPassword, data.name, data.loginRole]
+              [data.email.toLowerCase(), data.loginPassword, data.name, data.loginRole],
             );
             authUserId = userRes.rows[0].id;
           }
@@ -426,7 +475,7 @@ export const updateStaffMember = createServerFn({ method: "POST" })
           data.district,
           data.status,
           data.joinDate,
-          authUserId
+          authUserId,
         ],
       );
 
@@ -435,10 +484,10 @@ export const updateStaffMember = createServerFn({ method: "POST" })
           data.id,
           data.name,
         ]);
-        await client.query("UPDATE consultancy_requests SET consultant = $2 WHERE consultant_id = $1", [
-          data.id,
-          data.name,
-        ]);
+        await client.query(
+          "UPDATE consultancy_requests SET consultant = $2 WHERE consultant_id = $1",
+          [data.id, data.name],
+        );
         await client.query("UPDATE vehicles SET driver_name = $2 WHERE driver_id = $1", [
           data.id,
           data.name,
@@ -455,13 +504,14 @@ export const updateStaffMember = createServerFn({ method: "POST" })
          FROM staff s
          LEFT JOIN application_users u ON s.auth_user_id = u.id
          WHERE s.id = $1`,
-        [data.id]
+        [data.id],
       );
 
-      await client.query(
-        "INSERT INTO activity_feed(type, message, icon) VALUES ($1, $2, $3)",
-        ["staff", `Updated staff profile for ${data.name}`, "user-cog"],
-      );
+      await client.query("INSERT INTO activity_feed(type, message, icon) VALUES ($1, $2, $3)", [
+        "staff",
+        `Updated staff profile for ${data.name}`,
+        "user-cog",
+      ]);
       await client.query("COMMIT");
       return mapStaffRow(mappedResult.rows[0]);
     } catch (error) {
@@ -484,10 +534,11 @@ export const updateStaffStatus = createServerFn({ method: "POST" })
       [data.id, data.status],
     );
     if (!result.rows[0]) throw new Error("Staff member not found.");
-    await pool.query(
-      "INSERT INTO activity_feed(type, message, icon) VALUES ($1, $2, $3)",
-      ["staff", `Set ${result.rows[0].name} status to ${data.status.replace("_", " ")}`, "user-check"],
-    );
+    await pool.query("INSERT INTO activity_feed(type, message, icon) VALUES ($1, $2, $3)", [
+      "staff",
+      `Set ${result.rows[0].name} status to ${data.status.replace("_", " ")}`,
+      "user-check",
+    ]);
     return mapStaffRow(result.rows[0]);
   });
 
@@ -503,27 +554,38 @@ export const assignStaffTask = createServerFn({ method: "POST" })
       [data.id],
     );
     if (!result.rows[0]) throw new Error("Staff member not found.");
-    await pool.query(
-      "INSERT INTO activity_feed(type, message, icon) VALUES ($1, $2, $3)",
-      ["staff", `Assigned a new task to ${result.rows[0].name}`, "clipboard-list"],
-    );
+    await pool.query("INSERT INTO activity_feed(type, message, icon) VALUES ($1, $2, $3)", [
+      "staff",
+      `Assigned a new task to ${result.rows[0].name}`,
+      "clipboard-list",
+    ]);
     return mapStaffRow(result.rows[0]);
-});
+  });
 
 // ─── Products ─────────────────────────────────────────────────────
 export const getProducts = createServerFn({ method: "GET" }).handler(async () => {
   await requireAdmin();
   const pool = getDatabasePool();
   const result = await pool.query<{
-    id: string; name: string; category: string; farmer_name: string;
-    farmer_id: string | null; district: string; price: string; unit: string;
-    quantity: string; status: string; quality_status: string;
-    listed_date: string; sales: string; image: string;
+    id: string;
+    name: string;
+    category: string;
+    farmer_name: string;
+    farmer_id: string | null;
+    district: string;
+    price: string;
+    unit: string;
+    quantity: string;
+    status: string;
+    quality_status: string;
+    listed_date: string;
+    sales: string;
+    image: string;
   }>(
     `SELECT id, name, category, farmer_name, farmer_id, district, price::text,
             unit, quantity::text, status, quality_status, listed_date::text,
             sales::text, image
-     FROM products ORDER BY created_at DESC`
+     FROM products ORDER BY created_at DESC`,
   );
   return result.rows.map((r) => ({
     ...r,
@@ -533,7 +595,10 @@ export const getProducts = createServerFn({ method: "GET" }).handler(async () =>
     quantity: parseFloat(r.quantity),
     sales: parseFloat(r.sales),
     qualityStatus: r.quality_status as
-      "certified_organic" | "quality_verified" | "food_safety_approved" | "standard",
+      | "certified_organic"
+      | "quality_verified"
+      | "food_safety_approved"
+      | "standard",
     listedDate: r.listed_date,
   }));
 });
@@ -543,16 +608,26 @@ export const getOrders = createServerFn({ method: "GET" }).handler(async () => {
   await requireAdmin();
   const pool = getDatabasePool();
   const result = await pool.query<{
-    id: string; buyer_name: string; buyer_id: string | null;
-    farmer_name: string; farmer_id: string | null; product_name: string;
-    quantity: string; unit: string; total: string; status: string;
-    payment_method: string; payment_status: string;
-    order_date: string; delivery_date: string | null; district: string;
+    id: string;
+    buyer_name: string;
+    buyer_id: string | null;
+    farmer_name: string;
+    farmer_id: string | null;
+    product_name: string;
+    quantity: string;
+    unit: string;
+    total: string;
+    status: string;
+    payment_method: string;
+    payment_status: string;
+    order_date: string;
+    delivery_date: string | null;
+    district: string;
   }>(
     `SELECT id, buyer_name, buyer_id, farmer_name, farmer_id, product_name,
             quantity::text, unit, total::text, status, payment_method,
             payment_status, order_date::text, delivery_date::text, district
-     FROM orders ORDER BY created_at DESC`
+     FROM orders ORDER BY created_at DESC`,
   );
   return result.rows.map((r) => ({
     id: r.id,
@@ -564,7 +639,13 @@ export const getOrders = createServerFn({ method: "GET" }).handler(async () => {
     quantity: parseFloat(r.quantity),
     unit: r.unit,
     total: parseFloat(r.total),
-    status: r.status as "pending" | "confirmed" | "processing" | "in_transit" | "delivered" | "cancelled",
+    status: r.status as
+      | "pending"
+      | "confirmed"
+      | "processing"
+      | "in_transit"
+      | "delivered"
+      | "cancelled",
     paymentMethod: r.payment_method as "mtn_momo" | "airtel_money" | "bank_transfer" | "card",
     paymentStatus: r.payment_status as "paid" | "pending" | "failed" | "refunded",
     orderDate: r.order_date,
@@ -578,9 +659,17 @@ export const getPayments = createServerFn({ method: "GET" }).handler(async () =>
   await requireAdmin();
   const pool = getDatabasePool();
   const result = await pool.query<{
-    id: string; order_id: string; buyer_name: string; farmer_name: string;
-    product_name: string; amount: string; method: string; status: string;
-    external_reference: string | null; paid_at: string | null; created_at: string;
+    id: string;
+    order_id: string;
+    buyer_name: string;
+    farmer_name: string;
+    product_name: string;
+    amount: string;
+    method: string;
+    status: string;
+    external_reference: string | null;
+    paid_at: string | null;
+    created_at: string;
   }>(
     `SELECT p.id::text, p.order_id, o.buyer_name, o.farmer_name, o.product_name,
             p.amount::text, p.method, p.status, p.external_reference,
@@ -588,7 +677,7 @@ export const getPayments = createServerFn({ method: "GET" }).handler(async () =>
             to_char(p.created_at, 'YYYY-MM-DD') AS created_at
      FROM payments p
      JOIN orders o ON o.id = p.order_id
-     ORDER BY p.created_at DESC`
+     ORDER BY p.created_at DESC`,
   );
   return result.rows.map((r) => ({
     ...r,
@@ -601,13 +690,21 @@ export const getTrainingCourses = createServerFn({ method: "GET" }).handler(asyn
   await requireAdmin();
   const pool = getDatabasePool();
   const result = await pool.query<{
-    id: string; title: string; category: string; trainer: string;
-    duration: string; sessions: number; participants: number;
-    completion_rate: string; next_session: string; district: string; status: string;
+    id: string;
+    title: string;
+    category: string;
+    trainer: string;
+    duration: string;
+    sessions: number;
+    participants: number;
+    completion_rate: string;
+    next_session: string;
+    district: string;
+    status: string;
   }>(
     `SELECT id, title, category, trainer, duration, sessions, participants,
             completion_rate::text, next_session, district, status
-     FROM training_courses ORDER BY created_at DESC`
+     FROM training_courses ORDER BY created_at DESC`,
   );
   return result.rows.map((r) => ({
     ...r,
@@ -621,13 +718,21 @@ export const getConsultancyRequests = createServerFn({ method: "GET" }).handler(
   await requireAdmin();
   const pool = getDatabasePool();
   const result = await pool.query<{
-    id: string; client: string; service: string; consultant: string;
-    status: string; priority: string; request_date: string; due_date: string;
-    invoice_amount: string; invoice_status: string; district: string;
+    id: string;
+    client: string;
+    service: string;
+    consultant: string;
+    status: string;
+    priority: string;
+    request_date: string;
+    due_date: string;
+    invoice_amount: string;
+    invoice_status: string;
+    district: string;
   }>(
     `SELECT id, client, service, consultant, status, priority, request_date::text,
             due_date::text, invoice_amount::text, invoice_status, district
-     FROM consultancy_requests ORDER BY created_at DESC`
+     FROM consultancy_requests ORDER BY created_at DESC`,
   );
   return result.rows.map((r) => ({
     ...r,
@@ -643,15 +748,23 @@ export const getDeliveries = createServerFn({ method: "GET" }).handler(async () 
   await requireAdmin();
   const pool = getDatabasePool();
   const result = await pool.query<{
-    id: string; order_id: string; buyer_name: string; farmer_name: string;
-    driver_name: string; vehicle_plate: string; pickup_district: string;
-    delivery_district: string; status: string; scheduled_date: string;
-    actual_delivery: string | null; distance: string;
+    id: string;
+    order_id: string;
+    buyer_name: string;
+    farmer_name: string;
+    driver_name: string;
+    vehicle_plate: string;
+    pickup_district: string;
+    delivery_district: string;
+    status: string;
+    scheduled_date: string;
+    actual_delivery: string | null;
+    distance: string;
   }>(
     `SELECT id, order_id, buyer_name, farmer_name, driver_name, vehicle_plate,
             pickup_district, delivery_district, status, scheduled_date::text,
             actual_delivery::text, distance
-     FROM deliveries ORDER BY created_at DESC`
+     FROM deliveries ORDER BY created_at DESC`,
   );
   return result.rows.map((r) => ({
     id: r.id,
@@ -674,11 +787,16 @@ export const getVehicles = createServerFn({ method: "GET" }).handler(async () =>
   await requireAdmin();
   const pool = getDatabasePool();
   const result = await pool.query<{
-    id: string; plate: string; type: string; driver_name: string;
-    capacity: string; status: string; last_maintenance: string | null;
+    id: string;
+    plate: string;
+    type: string;
+    driver_name: string;
+    capacity: string;
+    status: string;
+    last_maintenance: string | null;
   }>(
     `SELECT id, plate, type, driver_name, capacity, status, last_maintenance::text
-     FROM vehicles ORDER BY created_at DESC`
+     FROM vehicles ORDER BY created_at DESC`,
   );
   return result.rows.map((r) => ({
     id: r.id,
@@ -696,13 +814,20 @@ export const getPartners = createServerFn({ method: "GET" }).handler(async () =>
   await requireAdmin();
   const pool = getDatabasePool();
   const result = await pool.query<{
-    id: string; name: string; type: string; district: string;
-    contact_person: string; phone: string; status: string;
-    since: string; total_orders: number; total_value: string;
+    id: string;
+    name: string;
+    type: string;
+    district: string;
+    contact_person: string;
+    phone: string;
+    status: string;
+    since: string;
+    total_orders: number;
+    total_value: string;
   }>(
     `SELECT id, name, type, district, contact_person, phone, status,
             since::text, total_orders, total_value::text
-     FROM partners ORDER BY created_at DESC`
+     FROM partners ORDER BY created_at DESC`,
   );
   return result.rows.map((r) => ({
     ...r,
@@ -727,51 +852,64 @@ interface FnbCategory {
   products: FnbProduct[];
 }
 
-export const getFnbData = createServerFn({ method: "GET" }).handler(async (): Promise<FnbCategory[]> => {
-  await requireAdmin();
-  const pool = getDatabasePool();
-  const result = await pool.query<{
-    category_id: string; category_name: string; icon: string;
-    product_id: string | null; product_name: string | null; price: string | null;
-    stock: string | null; sold: string | null; status: string | null;
-  }>(
-    `SELECT c.id::text AS category_id, c.name AS category_name, c.icon,
+export const getFnbData = createServerFn({ method: "GET" }).handler(
+  async (): Promise<FnbCategory[]> => {
+    await requireAdmin();
+    const pool = getDatabasePool();
+    const result = await pool.query<{
+      category_id: string;
+      category_name: string;
+      icon: string;
+      product_id: string | null;
+      product_name: string | null;
+      price: string | null;
+      stock: string | null;
+      sold: string | null;
+      status: string | null;
+    }>(
+      `SELECT c.id::text AS category_id, c.name AS category_name, c.icon,
             p.id::text AS product_id, p.name AS product_name, p.price::text,
             p.stock::text, p.sold::text, p.status
      FROM fnb_categories c
      LEFT JOIN fnb_products p ON p.category_id = c.id
-     ORDER BY c.id, p.id`
-  );
+     ORDER BY c.id, p.id`,
+    );
 
-  const map = new Map<string, FnbCategory>();
-  for (const row of result.rows) {
-    if (!map.has(row.category_id)) {
-      map.set(row.category_id, { name: row.category_name, icon: row.icon, products: [] });
+    const map = new Map<string, FnbCategory>();
+    for (const row of result.rows) {
+      if (!map.has(row.category_id)) {
+        map.set(row.category_id, { name: row.category_name, icon: row.icon, products: [] });
+      }
+      if (row.product_id && row.product_name) {
+        map.get(row.category_id)!.products.push({
+          name: row.product_name,
+          price: parseFloat(row.price ?? "0"),
+          stock: parseFloat(row.stock ?? "0"),
+          sold: parseFloat(row.sold ?? "0"),
+          status: row.status ?? "active",
+        });
+      }
     }
-    if (row.product_id && row.product_name) {
-      map.get(row.category_id)!.products.push({
-        name: row.product_name,
-        price: parseFloat(row.price ?? "0"),
-        stock: parseFloat(row.stock ?? "0"),
-        sold: parseFloat(row.sold ?? "0"),
-        status: row.status ?? "active",
-      });
-    }
-  }
-  return Array.from(map.values());
-});
+    return Array.from(map.values());
+  },
+);
 
 // ─── WhatsApp Orders ──────────────────────────────────────────────
 export const getWhatsappOrders = createServerFn({ method: "GET" }).handler(async () => {
   await requireAdmin();
   const pool = getDatabasePool();
   const result = await pool.query<{
-    id: string; customer: string; phone: string; product: string;
-    amount: string; status: string; ordered_at: string;
+    id: string;
+    customer: string;
+    phone: string;
+    product: string;
+    amount: string;
+    status: string;
+    ordered_at: string;
   }>(
     `SELECT id, customer, phone, product, amount::text, status,
             to_char(ordered_at, 'YYYY-MM-DD HH24:MI') AS ordered_at
-     FROM whatsapp_orders ORDER BY ordered_at DESC`
+     FROM whatsapp_orders ORDER BY ordered_at DESC`,
   );
   return result.rows.map((r) => ({
     ...r,
@@ -785,11 +923,15 @@ export const getContentPages = createServerFn({ method: "GET" }).handler(async (
   await requireAdmin();
   const pool = getDatabasePool();
   const result = await pool.query<{
-    id: string; title: string; type: string; status: string;
-    author: string; last_updated: string;
+    id: string;
+    title: string;
+    type: string;
+    status: string;
+    author: string;
+    last_updated: string;
   }>(
     `SELECT id, title, type, status, author, last_updated::text
-     FROM content_pages ORDER BY updated_at DESC`
+     FROM content_pages ORDER BY updated_at DESC`,
   );
   return result.rows.map((r) => ({
     ...r,
@@ -802,7 +944,7 @@ export const getGeographicStats = createServerFn({ method: "GET" }).handler(asyn
   await requireAdmin();
   const pool = getDatabasePool();
   const result = await pool.query<{ district: string; total: string }>(
-    `SELECT district, COUNT(*)::text AS total FROM farmers GROUP BY district ORDER BY COUNT(*) DESC`
+    `SELECT district, COUNT(*)::text AS total FROM farmers GROUP BY district ORDER BY COUNT(*) DESC`,
   );
   return result.rows.map((r) => ({ district: r.district, farmers: parseInt(r.total) }));
 });
@@ -820,7 +962,7 @@ export const getReportData = createServerFn({ method: "GET" }).handler(async () 
        FROM orders
        WHERE order_date >= date_trunc('month', CURRENT_DATE) - interval '11 months'
        GROUP BY date_trunc('month', order_date)
-       ORDER BY date_trunc('month', order_date)`
+       ORDER BY date_trunc('month', order_date)`,
     ),
     pool.query<{ month: string; farmers_reached: string; trained: string }>(
       `SELECT to_char(date_trunc('month', registered_date), 'Mon') AS month,
@@ -829,7 +971,7 @@ export const getReportData = createServerFn({ method: "GET" }).handler(async () 
        FROM farmers
        WHERE registered_date >= date_trunc('month', CURRENT_DATE) - interval '11 months'
        GROUP BY date_trunc('month', registered_date)
-       ORDER BY date_trunc('month', registered_date)`
+       ORDER BY date_trunc('month', registered_date)`,
     ),
   ]);
 
