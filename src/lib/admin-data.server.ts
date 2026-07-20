@@ -1033,6 +1033,182 @@ export const getTrainingCourses = createServerFn({ method: "GET" }).handler(asyn
   }));
 });
 
+export const createTrainingCourse = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      title: z.string().min(1),
+      category: z.string().min(1),
+      trainer: z.string().min(1),
+      duration: z.string().min(1),
+      sessions: z.number().int().nonnegative().default(1),
+      participants: z.number().int().nonnegative().default(0),
+      completionRate: z.number().min(0).max(100).default(0),
+      nextSession: z.string().min(1),
+      district: z.string().min(1),
+      status: z.enum(["active", "upcoming", "completed"]).default("upcoming"),
+    })
+  )
+  .handler(async ({ data }) => {
+    const admin = await requireAdmin();
+    const pool = getDatabasePool();
+
+    const randomDigits = Math.floor(100000 + Math.random() * 900000);
+    const courseId = `TRN-${randomDigits}`;
+
+    const result = await pool.query<{
+      id: string;
+      title: string;
+      category: string;
+      trainer: string;
+      duration: string;
+      sessions: number;
+      participants: number;
+      completion_rate: string;
+      next_session: string;
+      district: string;
+      status: string;
+    }>(
+      `INSERT INTO training_courses (
+        id, title, category, trainer, duration, sessions, participants,
+        completion_rate, next_session, district, status
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      RETURNING id, title, category, trainer, duration, sessions, participants,
+                completion_rate::text, next_session, district, status`,
+      [
+        courseId,
+        data.title,
+        data.category,
+        data.trainer,
+        data.duration,
+        data.sessions,
+        data.participants,
+        data.completionRate,
+        data.nextSession,
+        data.district,
+        data.status,
+      ]
+    );
+
+    await pool.query(
+      "INSERT INTO activity_feed (type, message, icon) VALUES ($1, $2, $3)",
+      [
+        "training",
+        `${admin.displayName} created training course "${data.title}"`,
+        "graduation-cap",
+      ]
+    );
+
+    const r = result.rows[0];
+    return {
+      ...r,
+      completionRate: parseFloat(r.completion_rate),
+      nextSession: r.next_session,
+    };
+  });
+
+export const updateTrainingCourse = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      id: z.string(),
+      title: z.string().min(1),
+      category: z.string().min(1),
+      trainer: z.string().min(1),
+      duration: z.string().min(1),
+      sessions: z.number().int().nonnegative(),
+      participants: z.number().int().nonnegative(),
+      completionRate: z.number().min(0).max(100),
+      nextSession: z.string().min(1),
+      district: z.string().min(1),
+      status: z.enum(["active", "upcoming", "completed"]),
+    })
+  )
+  .handler(async ({ data }) => {
+    const admin = await requireAdmin();
+    const pool = getDatabasePool();
+
+    const result = await pool.query<{
+      id: string;
+      title: string;
+      category: string;
+      trainer: string;
+      duration: string;
+      sessions: number;
+      participants: number;
+      completion_rate: string;
+      next_session: string;
+      district: string;
+      status: string;
+    }>(
+      `UPDATE training_courses
+       SET title = $1, category = $2, trainer = $3, duration = $4, sessions = $5,
+           participants = $6, completion_rate = $7, next_session = $8, district = $9,
+           status = $10, updated_at = now()
+       WHERE id = $11
+       RETURNING id, title, category, trainer, duration, sessions, participants,
+                 completion_rate::text, next_session, district, status`,
+      [
+        data.title,
+        data.category,
+        data.trainer,
+        data.duration,
+        data.sessions,
+        data.participants,
+        data.completionRate,
+        data.nextSession,
+        data.district,
+        data.status,
+        data.id,
+      ]
+    );
+
+    if (result.rowCount === 0) {
+      throw new Error("Training course not found");
+    }
+
+    await pool.query(
+      "INSERT INTO activity_feed (type, message, icon) VALUES ($1, $2, $3)",
+      [
+        "training",
+        `${admin.displayName} updated training course "${data.title}"`,
+        "edit",
+      ]
+    );
+
+    const r = result.rows[0];
+    return {
+      ...r,
+      completionRate: parseFloat(r.completion_rate),
+      nextSession: r.next_session,
+    };
+  });
+
+export const deleteTrainingCourse = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      id: z.string(),
+    })
+  )
+  .handler(async ({ data }) => {
+    const admin = await requireAdmin();
+    const pool = getDatabasePool();
+
+    const result = await pool.query(`DELETE FROM training_courses WHERE id = $1 RETURNING title`, [data.id]);
+    if (result.rowCount === 0) {
+      throw new Error("Training course not found");
+    }
+
+    await pool.query(
+      "INSERT INTO activity_feed (type, message, icon) VALUES ($1, $2, $3)",
+      [
+        "training",
+        `${admin.displayName} deleted training course "${result.rows[0].title}"`,
+        "trash-2",
+      ]
+    );
+
+    return { success: true };
+  });
+
 // ─── Consultancy Requests ─────────────────────────────────────────
 export const getConsultancyRequests = createServerFn({ method: "GET" }).handler(async () => {
   await requireAdmin();
@@ -1062,6 +1238,184 @@ export const getConsultancyRequests = createServerFn({ method: "GET" }).handler(
     invoiceStatus: r.invoice_status as "draft" | "sent" | "paid" | "overdue",
   }));
 });
+
+export const createConsultancyRequest = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      client: z.string().min(1),
+      service: z.string().min(1),
+      consultant: z.string().default("Unassigned"),
+      status: z.enum(["pending", "in_progress", "completed", "cancelled"]).default("pending"),
+      priority: z.enum(["high", "medium", "low"]).default("medium"),
+      dueDate: z.string().min(1),
+      invoiceAmount: z.number().nonnegative().default(0),
+      invoiceStatus: z.enum(["draft", "sent", "paid", "overdue"]).default("draft"),
+      district: z.string().min(1),
+    })
+  )
+  .handler(async ({ data }) => {
+    const admin = await requireAdmin();
+    const pool = getDatabasePool();
+
+    const randomDigits = Math.floor(100000 + Math.random() * 900000);
+    const requestId = `CNS-${randomDigits}`;
+
+    const result = await pool.query<{
+      id: string;
+      client: string;
+      service: string;
+      consultant: string;
+      status: string;
+      priority: string;
+      request_date: string;
+      due_date: string;
+      invoice_amount: string;
+      invoice_status: string;
+      district: string;
+    }>(
+      `INSERT INTO consultancy_requests (
+        id, client, service, consultant, status, priority, request_date,
+        due_date, invoice_amount, invoice_status, district
+      ) VALUES ($1, $2, $3, $4, $5, $6, CURRENT_DATE, $7, $8, $9, $10)
+      RETURNING id, client, service, consultant, status, priority, request_date::text,
+                due_date::text, invoice_amount::text, invoice_status, district`,
+      [
+        requestId,
+        data.client,
+        data.service,
+        data.consultant === "none" ? "" : data.consultant,
+        data.status,
+        data.priority,
+        data.dueDate,
+        data.invoiceAmount,
+        data.invoiceStatus,
+        data.district,
+      ]
+    );
+
+    await pool.query(
+      "INSERT INTO activity_feed (type, message, icon) VALUES ($1, $2, $3)",
+      [
+        "consultancy",
+        `${admin.displayName} created consultancy project for ${data.client}`,
+        "briefcase",
+      ]
+    );
+
+    const r = result.rows[0];
+    return {
+      ...r,
+      requestDate: r.request_date,
+      dueDate: r.due_date,
+      invoiceAmount: parseFloat(r.invoice_amount),
+      invoiceStatus: r.invoice_status as "draft" | "sent" | "paid" | "overdue",
+    };
+  });
+
+export const updateConsultancyRequest = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      id: z.string(),
+      client: z.string().min(1),
+      service: z.string().min(1),
+      consultant: z.string(),
+      status: z.enum(["pending", "in_progress", "completed", "cancelled"]),
+      priority: z.enum(["high", "medium", "low"]),
+      dueDate: z.string().min(1),
+      invoiceAmount: z.number().nonnegative(),
+      invoiceStatus: z.enum(["draft", "sent", "paid", "overdue"]),
+      district: z.string().min(1),
+    })
+  )
+  .handler(async ({ data }) => {
+    const admin = await requireAdmin();
+    const pool = getDatabasePool();
+
+    const consultantVal = data.consultant === "none" ? "" : data.consultant;
+
+    const result = await pool.query<{
+      id: string;
+      client: string;
+      service: string;
+      consultant: string;
+      status: string;
+      priority: string;
+      request_date: string;
+      due_date: string;
+      invoice_amount: string;
+      invoice_status: string;
+      district: string;
+    }>(
+      `UPDATE consultancy_requests
+       SET client = $1, service = $2, consultant = $3, status = $4, priority = $5,
+           due_date = $6, invoice_amount = $7, invoice_status = $8, district = $9,
+           updated_at = now()
+       WHERE id = $10
+       RETURNING id, client, service, consultant, status, priority, request_date::text,
+                 due_date::text, invoice_amount::text, invoice_status, district`,
+      [
+        data.client,
+        data.service,
+        consultantVal,
+        data.status,
+        data.priority,
+        data.dueDate,
+        data.invoiceAmount,
+        data.invoiceStatus,
+        data.district,
+        data.id,
+      ]
+    );
+
+    if (result.rowCount === 0) {
+      throw new Error("Consultancy request not found");
+    }
+
+    await pool.query(
+      "INSERT INTO activity_feed (type, message, icon) VALUES ($1, $2, $3)",
+      [
+        "consultancy",
+        `${admin.displayName} updated consultancy project ${data.id} (${data.client})`,
+        "edit",
+      ]
+    );
+
+    const r = result.rows[0];
+    return {
+      ...r,
+      requestDate: r.request_date,
+      dueDate: r.due_date,
+      invoiceAmount: parseFloat(r.invoice_amount),
+      invoiceStatus: r.invoice_status as "draft" | "sent" | "paid" | "overdue",
+    };
+  });
+
+export const deleteConsultancyRequest = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      id: z.string(),
+    })
+  )
+  .handler(async ({ data }) => {
+    const admin = await requireAdmin();
+    const pool = getDatabasePool();
+
+    const result = await pool.query(`DELETE FROM consultancy_requests WHERE id = $1 RETURNING client`, [data.id]);
+    if (result.rowCount === 0) {
+      throw new Error("Consultancy request not found");
+    }
+
+    await pool.query(
+      "INSERT INTO activity_feed (type, message, icon) VALUES ($1, $2, $3)",
+      [
+        "consultancy",
+        `${admin.displayName} deleted consultancy project for ${result.rows[0].client}`,
+        "trash-2",
+      ]
+    );
+
+    return { success: true };
+  });
 
 // ─── Deliveries ───────────────────────────────────────────────────
 export const getDeliveries = createServerFn({ method: "GET" }).handler(async () => {
