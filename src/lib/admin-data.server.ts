@@ -570,6 +570,7 @@ export const getProducts = createServerFn({ method: "GET" }).handler(async () =>
     id: string;
     name: string;
     category: string;
+    description: string;
     farmer_name: string;
     farmer_id: string | null;
     district: string;
@@ -582,7 +583,7 @@ export const getProducts = createServerFn({ method: "GET" }).handler(async () =>
     sales: string;
     image: string;
   }>(
-    `SELECT id, name, category, farmer_name, farmer_id, district, price::text,
+    `SELECT id, name, category, description, farmer_name, farmer_id, district, price::text,
             unit, quantity::text, status, quality_status, listed_date::text,
             sales::text, image
      FROM products ORDER BY created_at DESC`,
@@ -602,6 +603,325 @@ export const getProducts = createServerFn({ method: "GET" }).handler(async () =>
     listedDate: r.listed_date,
   }));
 });
+
+// Mutations for Products
+export const createProduct = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      name: z.string().min(1),
+      category: z.string().min(1),
+      description: z.string().default(""),
+      farmerId: z.string().min(1),
+      price: z.number().nonnegative(),
+      quantity: z.number().nonnegative(),
+      unit: z.string().min(1),
+      status: z.enum(["active", "pending", "rejected", "suspended", "featured"]).default("pending"),
+      qualityStatus: z.enum(["certified_organic", "quality_verified", "food_safety_approved", "standard"]).default("standard"),
+      image: z.string().default("📦"),
+    })
+  )
+  .handler(async ({ data }) => {
+    const admin = await requireAdmin();
+    const pool = getDatabasePool();
+
+    // Fetch farmer info
+    const farmerRes = await pool.query<{ name: string; farm_name: string; district: string; sector: string }>(
+      "SELECT name, farm_name, district, sector FROM farmers WHERE id = $1",
+      [data.farmerId]
+    );
+    if (farmerRes.rowCount === 0) {
+      throw new Error("Farmer not found");
+    }
+    const farmer = farmerRes.rows[0];
+
+    const randomDigits = Math.floor(100000 + Math.random() * 900000);
+    const productId = `PRD-${randomDigits}`;
+
+    const organic_status = data.qualityStatus === "certified_organic";
+    const quality_verified = data.qualityStatus === "quality_verified" || data.qualityStatus === "certified_organic";
+    const food_safety_status = data.qualityStatus === "food_safety_approved" || data.qualityStatus === "quality_verified" || data.qualityStatus === "certified_organic";
+
+    const result = await pool.query<{
+      id: string;
+      name: string;
+      category: string;
+      description: string;
+      farmer_name: string;
+      farmer_id: string | null;
+      district: string;
+      price: string;
+      unit: string;
+      quantity: string;
+      status: string;
+      quality_status: string;
+      listed_date: string;
+      sales: string;
+      image: string;
+    }>(
+      `INSERT INTO products (
+        id, name, category, description, farmer_id, farmer_name, farm_name,
+        district, location, price, quantity, unit, status, quality_status,
+        organic_status, quality_verified, food_safety_status, image, listed_date
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, CURRENT_DATE)
+      RETURNING id, name, category, description, farmer_name, farmer_id, district, price::text,
+                unit, quantity::text, status, quality_status, listed_date::text,
+                sales::text, image`,
+      [
+        productId,
+        data.name,
+        data.category,
+        data.description,
+        data.farmerId,
+        farmer.name,
+        farmer.farm_name || "",
+        farmer.district || "",
+        farmer.sector || "",
+        data.price,
+        data.quantity,
+        data.unit,
+        data.status,
+        data.qualityStatus,
+        organic_status,
+        quality_verified,
+        food_safety_status,
+        data.image || "📦",
+      ]
+    );
+
+    await pool.query(
+      "INSERT INTO activity_feed (type, message, icon) VALUES ($1, $2, $3)",
+      [
+        "marketplace",
+        `${admin.displayName} created product "${data.name}" for farmer ${farmer.name}`,
+        "package-plus",
+      ]
+    );
+
+    const r = result.rows[0];
+    return {
+      ...r,
+      farmer: r.farmer_name,
+      farmerId: r.farmer_id ?? "",
+      price: parseFloat(r.price),
+      quantity: parseFloat(r.quantity),
+      sales: parseFloat(r.sales),
+      qualityStatus: r.quality_status as
+        | "certified_organic"
+        | "quality_verified"
+        | "food_safety_approved"
+        | "standard",
+      listedDate: r.listed_date,
+    };
+  });
+
+export const updateProduct = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      id: z.string(),
+      name: z.string().min(1),
+      category: z.string().min(1),
+      description: z.string().default(""),
+      farmerId: z.string().min(1),
+      price: z.number().nonnegative(),
+      quantity: z.number().nonnegative(),
+      unit: z.string().min(1),
+      status: z.enum(["active", "pending", "rejected", "suspended", "featured"]),
+      qualityStatus: z.enum(["certified_organic", "quality_verified", "food_safety_approved", "standard"]),
+      image: z.string().default("📦"),
+    })
+  )
+  .handler(async ({ data }) => {
+    const admin = await requireAdmin();
+    const pool = getDatabasePool();
+
+    // Fetch farmer info
+    const farmerRes = await pool.query<{ name: string; farm_name: string; district: string; sector: string }>(
+      "SELECT name, farm_name, district, sector FROM farmers WHERE id = $1",
+      [data.farmerId]
+    );
+    if (farmerRes.rowCount === 0) {
+      throw new Error("Farmer not found");
+    }
+    const farmer = farmerRes.rows[0];
+
+    const organic_status = data.qualityStatus === "certified_organic";
+    const quality_verified = data.qualityStatus === "quality_verified" || data.qualityStatus === "certified_organic";
+    const food_safety_status = data.qualityStatus === "food_safety_approved" || data.qualityStatus === "quality_verified" || data.qualityStatus === "certified_organic";
+
+    const result = await pool.query<{
+      id: string;
+      name: string;
+      category: string;
+      description: string;
+      farmer_name: string;
+      farmer_id: string | null;
+      district: string;
+      price: string;
+      unit: string;
+      quantity: string;
+      status: string;
+      quality_status: string;
+      listed_date: string;
+      sales: string;
+      image: string;
+    }>(
+      `UPDATE products
+       SET name = $1, category = $2, description = $3, farmer_id = $4, farmer_name = $5,
+           farm_name = $6, district = $7, location = $8, price = $9, quantity = $10,
+           unit = $11, status = $12, quality_status = $13, organic_status = $14,
+           quality_verified = $15, food_safety_status = $16, image = $17, updated_at = now()
+       WHERE id = $18
+       RETURNING id, name, category, description, farmer_name, farmer_id, district, price::text,
+                 unit, quantity::text, status, quality_status, listed_date::text,
+                 sales::text, image`,
+      [
+        data.name,
+        data.category,
+        data.description,
+        data.farmerId,
+        farmer.name,
+        farmer.farm_name || "",
+        farmer.district || "",
+        farmer.sector || "",
+        data.price,
+        data.quantity,
+        data.unit,
+        data.status,
+        data.qualityStatus,
+        organic_status,
+        quality_verified,
+        food_safety_status,
+        data.image || "📦",
+        data.id,
+      ]
+    );
+
+    if (result.rowCount === 0) {
+      throw new Error("Product not found");
+    }
+
+    await pool.query(
+      "INSERT INTO activity_feed (type, message, icon) VALUES ($1, $2, $3)",
+      [
+        "marketplace",
+        `${admin.displayName} updated product "${data.name}"`,
+        "edit",
+      ]
+    );
+
+    const r = result.rows[0];
+    return {
+      ...r,
+      farmer: r.farmer_name,
+      farmerId: r.farmer_id ?? "",
+      price: parseFloat(r.price),
+      quantity: parseFloat(r.quantity),
+      sales: parseFloat(r.sales),
+      qualityStatus: r.quality_status as
+        | "certified_organic"
+        | "quality_verified"
+        | "food_safety_approved"
+        | "standard",
+      listedDate: r.listed_date,
+    };
+  });
+
+export const updateProductStatus = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      id: z.string(),
+      status: z.enum(["active", "pending", "rejected", "suspended", "featured"]),
+    })
+  )
+  .handler(async ({ data }) => {
+    const admin = await requireAdmin();
+    const pool = getDatabasePool();
+
+    const result = await pool.query(
+      `UPDATE products
+       SET status = $1, updated_at = now()
+       WHERE id = $2
+       RETURNING name`,
+      [data.status, data.id]
+    );
+
+    if (result.rowCount === 0) {
+      throw new Error("Product not found");
+    }
+
+    await pool.query(
+      "INSERT INTO activity_feed (type, message, icon) VALUES ($1, $2, $3)",
+      [
+        "marketplace",
+        `${admin.displayName} updated status of product "${result.rows[0].name}" to ${data.status}`,
+        data.status === "active" ? "check-circle" : data.status === "featured" ? "star" : "pause",
+      ]
+    );
+
+    return { success: true };
+  });
+
+export const bulkUpdateProductStatus = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      ids: z.array(z.string()),
+      status: z.enum(["active", "pending", "rejected", "suspended", "featured"]),
+    })
+  )
+  .handler(async ({ data }) => {
+    const admin = await requireAdmin();
+    const pool = getDatabasePool();
+
+    const result = await pool.query(
+      `UPDATE products
+       SET status = $1, updated_at = now()
+       WHERE id = ANY($2)
+       RETURNING id`,
+      [data.status, data.ids]
+    );
+
+    await pool.query(
+      "INSERT INTO activity_feed (type, message, icon) VALUES ($1, $2, $3)",
+      [
+        "marketplace",
+        `${admin.displayName} updated status of ${result.rowCount} products to ${data.status}`,
+        "package",
+      ]
+    );
+
+    return { success: true };
+  });
+
+export const deleteProduct = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      id: z.string(),
+    })
+  )
+  .handler(async ({ data }) => {
+    const admin = await requireAdmin();
+    const pool = getDatabasePool();
+
+    const result = await pool.query(
+      `DELETE FROM products WHERE id = $1 RETURNING name`,
+      [data.id]
+    );
+
+    if (result.rowCount === 0) {
+      throw new Error("Product not found");
+    }
+
+    await pool.query(
+      "INSERT INTO activity_feed (type, message, icon) VALUES ($1, $2, $3)",
+      [
+        "marketplace",
+        `${admin.displayName} deleted product "${result.rows[0].name}"`,
+        "trash-2",
+      ]
+    );
+
+    return { success: true };
+  });
 
 // ─── Orders ───────────────────────────────────────────────────────
 export const getOrders = createServerFn({ method: "GET" }).handler(async () => {

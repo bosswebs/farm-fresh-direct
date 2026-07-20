@@ -57,6 +57,7 @@ export interface Product {
   id: string;
   name: string;
   category: string;
+  description?: string;
   farmer: string;
   farmerId: string;
   district: string;
