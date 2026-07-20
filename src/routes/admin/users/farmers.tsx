@@ -1,17 +1,18 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import {
   Search, Filter, UserCheck, UserX, Eye, CheckCircle, XCircle,
   Pause, Star, MapPin, Phone, Mail, Leaf, TrendingUp, Clock,
   Award, MoreHorizontal, Download, RefreshCw
 } from "lucide-react";
+import { toast } from "sonner";
 import { Badge } from "../../../components/ui/badge";
 import { Button } from "../../../components/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "../../../components/ui/dropdown-menu";
 import { formatRWF, getStatusColor, type Farmer } from "../../../lib/admin-data";
-import { getFarmers } from "../../../lib/admin-data.server";
+import { getFarmers, updateFarmerStatus } from "../../../lib/admin-data.server";
 
 export const Route = createFileRoute("/admin/users/farmers")({
   loader: () => getFarmers(),
@@ -45,9 +46,48 @@ function QualityBar({ score }: { score: number }) {
 
 function FarmersPage() {
   const farmers = Route.useLoaderData();
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [busy, setBusy] = useState(false);
+
+  async function handleStatusUpdate(id: string, status: "active" | "pending" | "suspended" | "rejected") {
+    setBusy(true);
+    try {
+      const result = await updateFarmerStatus({ data: { id, status } });
+      if (result.success) {
+        toast.success(`Farmer status successfully updated to ${status}`);
+        router.invalidate();
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update status. Only super_admin is allowed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleBulkStatus(status: "active" | "suspended" | "rejected") {
+    setBusy(true);
+    let successCount = 0;
+    let failMsg = "";
+    for (const id of selected) {
+      try {
+        await updateFarmerStatus({ data: { id, status } });
+        successCount++;
+      } catch (err: any) {
+        failMsg = err.message || "Unauthorized";
+      }
+    }
+    if (successCount > 0) {
+      toast.success(`Successfully updated ${successCount} farmer(s) to ${status}`);
+      setSelected(new Set());
+      router.invalidate();
+    } else if (failMsg) {
+      toast.error(`Failed: ${failMsg}`);
+    }
+    setBusy(false);
+  }
 
   const filtered = farmers.filter((f) => {
     const matchSearch =
@@ -150,10 +190,22 @@ function FarmersPage() {
         <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
           <span className="text-sm font-medium text-emerald-800">{selected.size} selected</span>
           <div className="flex gap-2 ml-2">
-            <Button size="sm" variant="outline" className="border-emerald-300 text-emerald-700 h-7 text-xs gap-1.5">
+            <Button
+              onClick={() => handleBulkStatus("active")}
+              disabled={busy}
+              size="sm"
+              variant="outline"
+              className="border-emerald-300 text-emerald-700 h-7 text-xs gap-1.5 cursor-pointer"
+            >
               <UserCheck className="w-3.5 h-3.5" /> Approve All
             </Button>
-            <Button size="sm" variant="outline" className="border-red-300 text-red-700 h-7 text-xs gap-1.5">
+            <Button
+              onClick={() => handleBulkStatus("suspended")}
+              disabled={busy}
+              size="sm"
+              variant="outline"
+              className="border-red-300 text-red-700 h-7 text-xs gap-1.5 cursor-pointer"
+            >
               <UserX className="w-3.5 h-3.5" /> Suspend All
             </Button>
           </div>
@@ -259,21 +311,37 @@ function FarmersPage() {
                           <Eye className="w-3.5 h-3.5" /> View Profile
                         </DropdownMenuItem>
                         {farmer.status === "pending" && (
-                          <DropdownMenuItem className="gap-2 cursor-pointer text-sm text-emerald-700">
+                          <DropdownMenuItem
+                            onClick={() => handleStatusUpdate(farmer.id, "active")}
+                            disabled={busy}
+                            className="gap-2 cursor-pointer text-sm text-emerald-700 font-medium"
+                          >
                             <CheckCircle className="w-3.5 h-3.5" /> Approve
                           </DropdownMenuItem>
                         )}
                         {farmer.status === "active" && (
-                          <DropdownMenuItem className="gap-2 cursor-pointer text-sm text-amber-700">
+                          <DropdownMenuItem
+                            onClick={() => handleStatusUpdate(farmer.id, "suspended")}
+                            disabled={busy}
+                            className="gap-2 cursor-pointer text-sm text-amber-700 font-medium"
+                          >
                             <Pause className="w-3.5 h-3.5" /> Suspend
                           </DropdownMenuItem>
                         )}
                         {farmer.status === "suspended" && (
-                          <DropdownMenuItem className="gap-2 cursor-pointer text-sm text-emerald-700">
+                          <DropdownMenuItem
+                            onClick={() => handleStatusUpdate(farmer.id, "active")}
+                            disabled={busy}
+                            className="gap-2 cursor-pointer text-sm text-emerald-700 font-medium"
+                          >
                             <RefreshCw className="w-3.5 h-3.5" /> Reactivate
                           </DropdownMenuItem>
                         )}
-                        <DropdownMenuItem className="gap-2 cursor-pointer text-sm text-red-600">
+                        <DropdownMenuItem
+                          onClick={() => handleStatusUpdate(farmer.id, "rejected")}
+                          disabled={busy}
+                          className="gap-2 cursor-pointer text-sm text-red-600 font-medium"
+                        >
                           <XCircle className="w-3.5 h-3.5" /> Reject
                         </DropdownMenuItem>
                       </DropdownMenuContent>

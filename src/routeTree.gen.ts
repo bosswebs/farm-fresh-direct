@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TrainingRouteImport } from './routes/training'
 import { Route as TrackingRouteImport } from './routes/tracking'
+import { Route as RegisterFarmerRouteImport } from './routes/register-farmer'
 import { Route as MapRouteImport } from './routes/map'
 import { Route as ImpactRouteImport } from './routes/impact'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -49,6 +50,11 @@ const TrainingRoute = TrainingRouteImport.update({
 const TrackingRoute = TrackingRouteImport.update({
   id: '/tracking',
   path: '/tracking',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterFarmerRoute = RegisterFarmerRouteImport.update({
+  id: '/register-farmer',
+  path: '/register-farmer',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MapRoute = MapRouteImport.update({
@@ -208,6 +214,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/impact': typeof ImpactRoute
   '/map': typeof MapRoute
+  '/register-farmer': typeof RegisterFarmerRoute
   '/tracking': typeof TrackingRoute
   '/training': typeof TrainingRoute
   '/admin/communication': typeof AdminCommunicationRoute
@@ -240,6 +247,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/impact': typeof ImpactRoute
   '/map': typeof MapRoute
+  '/register-farmer': typeof RegisterFarmerRoute
   '/tracking': typeof TrackingRoute
   '/training': typeof TrainingRoute
   '/admin/communication': typeof AdminCommunicationRoute
@@ -274,6 +282,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/impact': typeof ImpactRoute
   '/map': typeof MapRoute
+  '/register-farmer': typeof RegisterFarmerRoute
   '/tracking': typeof TrackingRoute
   '/training': typeof TrainingRoute
   '/admin/communication': typeof AdminCommunicationRoute
@@ -309,6 +318,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/impact'
     | '/map'
+    | '/register-farmer'
     | '/tracking'
     | '/training'
     | '/admin/communication'
@@ -341,6 +351,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/impact'
     | '/map'
+    | '/register-farmer'
     | '/tracking'
     | '/training'
     | '/admin/communication'
@@ -374,6 +385,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/impact'
     | '/map'
+    | '/register-farmer'
     | '/tracking'
     | '/training'
     | '/admin/communication'
@@ -408,6 +420,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   ImpactRoute: typeof ImpactRoute
   MapRoute: typeof MapRoute
+  RegisterFarmerRoute: typeof RegisterFarmerRoute
   TrackingRoute: typeof TrackingRoute
   TrainingRoute: typeof TrainingRoute
   ProductIdRoute: typeof ProductIdRoute
@@ -427,6 +440,13 @@ declare module '@tanstack/react-router' {
       path: '/tracking'
       fullPath: '/tracking'
       preLoaderRoute: typeof TrackingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register-farmer': {
+      id: '/register-farmer'
+      path: '/register-farmer'
+      fullPath: '/register-farmer'
+      preLoaderRoute: typeof RegisterFarmerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/map': {
@@ -692,6 +712,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   ImpactRoute: ImpactRoute,
   MapRoute: MapRoute,
+  RegisterFarmerRoute: RegisterFarmerRoute,
   TrackingRoute: TrackingRoute,
   TrainingRoute: TrainingRoute,
   ProductIdRoute: ProductIdRoute,

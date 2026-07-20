@@ -1189,3 +1189,148 @@ export const getLoggedInFarmer = createServerFn({ method: "GET" }).handler(async
   };
 });
 
+export const registerFarmer = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      name: z.string().min(2).max(100),
+      email: z.string().trim().email().max(254),
+      phone: z.string().min(8).max(20),
+      district: z.string().min(2).max(50),
+      sector: z.string().min(2).max(50),
+      farmName: z.string().min(2).max(100),
+      farmSize: z.string().min(1).max(50),
+      password: z.string().min(10).max(128),
+      products: z.array(z.string()),
+    }),
+  )
+  .handler(async ({ data }) => {
+    const pool = getDatabasePool();
+    const checkUser = await pool.query(
+      "SELECT id FROM application_users WHERE email = $1",
+      [data.email.toLowerCase()]
+    );
+    if (checkUser.rowCount && checkUser.rowCount > 0) {
+      throw new Error("Email address is already registered.");
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      const passRes = await client.query<{ hash: string }>(
+        "SELECT crypt($1, gen_salt('bf', 12)) AS hash",
+        [data.password]
+      );
+      const passHash = passRes.rows[0].hash;
+
+      const userInsert = await client.query<{ id: string }>(
+        `INSERT INTO application_users (email, password_hash, display_name, role, status)
+         VALUES ($1, $2, $3, 'farmer', 'suspended') RETURNING id`,
+        [data.email.toLowerCase(), passHash, data.name]
+      );
+      const userId = userInsert.rows[0].id;
+
+      await client.query(
+        `INSERT INTO farmers (id, name, phone, email, district, sector, farm_name, farm_size, products, status, kyc_status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending', 'pending')`,
+        [
+          userId,
+          data.name,
+          data.phone,
+          data.email.toLowerCase(),
+          data.district,
+          data.sector,
+          data.farmName,
+          data.farmSize,
+          data.products,
+        ]
+      );
+
+      await client.query(
+        `INSERT INTO activity_feed (type, message, icon)
+         VALUES ($1, $2, $3)`,
+        [
+          "users",
+          `New farmer registration request from ${data.name} (${data.farmName})`,
+          "user-plus",
+        ]
+      );
+
+      await client.query("COMMIT");
+      return { success: true };
+    } catch (err: any) {
+      await client.query("ROLLBACK");
+      throw new Error(err.message || "Failed to register farmer account.");
+    } finally {
+      client.release();
+    }
+  });
+
+export const updateFarmerStatus = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      id: z.string(),
+      status: z.enum(["active", "pending", "suspended", "rejected"]),
+    }),
+  )
+  .handler(async ({ data }) => {
+    const { requireRole } = await import("./auth.server");
+    const admin = await requireRole(["super_admin"]);
+
+    const pool = getDatabasePool();
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      const farmerRes = await client.query<{ name: string; email: string }>(
+        "SELECT name, email FROM farmers WHERE id = $1 LIMIT 1",
+        [data.id]
+      );
+      if (farmerRes.rowCount === 0) {
+        throw new Error("Farmer not found");
+      }
+      const farmer = farmerRes.rows[0];
+
+      let kycStatus = "pending";
+      if (data.status === "active") kycStatus = "verified";
+      else if (data.status === "rejected") kycStatus = "failed";
+
+      await client.query(
+        `UPDATE farmers 
+         SET status = $1, kyc_status = $2, updated_at = now() 
+         WHERE id = $3`,
+        [data.status, kycStatus, data.id]
+      );
+
+      let userStatus = "suspended";
+      if (data.status === "active") userStatus = "active";
+      else if (data.status === "suspended") userStatus = "suspended";
+      else if (data.status === "rejected") userStatus = "disabled";
+
+      await client.query(
+        `UPDATE application_users 
+         SET status = $1, updated_at = now() 
+         WHERE email = $2`,
+        [userStatus, farmer.email.toLowerCase()]
+      );
+
+      await client.query(
+        `INSERT INTO activity_feed (type, message, icon)
+         VALUES ($1, $2, $3)`,
+        [
+          "users",
+          `${admin.displayName} updated status of farmer ${farmer.name} to ${data.status}`,
+          "user-check",
+        ]
+      );
+
+      await client.query("COMMIT");
+      return { success: true };
+    } catch (err: any) {
+      await client.query("ROLLBACK");
+      throw new Error(err.message || "Failed to update farmer status.");
+    } finally {
+      client.release();
+    }
+  });
+

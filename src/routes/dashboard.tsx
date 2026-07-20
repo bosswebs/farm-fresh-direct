@@ -1137,7 +1137,10 @@ function AuthGate({ onAuthed }: { onAuthed: () => void }) {
               {busy ? "Signing in…" : "Sign In"}
             </button>
           </form>
-          <div className="mt-6 border-t border-border pt-4 text-center">
+          <div className="mt-6 border-t border-border pt-4 text-center flex flex-col gap-2">
+            <Link to="/register-farmer" className="text-xs font-semibold text-emerald-600 hover:text-emerald-500 transition-colors">
+              New Farmer? Apply for registration
+            </Link>
             <Link to="/" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
               ← Back to Deacomart Home
             </Link>
