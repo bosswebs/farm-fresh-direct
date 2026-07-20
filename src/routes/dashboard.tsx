@@ -724,35 +724,6 @@ function ContentConfigTab() {
     }));
   }
 
-  function updateTeamMember(id: string, field: string, value: string) {
-    setContent((prev) => ({
-      ...prev,
-      team: prev.team.map((m) => (m.id === id ? { ...m, [field]: value } : m)),
-    }));
-  }
-
-  function addTeamMember() {
-    setContent((prev) => ({
-      ...prev,
-      team: [
-        ...prev.team,
-        {
-          id: "t-" + Math.random().toString(36).slice(2, 10),
-          role: "Role / Position",
-          name: "Full Name",
-          expertise: "Expertise details",
-        },
-      ],
-    }));
-  }
-
-  function removeTeamMember(id: string) {
-    setContent((prev) => ({
-      ...prev,
-      team: prev.team.filter((m) => m.id !== id),
-    }));
-  }
-
   function updatePartner(index: number, value: string) {
     setContent((prev) => {
       const copy = [...prev.partners];
@@ -855,68 +826,12 @@ function ContentConfigTab() {
         </div>
       </div>
 
-      {/* Team Section */}
-      <div className="pt-8 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-base font-bold text-foreground">Agribusiness Team Profiles</h3>
-            <p className="text-xs text-muted-foreground">Manage Deacomart team members, roles, and expertise descriptions.</p>
-          </div>
-          <button
-            onClick={addTeamMember}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary text-primary text-xs font-semibold hover:bg-primary hover:text-primary-foreground transition-all cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5" /> Add Team Member
-          </button>
-        </div>
-        <div className="overflow-x-auto border border-border rounded-xl">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-secondary/40 text-muted-foreground font-semibold border-b border-border">
-                <th className="p-3">Full Name</th>
-                <th className="p-3">Role / Designation</th>
-                <th className="p-3">Expertise / Background</th>
-                <th className="p-3 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {content.team.map((m) => (
-                <tr key={m.id} className="hover:bg-secondary/10">
-                  <td className="p-2">
-                    <input
-                      value={m.name}
-                      onChange={(e) => updateTeamMember(m.id, "name", e.target.value)}
-                      className="input py-1 text-xs max-w-[150px]"
-                    />
-                  </td>
-                  <td className="p-2">
-                    <input
-                      value={m.role}
-                      onChange={(e) => updateTeamMember(m.id, "role", e.target.value)}
-                      className="input py-1 text-xs max-w-[150px]"
-                    />
-                  </td>
-                  <td className="p-2">
-                    <input
-                      value={m.expertise}
-                      onChange={(e) => updateTeamMember(m.id, "expertise", e.target.value)}
-                      className="input py-1 text-xs w-full"
-                    />
-                  </td>
-                  <td className="p-2 text-right">
-                    <button
-                      onClick={() => removeTeamMember(m.id)}
-                      className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
-                      title="Remove Member"
-                    >
-                      <Trash className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {/* Team Section Notice */}
+      <div className="pt-8 space-y-2 border-t border-border mt-8">
+        <h3 className="text-base font-bold text-foreground">Agribusiness Team Profiles</h3>
+        <p className="text-xs text-muted-foreground bg-secondary/20 p-4 rounded-xl border border-border">
+          Team profiles have been migrated to the database backend for production stability and are now managed securely via the <Link to="/admin/content" className="text-primary hover:underline font-semibold">Admin Content Management Page</Link>.
+        </p>
       </div>
 
       {/* Partners Section */}

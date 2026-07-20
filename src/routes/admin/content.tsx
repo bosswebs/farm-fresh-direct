@@ -1,25 +1,162 @@
 import { useState, useEffect } from "react";
-import { createFileRoute } from "@tanstack/react-router";
-import { Save, RotateCcw, Plus, Trash2, Eye, Upload } from "lucide-react";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { Save, RotateCcw, Plus, Trash2, Eye, Upload, X } from "lucide-react";
 import {
   getDraft, saveDraft, publishDraft, discardDraft, resetContent,
   hasDraftChanges, SEED_CONTENT, type SiteContent
 } from "@/lib/content-store";
 import { toast } from "sonner";
+import {
+  getTeamMembers,
+  createTeamMember,
+  updateTeamMember,
+  deleteTeamMember,
+} from "@/lib/admin-data.server";
+import { uploadProductImage } from "@/lib/products-store";
+import type { TeamMember } from "@/lib/admin-data";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+
+const TEAM_IMAGE_BY_ID: Record<string, string> = {
+  "t-1": "/images/staff/DUKUZUMUREMYI Eric.jpeg",
+  "t-3": "/images/staff/Accountant - TURIMASO Innocent.jpeg",
+  "t-4": "/images/staff/HABIMANA Jpseph.jpeg",
+};
 
 export const Route = createFileRoute("/admin/content")({
+  loader: async () => {
+    try {
+      return {
+        teamMembers: await getTeamMembers(),
+      };
+    } catch (e) {
+      console.error("Failed to load team members:", e);
+      return { teamMembers: [] };
+    }
+  },
   component: ContentManagementPage,
 });
 
 function ContentManagementPage() {
+  const { teamMembers: initialTeam } = Route.useLoaderData();
+  const router = useRouter();
+
   const [c, setC] = useState<SiteContent>(() => getDraft());
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [dirty, setDirty] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
 
+  // Database team members state
+  const [teamList, setTeamList] = useState<TeamMember[]>(initialTeam);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
+
+  // Form fields state
+  const [formName, setFormName] = useState("");
+  const [formRole, setFormRole] = useState("");
+  const [formExpertise, setFormExpertise] = useState("");
+  const [formImageUrl, setFormImageUrl] = useState("");
+  const [formDisplayOrder, setFormDisplayOrder] = useState(0);
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+
   useEffect(() => {
     setHasDraft(hasDraftChanges());
   }, [savedAt]);
+
+  useEffect(() => {
+    setTeamList(initialTeam);
+  }, [initialTeam]);
+
+  function openAddDialog() {
+    setEditingMember(null);
+    setFormName("");
+    setFormRole("");
+    setFormExpertise("");
+    setFormImageUrl("");
+    setFormDisplayOrder(teamList.length + 1);
+    setDialogOpen(true);
+  }
+
+  function openEditDialog(member: TeamMember) {
+    setEditingMember(member);
+    setFormName(member.name);
+    setFormRole(member.role);
+    setFormExpertise(member.expertise);
+    setFormImageUrl(member.imageUrl || "");
+    setFormDisplayOrder(member.displayOrder);
+    setDialogOpen(true);
+  }
+
+  async function handleSaveTeamMember(e: React.FormEvent) {
+    e.preventDefault();
+    if (!formName.trim() || !formRole.trim() || !formExpertise.trim()) {
+      toast.error("Please fill in all required fields.");
+      return;
+    }
+    setSaving(true);
+    try {
+      if (editingMember) {
+        const updated = await updateTeamMember({
+          data: {
+            id: editingMember.id,
+            name: formName,
+            role: formRole,
+            expertise: formExpertise,
+            imageUrl: formImageUrl || null,
+            displayOrder: formDisplayOrder,
+          },
+        });
+        setTeamList((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
+        toast.success(`Updated ${formName}`);
+      } else {
+        const created = await createTeamMember({
+          data: {
+            name: formName,
+            role: formRole,
+            expertise: formExpertise,
+            imageUrl: formImageUrl || null,
+            displayOrder: formDisplayOrder,
+          },
+        });
+        setTeamList((prev) => [...prev, created].sort((a, b) => a.displayOrder - b.displayOrder));
+        toast.success(`Created team profile for ${formName}`);
+      }
+      setDialogOpen(false);
+      await router.invalidate();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save team member");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDeleteTeamMember(id: string, name: string) {
+    if (!confirm(`Are you sure you want to remove ${name} from the team?`)) return;
+    try {
+      await deleteTeamMember({ data: { id } });
+      setTeamList((prev) => prev.filter((m) => m.id !== id));
+      toast.success(`Removed ${name} from the team`);
+      await router.invalidate();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete team member");
+    }
+  }
+
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const url = await uploadProductImage(file);
+      setFormImageUrl(url);
+      toast.success("Image uploaded successfully!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to upload image");
+    } finally {
+      setUploading(false);
+    }
+  }
 
   function update<K extends keyof SiteContent>(key: K, value: SiteContent[K]) {
     setC((prev) => ({ ...prev, [key]: value }));
@@ -136,23 +273,87 @@ function ContentManagementPage() {
           </div>
         </Section>
 
-        {/* Team */}
-        <Section title="Team Members">
-          <div className="md:col-span-2">
-            <RepeatList
-              items={c.team}
-              onChange={(items) => update("team", items)}
-              emptyItem={{ id: "t-" + Math.random().toString(36).slice(2, 10), role: "", name: "", expertise: "" }}
-              render={(item, setItem) => (
-                <>
-                  <Field label="Role"><input className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500" value={item.role} onChange={(e) => setItem({ ...item, role: e.target.value })} /></Field>
-                  <Field label="Name"><input className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500" value={item.name} onChange={(e) => setItem({ ...item, name: e.target.value })} /></Field>
-                  <Field label="Expertise" full><input className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500" value={item.expertise} onChange={(e) => setItem({ ...item, expertise: e.target.value })} /></Field>
-                </>
-              )}
-            />
+        {/* Team (Database Managed) */}
+        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm md:col-span-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 border-b border-gray-50 pb-4">
+            <div>
+              <h2 className="font-display text-base font-bold text-gray-900">Our Team Profiles (Live Database)</h2>
+              <p className="text-xs text-gray-400">Directly perform CRUD on team profiles visible on the homepage.</p>
+            </div>
+            <button
+              type="button"
+              onClick={openAddDialog}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" /> Add Member
+            </button>
           </div>
-        </Section>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {teamList.map((m) => {
+              const staticImage = TEAM_IMAGE_BY_ID[m.id];
+              const imageSrc = m.imageUrl || staticImage;
+              return (
+                <div
+                  key={m.id}
+                  className="group relative overflow-hidden rounded-xl border border-gray-100 bg-gray-50 hover:border-emerald-500/30 transition-all flex flex-col justify-between"
+                >
+                  <div>
+                    {/* Image / Avatar */}
+                    <div className="aspect-video w-full overflow-hidden bg-gray-200 relative">
+                      {imageSrc ? (
+                        <img
+                          src={imageSrc}
+                          alt={m.name}
+                          className="h-full w-full object-cover object-top"
+                        />
+                      ) : (
+                        <div className="grid h-full w-full place-items-center bg-[image:var(--gradient-leaf)] text-3xl font-bold text-primary-foreground">
+                          {m.name.charAt(0)}
+                        </div>
+                      )}
+                      <div className="absolute top-2 left-2 bg-black/60 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                        Order #{m.displayOrder}
+                      </div>
+                    </div>
+
+                    <div className="p-4">
+                      <div className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wider">
+                        {m.role}
+                      </div>
+                      <h3 className="font-bold text-gray-900 text-sm mt-1">{m.name}</h3>
+                      <p className="text-xs text-gray-500 mt-1">{m.expertise}</p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 pt-0 flex gap-2 border-t border-gray-100/50 mt-3">
+                    <button
+                      type="button"
+                      onClick={() => openEditDialog(m)}
+                      className="flex-1 inline-flex justify-center items-center gap-1.5 py-1 px-3 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteTeamMember(m.id, m.name)}
+                      className="inline-flex justify-center items-center p-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors cursor-pointer"
+                      title="Delete member"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+
+            {teamList.length === 0 && (
+              <div className="col-span-full py-12 text-center text-gray-400 text-sm">
+                No team profiles found in database. Click Add Member to create one!
+              </div>
+            )}
+          </div>
+        </section>
 
         {/* Contact */}
         <Section title="Contact Information & Banking Coordinates">
@@ -166,6 +367,125 @@ function ContentManagementPage() {
           <Field label="TIN"><input className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500" value={c.contact.tin} onChange={(e) => update("contact", { ...c.contact, tin: e.target.value })} /></Field>
         </Section>
       </div>
+
+      {/* Dialog for Add/Edit Team Member */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-md bg-white border border-gray-100 shadow-lg rounded-2xl p-6">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-gray-955">
+              {editingMember ? `Edit ${editingMember.name}` : "Add Team Member Profile"}
+            </DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleSaveTeamMember} className="space-y-4 mt-4 text-left">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Full Name</label>
+              <input
+                required
+                type="text"
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                placeholder="e.g. Dukuzumuremyi Eric"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Role / Designation</label>
+              <input
+                required
+                type="text"
+                value={formRole}
+                onChange={(e) => setFormRole(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                placeholder="e.g. CEO"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Expertise / Background</label>
+              <input
+                required
+                type="text"
+                value={formExpertise}
+                onChange={(e) => setFormExpertise(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                placeholder="e.g. Agribusiness Expert"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Display Order</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formDisplayOrder}
+                  onChange={(e) => setFormDisplayOrder(parseInt(e.target.value) || 0)}
+                  className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Upload Photo</label>
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    disabled={uploading}
+                  />
+                  <div className="flex h-10 w-full items-center justify-center rounded-md border border-dashed border-gray-300 bg-gray-50 text-xs font-semibold text-gray-500 hover:bg-gray-100 transition-colors">
+                    {uploading ? "Uploading..." : "Choose File"}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Photo URL (Optional)</label>
+              <input
+                type="text"
+                value={formImageUrl}
+                onChange={(e) => setFormImageUrl(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                placeholder="https://example.com/avatar.jpg"
+              />
+              {formImageUrl && (
+                <div className="mt-2 relative aspect-video rounded-lg overflow-hidden border border-gray-100 bg-gray-50">
+                  <img src={formImageUrl} alt="Preview" className="w-full h-full object-cover object-top" />
+                  <button
+                    type="button"
+                    onClick={() => setFormImageUrl("")}
+                    className="absolute top-1 right-1 bg-black/60 hover:bg-black/80 text-white rounded-full p-1"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-gray-100 mt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setDialogOpen(false)}
+                className="text-xs h-9 cursor-pointer text-gray-600 hover:bg-gray-100"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={saving || uploading}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-9 cursor-pointer"
+              >
+                {saving ? "Saving..." : "Save Profile"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

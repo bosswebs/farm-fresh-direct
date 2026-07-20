@@ -100,8 +100,8 @@ export interface StaffMember {
   status: "active" | "on_leave" | "inactive";
   joinDate: string;
   assignedTasks: number;
-  authUserId?: string | null;
-  loginRole?: string | null;
+  authUserId: string | null;
+  loginRole: string | null;
 }
 
 // ─── Training Course ──────────────────────────────────────────────
@@ -162,6 +162,16 @@ export interface Partner {
   since: string;
   totalOrders: number;
   totalValue: number;
+}
+
+// ─── Team Member ──────────────────────────────────────────────────
+export interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  expertise: string;
+  imageUrl?: string | null;
+  displayOrder: number;
 }
 
 // ─── Rwanda Geographic Provinces (structural, not data) ───────────

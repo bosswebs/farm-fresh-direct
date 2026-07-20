@@ -33,19 +33,12 @@ import {
   type ContentMode,
   type ServiceItem,
   type SiteContent,
-  type TeamItem,
 } from "@/lib/content-store";
-
 const FEATURED_PRODUCT_IMAGE = "/images/AVOCADO AIL.jpeg";
 const PRODUCT_SHOWCASE_IMAGE = "/images/SLIDER6.jpeg";
 const TEA_PRODUCT_IMAGE = "/images/Tea1.jpeg";
 const HERBAL_PRODUCT_IMAGE = "/images/3green-tea.jpeg";
 const JUICE_PRODUCT_IMAGE = "/images/JAMA FRUITS JUICE.jpeg";
-const TEAM_IMAGE_BY_ID: Record<string, string> = {
-  "t-1": "/images/staff/DUKUZUMUREMYI Eric.jpeg",
-  "t-3": "/images/staff/Accountant - TURIMASO Innocent.jpeg",
-  "t-4": "/images/staff/HABIMANA Jpseph.jpeg",
-};
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   GraduationCap,
@@ -109,7 +102,6 @@ function Index() {
       <Products />
       <RwandaGallery />
       <About contact={content.contact} />
-      <Team team={content.team} />
       <Outcomes />
       <TermsCTA onOpen={() => setTermsOpen(true)} />
       <Contact contact={content.contact} onOpenTerms={() => setTermsOpen(true)} />
@@ -523,57 +515,6 @@ function About({ contact }: { contact: ContactInfo }) {
   );
 }
 
-function Team({ team }: { team: TeamItem[] }) {
-  return (
-    <section id="team" className="py-20 md:py-28">
-      <div className="mx-auto max-w-7xl px-6">
-        <div className="max-w-2xl">
-          <p className="text-sm font-semibold text-leaf uppercase tracking-wider">Our Team</p>
-          <h2 className="mt-2 text-4xl md:text-5xl font-bold text-foreground">
-            Multidisciplinary expertise.
-          </h2>
-          <p className="mt-4 text-muted-foreground">
-            Agribusiness, food science, IT, finance, and business development — under one roof.
-          </p>
-        </div>
-        <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {team.map((m) => {
-            const imageSrc = TEAM_IMAGE_BY_ID[m.id];
-            return (
-              <div
-                key={m.id || m.role}
-                className="overflow-hidden rounded-2xl bg-card border border-border hover:border-leaf transition-colors"
-              >
-                <div className="aspect-square overflow-hidden bg-muted">
-                  {imageSrc ? (
-                    <img
-                      src={imageSrc}
-                      alt={`${m.name}, ${m.role}`}
-                      className="h-full w-full object-cover object-top"
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  ) : (
-                    <div className="grid h-full w-full place-items-center bg-[image:var(--gradient-leaf)] text-5xl font-bold text-primary-foreground">
-                      {m.name.charAt(0)}
-                    </div>
-                  )}
-                </div>
-                <div className="p-5">
-                  <div className="text-xs font-semibold text-leaf uppercase tracking-wider">
-                    {m.role}
-                  </div>
-                  <div className="mt-1 font-bold text-foreground">{m.name}</div>
-                  <div className="mt-1 text-sm text-muted-foreground">{m.expertise}</div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </section>
-  );
-}
 
 function Outcomes() {
   const items = [

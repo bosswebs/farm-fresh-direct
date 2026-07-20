@@ -998,3 +998,114 @@ export const getReportData = createServerFn({ method: "GET" }).handler(async () 
     impactMetrics,
   };
 });
+
+// ─── Team Members CRUD ──────────────────────────────────────────────
+const teamMemberPayloadSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  role: z.string().trim().min(2).max(120),
+  expertise: z.string().trim().min(2).max(120),
+  imageUrl: z.string().trim().nullable().optional(),
+  displayOrder: z.number().int().default(0),
+});
+
+export const getTeamMembers = createServerFn({ method: "GET" }).handler(async () => {
+  const pool = getDatabasePool();
+  const result = await pool.query<{
+    id: string;
+    name: string;
+    role: string;
+    expertise: string;
+    image_url: string | null;
+    display_order: number;
+  }>(
+    `SELECT id, name, role, expertise, image_url, display_order
+     FROM team_members
+     ORDER BY display_order ASC, created_at DESC`
+  );
+  return result.rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    role: row.role,
+    expertise: row.expertise,
+    imageUrl: row.image_url,
+    displayOrder: row.display_order,
+  }));
+});
+
+export const createTeamMember = createServerFn({ method: "POST" })
+  .validator(teamMemberPayloadSchema)
+  .handler(async ({ data }) => {
+    await requireAdmin();
+    const pool = getDatabasePool();
+    const id = "t-" + Math.random().toString(36).slice(2, 10);
+    const result = await pool.query(
+      `INSERT INTO team_members (id, name, role, expertise, image_url, display_order)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, name, role, expertise, image_url AS "imageUrl", display_order AS "displayOrder"`,
+      [id, data.name, data.role, data.expertise, data.imageUrl || null, data.displayOrder]
+    );
+
+    await pool.query(
+      "INSERT INTO activity_feed(type, message, icon) VALUES ($1, $2, $3)",
+      ["content", `Added team member ${data.name}`, "user-plus"]
+    );
+
+    return result.rows[0];
+  });
+
+export const updateTeamMember = createServerFn({ method: "POST" })
+  .validator(
+    teamMemberPayloadSchema.extend({
+      id: z.string().trim().min(1),
+    })
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin();
+    const pool = getDatabasePool();
+    const result = await pool.query(
+      `UPDATE team_members
+       SET name = $2, role = $3, expertise = $4, image_url = $5, display_order = $6, updated_at = now()
+       WHERE id = $1
+       RETURNING id, name, role, expertise, image_url AS "imageUrl", display_order AS "displayOrder"`,
+      [data.id, data.name, data.role, data.expertise, data.imageUrl || null, data.displayOrder]
+    );
+    if (result.rowCount === 0) {
+      throw new Error("Team member not found");
+    }
+
+    await pool.query(
+      "INSERT INTO activity_feed(type, message, icon) VALUES ($1, $2, $3)",
+      ["content", `Updated team member ${data.name}`, "edit"]
+    );
+
+    return result.rows[0];
+  });
+
+export const deleteTeamMember = createServerFn({ method: "POST" })
+  .validator(z.object({ id: z.string().trim().min(1) }))
+  .handler(async ({ data }) => {
+    await requireAdmin();
+    const pool = getDatabasePool();
+
+    const nameRes = await pool.query<{ name: string }>(
+      "SELECT name FROM team_members WHERE id = $1",
+      [data.id]
+    );
+    const name = nameRes.rows[0]?.name || data.id;
+
+    const result = await pool.query(
+      "DELETE FROM team_members WHERE id = $1 RETURNING id",
+      [data.id]
+    );
+    if (result.rowCount === 0) {
+      throw new Error("Team member not found");
+    }
+
+    await pool.query(
+      "INSERT INTO activity_feed(type, message, icon) VALUES ($1, $2, $3)",
+      ["content", `Deleted team member ${name}`, "user-minus"]
+    );
+
+    return { id: data.id };
+  });
+

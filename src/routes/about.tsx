@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
+import { getTeamMembers } from "@/lib/admin-data.server";
+import type { TeamMember } from "@/lib/admin-data";
 import {
   BookOpen,
   Users,
@@ -18,6 +20,14 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/about")({
+  loader: async () => {
+    try {
+      return await getTeamMembers();
+    } catch (e) {
+      console.error("Failed to load team members from DB:", e);
+      return [];
+    }
+  },
   head: () => ({
     meta: [
       { title: "About Us — DEACOMART Ltd" },
@@ -38,6 +48,7 @@ export const Route = createFileRoute("/about")({
 });
 
 function AboutPage() {
+  const teamMembers = Route.useLoaderData();
   const acronymItems = [
     { letter: "D", word: "Development", desc: "Strengthening the agricultural value chain" },
     { letter: "E", word: "Empowerment", desc: "Helping farmers and entrepreneurs scale up" },
@@ -258,6 +269,9 @@ function AboutPage() {
         </div>
       </section>
 
+      {/* Team */}
+      <Team team={teamMembers} />
+
       {/* Who Should Partner */}
       <section className="py-20 md:py-28 bg-[image:var(--gradient-soft)]">
         <div className="mx-auto max-w-6xl px-6">
@@ -284,5 +298,63 @@ function AboutPage() {
 
       <SiteFooter />
     </div>
+  );
+}
+
+const TEAM_IMAGE_BY_ID: Record<string, string> = {
+  "t-1": "/images/staff/DUKUZUMUREMYI Eric.jpeg",
+  "t-3": "/images/staff/Accountant - TURIMASO Innocent.jpeg",
+  "t-4": "/images/staff/HABIMANA Jpseph.jpeg",
+};
+
+function Team({ team }: { team: TeamMember[] }) {
+  return (
+    <section id="team" className="py-20 md:py-28">
+      <div className="mx-auto max-w-7xl px-6">
+        <div className="max-w-2xl text-left">
+          <p className="text-sm font-semibold text-leaf uppercase tracking-wider">Our Team</p>
+          <h2 className="mt-2 text-4xl md:text-5xl font-bold text-foreground">
+            Multidisciplinary expertise.
+          </h2>
+          <p className="mt-4 text-muted-foreground text-sm">
+            Agribusiness, food science, IT, finance, and business development — under one roof.
+          </p>
+        </div>
+        <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {team.map((m) => {
+            const imageSrc = m.imageUrl || TEAM_IMAGE_BY_ID[m.id];
+            return (
+              <div
+                key={m.id || m.role}
+                className="overflow-hidden rounded-2xl bg-card border border-border hover:border-leaf transition-colors text-left"
+              >
+                <div className="aspect-square overflow-hidden bg-muted">
+                  {imageSrc ? (
+                    <img
+                      src={imageSrc}
+                      alt={`${m.name}, ${m.role}`}
+                      className="h-full w-full object-cover object-top"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  ) : (
+                    <div className="grid h-full w-full place-items-center bg-[image:var(--gradient-leaf)] text-5xl font-bold text-primary-foreground">
+                      {m.name.charAt(0)}
+                    </div>
+                  )}
+                </div>
+                <div className="p-5">
+                  <div className="text-xs font-semibold text-leaf uppercase tracking-wider">
+                    {m.role}
+                  </div>
+                  <div className="mt-1 font-bold text-foreground">{m.name}</div>
+                  <div className="mt-1 text-sm text-muted-foreground">{m.expertise}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
   );
 }

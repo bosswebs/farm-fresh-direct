@@ -245,8 +245,8 @@ function StaffPage() {
     setFormError(null);
     try {
       const saved = editingMember
-        ? await updateStaffMember({ data: { id: editingMember.id, ...form } })
-        : await createStaffMember({ data: form });
+        ? await updateStaffMember({ data: { id: editingMember.id, ...form } as any })
+        : await createStaffMember({ data: form as any });
 
       if (editingMember) {
         applyStaffUpdate(saved);
