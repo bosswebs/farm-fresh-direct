@@ -1006,6 +1006,10 @@ const teamMemberPayloadSchema = z.object({
   expertise: z.string().trim().min(2).max(120),
   imageUrl: z.string().trim().nullable().optional(),
   displayOrder: z.number().int().default(0),
+  biography: z.string().trim().nullable().optional(),
+  phone: z.string().trim().nullable().optional(),
+  email: z.string().trim().nullable().optional(),
+  socialMedia: z.string().trim().nullable().optional(),
 });
 
 export const getTeamMembers = createServerFn({ method: "GET" }).handler(async () => {
@@ -1017,8 +1021,12 @@ export const getTeamMembers = createServerFn({ method: "GET" }).handler(async ()
     expertise: string;
     image_url: string | null;
     display_order: number;
+    biography: string | null;
+    phone: string | null;
+    email: string | null;
+    social_media: string | null;
   }>(
-    `SELECT id, name, role, expertise, image_url, display_order
+    `SELECT id, name, role, expertise, image_url, display_order, biography, phone, email, social_media
      FROM team_members
      ORDER BY display_order ASC, created_at DESC`
   );
@@ -1029,6 +1037,10 @@ export const getTeamMembers = createServerFn({ method: "GET" }).handler(async ()
     expertise: row.expertise,
     imageUrl: row.image_url,
     displayOrder: row.display_order,
+    biography: row.biography,
+    phone: row.phone,
+    email: row.email,
+    socialMedia: row.social_media,
   }));
 });
 
@@ -1039,10 +1051,21 @@ export const createTeamMember = createServerFn({ method: "POST" })
     const pool = getDatabasePool();
     const id = "t-" + Math.random().toString(36).slice(2, 10);
     const result = await pool.query(
-      `INSERT INTO team_members (id, name, role, expertise, image_url, display_order)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id, name, role, expertise, image_url AS "imageUrl", display_order AS "displayOrder"`,
-      [id, data.name, data.role, data.expertise, data.imageUrl || null, data.displayOrder]
+      `INSERT INTO team_members (id, name, role, expertise, image_url, display_order, biography, phone, email, social_media)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       RETURNING id, name, role, expertise, image_url AS "imageUrl", display_order AS "displayOrder", biography, phone, email, social_media AS "socialMedia"`,
+      [
+        id,
+        data.name,
+        data.role,
+        data.expertise,
+        data.imageUrl || null,
+        data.displayOrder,
+        data.biography || null,
+        data.phone || null,
+        data.email || null,
+        data.socialMedia || null,
+      ]
     );
 
     await pool.query(
@@ -1064,10 +1087,22 @@ export const updateTeamMember = createServerFn({ method: "POST" })
     const pool = getDatabasePool();
     const result = await pool.query(
       `UPDATE team_members
-       SET name = $2, role = $3, expertise = $4, image_url = $5, display_order = $6, updated_at = now()
+       SET name = $2, role = $3, expertise = $4, image_url = $5, display_order = $6,
+           biography = $7, phone = $8, email = $9, social_media = $10, updated_at = now()
        WHERE id = $1
-       RETURNING id, name, role, expertise, image_url AS "imageUrl", display_order AS "displayOrder"`,
-      [data.id, data.name, data.role, data.expertise, data.imageUrl || null, data.displayOrder]
+       RETURNING id, name, role, expertise, image_url AS "imageUrl", display_order AS "displayOrder", biography, phone, email, social_media AS "socialMedia"`,
+      [
+        data.id,
+        data.name,
+        data.role,
+        data.expertise,
+        data.imageUrl || null,
+        data.displayOrder,
+        data.biography || null,
+        data.phone || null,
+        data.email || null,
+        data.socialMedia || null,
+      ]
     );
     if (result.rowCount === 0) {
       throw new Error("Team member not found");
@@ -1108,4 +1143,49 @@ export const deleteTeamMember = createServerFn({ method: "POST" })
 
     return { id: data.id };
   });
+
+export const getLoggedInFarmer = createServerFn({ method: "GET" }).handler(async () => {
+  const { getCurrentUser } = await import("./auth.server");
+  const user = await getCurrentUser();
+  if (!user) return null;
+
+  const pool = getDatabasePool();
+  const result = await pool.query<{
+    id: string;
+    name: string;
+    phone: string;
+    email: string;
+    district: string;
+    sector: string | null;
+    farm_name: string;
+    farm_size: string | null;
+  }>(
+    `SELECT id, name, phone, email, district, sector, farm_name, farm_size 
+     FROM farmers 
+     WHERE email = $1 LIMIT 1`,
+    [user.email.toLowerCase()]
+  );
+  if (result.rows.length === 0) {
+    return {
+      id: user.id,
+      name: user.displayName,
+      phone: "",
+      email: user.email,
+      district: "Kigali",
+      sector: null,
+      farmName: user.displayName + " Farm",
+      farmSize: null,
+    };
+  }
+  return {
+    id: result.rows[0].id,
+    name: result.rows[0].name,
+    phone: result.rows[0].phone,
+    email: result.rows[0].email,
+    district: result.rows[0].district,
+    sector: result.rows[0].sector,
+    farmName: result.rows[0].farm_name,
+    farmSize: result.rows[0].farm_size,
+  };
+});
 

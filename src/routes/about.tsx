@@ -17,6 +17,9 @@ import {
   HelpCircle,
   Sparkles,
   Quote,
+  Phone,
+  Mail,
+  Linkedin,
 } from "lucide-react";
 
 export const Route = createFileRoute("/about")({
@@ -343,12 +346,52 @@ function Team({ team }: { team: TeamMember[] }) {
                     </div>
                   )}
                 </div>
-                <div className="p-5">
-                  <div className="text-xs font-semibold text-leaf uppercase tracking-wider">
-                    {m.role}
+                <div className="p-5 flex flex-col h-[calc(100%-100%)] justify-between">
+                  <div>
+                    <div className="text-xs font-semibold text-leaf uppercase tracking-wider">
+                      {m.role}
+                    </div>
+                    <div className="mt-1 font-bold text-foreground">{m.name}</div>
+                    <div className="mt-1 text-sm text-muted-foreground">{m.expertise}</div>
+                    {m.biography && (
+                      <p className="mt-3 text-xs text-muted-foreground/80 leading-relaxed border-t border-border/50 pt-2.5 italic">
+                        "{m.biography}"
+                      </p>
+                    )}
                   </div>
-                  <div className="mt-1 font-bold text-foreground">{m.name}</div>
-                  <div className="mt-1 text-sm text-muted-foreground">{m.expertise}</div>
+                  {(m.phone || m.email || m.socialMedia) && (
+                    <div className="mt-4 flex items-center gap-2 text-muted-foreground border-t border-border/50 pt-3">
+                      {m.email && (
+                        <a
+                          href={`mailto:${m.email}`}
+                          className="p-1.5 rounded-lg hover:bg-leaf/10 hover:text-leaf transition-colors"
+                          title={`Email ${m.name}`}
+                        >
+                          <Mail className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                      {m.phone && (
+                        <a
+                          href={`tel:${m.phone}`}
+                          className="p-1.5 rounded-lg hover:bg-leaf/10 hover:text-leaf transition-colors"
+                          title={`Call ${m.name}`}
+                        >
+                          <Phone className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                      {m.socialMedia && (
+                        <a
+                          href={m.socialMedia.startsWith('http') ? m.socialMedia : `https://${m.socialMedia}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1.5 rounded-lg hover:bg-leaf/10 hover:text-leaf transition-colors"
+                          title="LinkedIn / Professional profile"
+                        >
+                          <Linkedin className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             );

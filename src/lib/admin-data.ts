@@ -172,6 +172,10 @@ export interface TeamMember {
   expertise: string;
   imageUrl?: string | null;
   displayOrder: number;
+  biography?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  socialMedia?: string | null;
 }
 
 // ─── Rwanda Geographic Provinces (structural, not data) ───────────

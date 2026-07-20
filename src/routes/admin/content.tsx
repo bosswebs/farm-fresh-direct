@@ -57,6 +57,10 @@ function ContentManagementPage() {
   const [formExpertise, setFormExpertise] = useState("");
   const [formImageUrl, setFormImageUrl] = useState("");
   const [formDisplayOrder, setFormDisplayOrder] = useState(0);
+  const [formBiography, setFormBiography] = useState("");
+  const [formPhone, setFormPhone] = useState("");
+  const [formEmail, setFormEmail] = useState("");
+  const [formSocialMedia, setFormSocialMedia] = useState("");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -75,6 +79,10 @@ function ContentManagementPage() {
     setFormExpertise("");
     setFormImageUrl("");
     setFormDisplayOrder(teamList.length + 1);
+    setFormBiography("");
+    setFormPhone("");
+    setFormEmail("");
+    setFormSocialMedia("");
     setDialogOpen(true);
   }
 
@@ -85,6 +93,10 @@ function ContentManagementPage() {
     setFormExpertise(member.expertise);
     setFormImageUrl(member.imageUrl || "");
     setFormDisplayOrder(member.displayOrder);
+    setFormBiography(member.biography || "");
+    setFormPhone(member.phone || "");
+    setFormEmail(member.email || "");
+    setFormSocialMedia(member.socialMedia || "");
     setDialogOpen(true);
   }
 
@@ -105,6 +117,10 @@ function ContentManagementPage() {
             expertise: formExpertise,
             imageUrl: formImageUrl || null,
             displayOrder: formDisplayOrder,
+            biography: formBiography || null,
+            phone: formPhone || null,
+            email: formEmail || null,
+            socialMedia: formSocialMedia || null,
           },
         });
         setTeamList((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
@@ -117,6 +133,10 @@ function ContentManagementPage() {
             expertise: formExpertise,
             imageUrl: formImageUrl || null,
             displayOrder: formDisplayOrder,
+            biography: formBiography || null,
+            phone: formPhone || null,
+            email: formEmail || null,
+            socialMedia: formSocialMedia || null,
           },
         });
         setTeamList((prev) => [...prev, created].sort((a, b) => a.displayOrder - b.displayOrder));
@@ -322,7 +342,19 @@ function ContentManagementPage() {
                         {m.role}
                       </div>
                       <h3 className="font-bold text-gray-900 text-sm mt-1">{m.name}</h3>
-                      <p className="text-xs text-gray-500 mt-1">{m.expertise}</p>
+                      <p className="text-xs text-gray-500 mt-1 font-medium">{m.expertise}</p>
+                      {m.biography && (
+                        <p className="text-[11px] text-gray-400 mt-2 line-clamp-2 italic">
+                          "{m.biography}"
+                        </p>
+                      )}
+                      {(m.phone || m.email || m.socialMedia) && (
+                        <div className="mt-2.5 pt-2 border-t border-gray-100 flex flex-wrap gap-2 text-[10px] text-gray-400">
+                          {m.email && <span className="truncate max-w-[120px]" title={m.email}>📧 {m.email}</span>}
+                          {m.phone && <span>📞 {m.phone}</span>}
+                          {m.socialMedia && <span className="truncate max-w-[100px]" title={m.socialMedia}>🔗 Social</span>}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -412,6 +444,51 @@ function ContentManagementPage() {
                 className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                 placeholder="e.g. Agribusiness Expert"
               />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Biography / About</label>
+              <textarea
+                value={formBiography}
+                onChange={(e) => setFormBiography(e.target.value)}
+                className="flex min-h-[80px] w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                placeholder="Write a brief biography about this team member..."
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Phone</label>
+                <input
+                  type="text"
+                  value={formPhone}
+                  onChange={(e) => setFormPhone(e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                  placeholder="+250 780 ..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={formEmail}
+                  onChange={(e) => setFormEmail(e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                  placeholder="name@deacomart.com"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Social Media Link</label>
+                <input
+                  type="text"
+                  value={formSocialMedia}
+                  onChange={(e) => setFormSocialMedia(e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                  placeholder="https://linkedin.com/in/..."
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

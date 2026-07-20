@@ -1,8 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus, Pencil, Trash2, Upload, X, Package, DollarSign, TrendingUp,
-  ImageIcon, MapPin, Tractor, GraduationCap, Briefcase, Handshake, CheckCircle2, Clock, FileText, Trash
+  ImageIcon, MapPin, Tractor, GraduationCap, Briefcase, Handshake, CheckCircle2, Clock, FileText, Trash,
+  Lock, Eye, EyeOff
 } from "lucide-react";
 import { SiteNav } from "@/components/site-nav";
 import {
@@ -13,8 +14,20 @@ import {
 } from "@/lib/products-store";
 import { getSiteContent, updateSiteContent, type SiteContent } from "@/lib/content-store";
 import { toast } from "sonner";
+import { getAdminSession, loginAdmin, logoutAdmin } from "@/lib/auth.functions";
+import { getLoggedInFarmer } from "@/lib/admin-data.server";
 
 export const Route = createFileRoute("/dashboard")({
+  loader: async () => {
+    try {
+      const user = await getAdminSession();
+      const farmerProfile = user ? await getLoggedInFarmer() : null;
+      return { user, farmerProfile };
+    } catch (e) {
+      console.error("Dashboard session load failed:", e);
+      return { user: null, farmerProfile: null };
+    }
+  },
   head: () => ({
     meta: [
       { title: "Deacomart Ltd — Admin & Agribusiness Dashboard" },
@@ -69,6 +82,9 @@ function emptyDraft(farmer: FarmerProfile): ProductInput {
 type TabType = "products" | "academy" | "consultancy" | "partnerships" | "content";
 
 function Dashboard() {
+  const { user, farmerProfile } = Route.useLoaderData();
+  const router = useRouter();
+
   const [activeTab, setActiveTab] = useState<TabType>("products");
   const [products, setProducts] = useState<Product[]>([]);
   const [registrations, setRegistrations] = useState<TrainingRegistration[]>([]);
@@ -106,12 +122,58 @@ function Dashboard() {
     };
   }, []);
 
+  const filteredProducts = useMemo(() => {
+    if (user?.role === "farmer" && farmerProfile) {
+      const fName = farmerProfile.name.toLowerCase();
+      const farmName = farmerProfile.farmName.toLowerCase();
+      return products.filter(
+        (p) =>
+          p.farmerName.toLowerCase() === fName ||
+          p.farmName.toLowerCase() === farmName
+      );
+    }
+    return products;
+  }, [products, user, farmerProfile]);
+
   const stats = useMemo(() => {
-    const totalListings = products.length;
-    const totalValue = products.reduce((s, p) => s + p.price * p.quantity, 0);
-    const lowStock = products.filter((p) => p.quantity > 0 && p.quantity < 20).length;
+    const totalListings = filteredProducts.length;
+    const totalValue = filteredProducts.reduce((s, p) => s + p.price * p.quantity, 0);
+    const lowStock = filteredProducts.filter((p) => p.quantity > 0 && p.quantity < 20).length;
     return { totalListings, totalValue, lowStock };
-  }, [products]);
+  }, [filteredProducts]);
+
+  if (!user) {
+    return <AuthGate onAuthed={() => router.invalidate()} />;
+  }
+
+  const allowedRoles = ["super_admin", "manager", "marketplace_manager", "farmer"];
+  if (!allowedRoles.includes(user.role)) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6">
+        <div className="max-w-md text-center border border-border p-8 rounded-3xl bg-card shadow-[var(--shadow-soft)]">
+          <X className="w-12 h-12 text-destructive mx-auto mb-4" />
+          <h1 className="text-xl font-bold font-display">Access Denied</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            You do not have permission to access the Farmer Portal. Please contact system administrators.
+          </p>
+          <button
+            onClick={async () => {
+              await logoutAdmin();
+              router.invalidate();
+            }}
+            className="mt-6 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 cursor-pointer"
+          >
+            Sign out
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const portalTitle = user.role === "farmer" ? "Farmer Portal." : "Management Portal.";
+  const portalDesc = user.role === "farmer"
+    ? `Welcome back, ${user.displayName}. Manage your farm products, price inventory, and check stock levels.`
+    : "Admin panel for reviewing product inventories, academy trainees, consultancies, and partnership applications.";
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -122,17 +184,28 @@ function Dashboard() {
         <div className="mx-auto max-w-7xl px-6 py-12 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
           <div>
             <p className="text-sm font-semibold text-leaf uppercase tracking-wider">Deacomart Agribusiness Management</p>
-            <h1 className="mt-2 text-4xl md:text-5xl font-bold text-foreground">Management Portal.</h1>
-            <p className="mt-2 text-muted-foreground">Admin panel for reviewing product inventories, academy trainees, consultancies, and partnership applications.</p>
+            <h1 className="mt-2 text-4xl md:text-5xl font-bold text-foreground">{portalTitle}</h1>
+            <p className="mt-2 text-muted-foreground">{portalDesc}</p>
           </div>
-          {activeTab === "products" && (
+          <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
+            {activeTab === "products" && (
+              <button
+                onClick={() => setCreating(true)}
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity shadow-[var(--shadow-soft)] cursor-pointer text-sm"
+              >
+                <Plus className="w-5 h-5" /> Add product
+              </button>
+            )}
             <button
-              onClick={() => setCreating(true)}
-              className="self-start md:self-auto inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity shadow-[var(--shadow-soft)] cursor-pointer"
+              onClick={async () => {
+                await logoutAdmin();
+                router.invalidate();
+              }}
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-border bg-card text-foreground font-semibold hover:bg-muted transition-colors shadow-xs cursor-pointer text-sm"
             >
-              <Plus className="w-5 h-5" /> Add product
+              Sign out
             </button>
-          )}
+          </div>
         </div>
       </section>
 
@@ -148,10 +221,14 @@ function Dashboard() {
       <section className="mx-auto max-w-7xl px-6 pb-24">
         <div className="flex border-b border-border mb-6 overflow-x-auto gap-2">
           <TabButton active={activeTab === "products"} onClick={() => setActiveTab("products")} label="Products Inventory" icon={Package} />
-          <TabButton active={activeTab === "academy"} onClick={() => setActiveTab("academy")} label="Academy Trainees" icon={GraduationCap} />
-          <TabButton active={activeTab === "consultancy"} onClick={() => setActiveTab("consultancy")} label="Consultancies" icon={Briefcase} />
-          <TabButton active={activeTab === "partnerships"} onClick={() => setActiveTab("partnerships")} label="Partnerships" icon={Handshake} />
-          <TabButton active={activeTab === "content"} onClick={() => setActiveTab("content")} label="Concept Note Config" icon={FileText} />
+          {user.role !== "farmer" && (
+            <>
+              <TabButton active={activeTab === "academy"} onClick={() => setActiveTab("academy")} label="Academy Trainees" icon={GraduationCap} />
+              <TabButton active={activeTab === "consultancy"} onClick={() => setActiveTab("consultancy")} label="Consultancies" icon={Briefcase} />
+              <TabButton active={activeTab === "partnerships"} onClick={() => setActiveTab("partnerships")} label="Partnerships" icon={Handshake} />
+              <TabButton active={activeTab === "content"} onClick={() => setActiveTab("content")} label="Concept Note Config" icon={FileText} />
+            </>
+          )}
         </div>
 
         <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-[var(--shadow-soft)]">
@@ -159,9 +236,9 @@ function Dashboard() {
             <div>
               <div className="px-6 py-4 border-b border-border flex items-center justify-between">
                 <h2 className="font-display font-bold text-lg">Your listings</h2>
-                <span className="text-sm text-muted-foreground">{products.length} total</span>
+                <span className="text-sm text-muted-foreground">{filteredProducts.length} total</span>
               </div>
-              {products.length === 0 ? (
+              {filteredProducts.length === 0 ? (
                 <div className="p-16 text-center">
                   <Tractor className="w-10 h-10 mx-auto text-muted-foreground" />
                   <p className="mt-4 font-semibold">No products yet.</p>
@@ -171,7 +248,7 @@ function Dashboard() {
                 </div>
               ) : (
                 <div className="divide-y divide-border">
-                  {products.map((p) => (
+                  {filteredProducts.map((p) => (
                     <Row
                       key={p.id}
                       product={p}
@@ -346,6 +423,8 @@ function Dashboard() {
         <ProductForm
           initial={editing ?? emptyDraft(farmer)}
           mode={editing ? "edit" : "create"}
+          isFarmer={user.role === "farmer"}
+          farmerProfile={farmerProfile}
           onCancel={() => { setCreating(false); setEditing(null); }}
           onSubmit={(data) => {
             if (editing) {
@@ -438,16 +517,30 @@ function Row({ product, onEdit, onDelete, onAdjust }: { product: Product; onEdit
 }
 
 function ProductForm({
-  initial, mode, onSubmit, onCancel,
+  initial, mode, onSubmit, onCancel, isFarmer, farmerProfile,
 }: {
   initial: ProductInput;
   mode: "create" | "edit";
   onSubmit: (data: ProductInput) => void;
   onCancel: () => void;
+  isFarmer?: boolean;
+  farmerProfile?: any;
 }) {
   const [form, setForm] = useState<ProductInput>(initial);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isFarmer && farmerProfile && mode === "create") {
+      const loc = farmerProfile.district + (farmerProfile.sector ? `, ${farmerProfile.sector}` : "");
+      setForm((prev) => ({
+        ...prev,
+        location: loc,
+        farmerName: farmerProfile.name,
+        farmName: farmerProfile.farmName,
+      }));
+    }
+  }, [isFarmer, farmerProfile, mode]);
 
   function set<K extends keyof ProductInput>(key: K, value: ProductInput[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -586,6 +679,7 @@ function ProductForm({
                 maxLength={80}
                 placeholder="District, Rwanda"
                 className="input"
+                disabled={isFarmer}
               />
             </Field>
             <Field label="Harvest date">
@@ -602,6 +696,7 @@ function ProductForm({
                 maxLength={80}
                 placeholder="e.g. Habimana Joseph"
                 className="input"
+                disabled={isFarmer}
               />
             </Field>
             <Field label="Farm / cooperative">
@@ -611,9 +706,16 @@ function ProductForm({
                 maxLength={80}
                 placeholder="e.g. Volcanoes Apiary"
                 className="input"
+                disabled={isFarmer}
               />
             </Field>
           </div>
+
+          {isFarmer && (
+            <p className="text-[11px] text-muted-foreground/80 italic">
+              * Location, farmer name, and farm name are preset based on your verified Farmer Profile.
+            </p>
+          )}
 
           {/* Certifications (New) */}
           <div className="pt-4 border-t border-border">
@@ -948,6 +1050,100 @@ function ContentConfigTab() {
           ✓ Configuration changes successfully saved to local system storage!
         </div>
       )}
+    </div>
+  );
+}
+
+function AuthGate({ onAuthed }: { onAuthed: () => void }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await loginAdmin({ data: { email, password } });
+      if (result.user) onAuthed();
+      else
+        setError(
+          "Invalid email or password. Please check your credentials or contact support.",
+        );
+    } catch (err: any) {
+      setError(err?.message || "Sign-in is temporarily unavailable. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+      <div className="mx-auto max-w-md px-6 py-20 w-full">
+        <div className="rounded-3xl border border-border bg-card p-8 shadow-[var(--shadow-glow)]">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-xs font-semibold mb-4 text-emerald-800">
+            <Lock className="w-3.5 h-3.5" /> Farmer Portal
+          </div>
+          <h1 className="text-2xl font-bold mb-2 font-display">Sign in to Portal</h1>
+          <p className="text-sm text-muted-foreground mb-6">
+            Authenticate to manage your marketplace products and agribusiness profile.
+          </p>
+          <form onSubmit={submit} className="space-y-4">
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Email Address</label>
+              <input
+                type="email"
+                autoComplete="username"
+                autoFocus
+                required
+                maxLength={254}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500 font-medium"
+                placeholder="farmer@deacomart.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Password</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  maxLength={128}
+                  required
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500 font-medium"
+                  placeholder="••••••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((value) => !value)}
+                  className="absolute inset-y-0 right-0 grid w-10 place-items-center text-muted-foreground hover:text-foreground cursor-pointer"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            {error && <p className="text-sm text-destructive font-medium">{error}</p>}
+            <button
+              type="submit"
+              disabled={busy || !email || !password}
+              className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity cursor-pointer shadow-[var(--shadow-soft)]"
+            >
+              {busy ? "Signing in…" : "Sign In"}
+            </button>
+          </form>
+          <div className="mt-6 border-t border-border pt-4 text-center">
+            <Link to="/" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+              ← Back to Deacomart Home
+            </Link>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
