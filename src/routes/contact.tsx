@@ -36,15 +36,16 @@ function ContactPage() {
       <SiteNav />
 
       {/* Hero */}
-      <section className="border-b border-border bg-[image:var(--gradient-soft)]">
-        <div className="mx-auto max-w-7xl px-6 py-16 text-center">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-leaf/10 border border-leaf/20 text-xs font-semibold text-primary">
-            <Mail className="w-4 h-4 text-leaf" /> {t("contact.badge")}
+      <section className="border-b border-border bg-[url('/images/login_bg.png')] bg-cover bg-center relative py-20 text-white">
+        <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-sm z-0" />
+        <div className="mx-auto max-w-7xl px-6 text-center relative z-10">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-xs font-semibold text-emerald-400">
+            <Mail className="w-4 h-4 text-emerald-400" /> {t("contact.badge")}
           </div>
-          <h1 className="mt-6 text-4xl md:text-6xl font-extrabold max-w-3xl mx-auto leading-[1.05]">
+          <h1 className="mt-6 text-4xl md:text-6xl font-extrabold max-w-3xl mx-auto leading-[1.08] font-display">
             {t("contact.title")}
           </h1>
-          <p className="mt-4 text-muted-foreground max-w-xl mx-auto text-base">
+          <p className="mt-4 text-gray-300 max-w-xl mx-auto text-base">
             {t("contact.subtitle")}
           </p>
         </div>
