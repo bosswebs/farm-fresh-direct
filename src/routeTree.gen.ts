@@ -9,14 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TrustRouteImport } from './routes/trust'
 import { Route as TrainingRouteImport } from './routes/training'
 import { Route as TrackingRouteImport } from './routes/tracking'
 import { Route as RegisterFarmerRouteImport } from './routes/register-farmer'
-import { Route as MapRouteImport } from './routes/map'
 import { Route as ImpactRouteImport } from './routes/impact'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as ContactRouteImport } from './routes/contact'
 import { Route as ConsultancyRouteImport } from './routes/consultancy'
+import { Route as CareersRouteImport } from './routes/careers'
 import { Route as BrowseRouteImport } from './routes/browse'
+import { Route as AdvertiseRouteImport } from './routes/advertise'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
@@ -35,6 +38,7 @@ import { Route as AdminFnbRouteImport } from './routes/admin/fnb'
 import { Route as AdminContentRouteImport } from './routes/admin/content'
 import { Route as AdminConsultancyRouteImport } from './routes/admin/consultancy'
 import { Route as AdminCommunicationRouteImport } from './routes/admin/communication'
+import { Route as AdminCareersRouteImport } from './routes/admin/careers'
 import { Route as AdminUsersStaffRouteImport } from './routes/admin/users/staff'
 import { Route as AdminUsersFarmersRouteImport } from './routes/admin/users/farmers'
 import { Route as AdminUsersBuyersRouteImport } from './routes/admin/users/buyers'
@@ -42,6 +46,11 @@ import { Route as AdminMarketplaceProductsRouteImport } from './routes/admin/mar
 import { Route as AdminMarketplacePaymentsRouteImport } from './routes/admin/marketplace/payments'
 import { Route as AdminMarketplaceOrdersRouteImport } from './routes/admin/marketplace/orders'
 
+const TrustRoute = TrustRouteImport.update({
+  id: '/trust',
+  path: '/trust',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TrainingRoute = TrainingRouteImport.update({
   id: '/training',
   path: '/training',
@@ -57,11 +66,6 @@ const RegisterFarmerRoute = RegisterFarmerRouteImport.update({
   path: '/register-farmer',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MapRoute = MapRouteImport.update({
-  id: '/map',
-  path: '/map',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ImpactRoute = ImpactRouteImport.update({
   id: '/impact',
   path: '/impact',
@@ -72,14 +76,29 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ConsultancyRoute = ConsultancyRouteImport.update({
   id: '/consultancy',
   path: '/consultancy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CareersRoute = CareersRouteImport.update({
+  id: '/careers',
+  path: '/careers',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BrowseRoute = BrowseRouteImport.update({
   id: '/browse',
   path: '/browse',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdvertiseRoute = AdvertiseRouteImport.update({
+  id: '/advertise',
+  path: '/advertise',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -172,6 +191,11 @@ const AdminCommunicationRoute = AdminCommunicationRouteImport.update({
   path: '/communication',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCareersRoute = AdminCareersRouteImport.update({
+  id: '/careers',
+  path: '/careers',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminUsersStaffRoute = AdminUsersStaffRouteImport.update({
   id: '/users/staff',
   path: '/users/staff',
@@ -209,14 +233,18 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
+  '/advertise': typeof AdvertiseRoute
   '/browse': typeof BrowseRoute
+  '/careers': typeof CareersRoute
   '/consultancy': typeof ConsultancyRoute
+  '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
   '/impact': typeof ImpactRoute
-  '/map': typeof MapRoute
   '/register-farmer': typeof RegisterFarmerRoute
   '/tracking': typeof TrackingRoute
   '/training': typeof TrainingRoute
+  '/trust': typeof TrustRoute
+  '/admin/careers': typeof AdminCareersRoute
   '/admin/communication': typeof AdminCommunicationRoute
   '/admin/consultancy': typeof AdminConsultancyRoute
   '/admin/content': typeof AdminContentRoute
@@ -242,14 +270,18 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/advertise': typeof AdvertiseRoute
   '/browse': typeof BrowseRoute
+  '/careers': typeof CareersRoute
   '/consultancy': typeof ConsultancyRoute
+  '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
   '/impact': typeof ImpactRoute
-  '/map': typeof MapRoute
   '/register-farmer': typeof RegisterFarmerRoute
   '/tracking': typeof TrackingRoute
   '/training': typeof TrainingRoute
+  '/trust': typeof TrustRoute
+  '/admin/careers': typeof AdminCareersRoute
   '/admin/communication': typeof AdminCommunicationRoute
   '/admin/consultancy': typeof AdminConsultancyRoute
   '/admin/content': typeof AdminContentRoute
@@ -277,14 +309,18 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
+  '/advertise': typeof AdvertiseRoute
   '/browse': typeof BrowseRoute
+  '/careers': typeof CareersRoute
   '/consultancy': typeof ConsultancyRoute
+  '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
   '/impact': typeof ImpactRoute
-  '/map': typeof MapRoute
   '/register-farmer': typeof RegisterFarmerRoute
   '/tracking': typeof TrackingRoute
   '/training': typeof TrainingRoute
+  '/trust': typeof TrustRoute
+  '/admin/careers': typeof AdminCareersRoute
   '/admin/communication': typeof AdminCommunicationRoute
   '/admin/consultancy': typeof AdminConsultancyRoute
   '/admin/content': typeof AdminContentRoute
@@ -313,14 +349,18 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/advertise'
     | '/browse'
+    | '/careers'
     | '/consultancy'
+    | '/contact'
     | '/dashboard'
     | '/impact'
-    | '/map'
     | '/register-farmer'
     | '/tracking'
     | '/training'
+    | '/trust'
+    | '/admin/careers'
     | '/admin/communication'
     | '/admin/consultancy'
     | '/admin/content'
@@ -346,14 +386,18 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/advertise'
     | '/browse'
+    | '/careers'
     | '/consultancy'
+    | '/contact'
     | '/dashboard'
     | '/impact'
-    | '/map'
     | '/register-farmer'
     | '/tracking'
     | '/training'
+    | '/trust'
+    | '/admin/careers'
     | '/admin/communication'
     | '/admin/consultancy'
     | '/admin/content'
@@ -380,14 +424,18 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/advertise'
     | '/browse'
+    | '/careers'
     | '/consultancy'
+    | '/contact'
     | '/dashboard'
     | '/impact'
-    | '/map'
     | '/register-farmer'
     | '/tracking'
     | '/training'
+    | '/trust'
+    | '/admin/careers'
     | '/admin/communication'
     | '/admin/consultancy'
     | '/admin/content'
@@ -415,19 +463,29 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRouteWithChildren
+  AdvertiseRoute: typeof AdvertiseRoute
   BrowseRoute: typeof BrowseRoute
+  CareersRoute: typeof CareersRoute
   ConsultancyRoute: typeof ConsultancyRoute
+  ContactRoute: typeof ContactRoute
   DashboardRoute: typeof DashboardRoute
   ImpactRoute: typeof ImpactRoute
-  MapRoute: typeof MapRoute
   RegisterFarmerRoute: typeof RegisterFarmerRoute
   TrackingRoute: typeof TrackingRoute
   TrainingRoute: typeof TrainingRoute
+  TrustRoute: typeof TrustRoute
   ProductIdRoute: typeof ProductIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/trust': {
+      id: '/trust'
+      path: '/trust'
+      fullPath: '/trust'
+      preLoaderRoute: typeof TrustRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/training': {
       id: '/training'
       path: '/training'
@@ -449,13 +507,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterFarmerRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/map': {
-      id: '/map'
-      path: '/map'
-      fullPath: '/map'
-      preLoaderRoute: typeof MapRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/impact': {
       id: '/impact'
       path: '/impact'
@@ -470,6 +521,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/consultancy': {
       id: '/consultancy'
       path: '/consultancy'
@@ -477,11 +535,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConsultancyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/careers': {
+      id: '/careers'
+      path: '/careers'
+      fullPath: '/careers'
+      preLoaderRoute: typeof CareersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/browse': {
       id: '/browse'
       path: '/browse'
       fullPath: '/browse'
       preLoaderRoute: typeof BrowseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/advertise': {
+      id: '/advertise'
+      path: '/advertise'
+      fullPath: '/advertise'
+      preLoaderRoute: typeof AdvertiseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -610,6 +682,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCommunicationRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/careers': {
+      id: '/admin/careers'
+      path: '/careers'
+      fullPath: '/admin/careers'
+      preLoaderRoute: typeof AdminCareersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/users/staff': {
       id: '/admin/users/staff'
       path: '/users/staff'
@@ -656,6 +735,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminCareersRoute: typeof AdminCareersRoute
   AdminCommunicationRoute: typeof AdminCommunicationRoute
   AdminConsultancyRoute: typeof AdminConsultancyRoute
   AdminContentRoute: typeof AdminContentRoute
@@ -679,6 +759,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminCareersRoute: AdminCareersRoute,
   AdminCommunicationRoute: AdminCommunicationRoute,
   AdminConsultancyRoute: AdminConsultancyRoute,
   AdminContentRoute: AdminContentRoute,
@@ -707,14 +788,17 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AdminRoute: AdminRouteWithChildren,
+  AdvertiseRoute: AdvertiseRoute,
   BrowseRoute: BrowseRoute,
+  CareersRoute: CareersRoute,
   ConsultancyRoute: ConsultancyRoute,
+  ContactRoute: ContactRoute,
   DashboardRoute: DashboardRoute,
   ImpactRoute: ImpactRoute,
-  MapRoute: MapRoute,
   RegisterFarmerRoute: RegisterFarmerRoute,
   TrackingRoute: TrackingRoute,
   TrainingRoute: TrainingRoute,
+  TrustRoute: TrustRoute,
   ProductIdRoute: ProductIdRoute,
 }
 export const routeTree = rootRouteImport

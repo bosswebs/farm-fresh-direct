@@ -10,6 +10,7 @@ import {
   type Category,
   type Product,
 } from "@/lib/products-store";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/browse")({
   head: () => ({
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/browse")({
 });
 
 function BrowsePage() {
+  const { t } = useLanguage();
   const [products, setProducts] = useState<Product[]>([]);
   const [category, setCategory] = useState<Category | "All">("All");
   const [q, setQ] = useState("");
@@ -61,9 +63,9 @@ function BrowsePage() {
       {/* Header */}
       <section className="border-b border-border bg-[image:var(--gradient-soft)]">
         <div className="mx-auto max-w-7xl px-6 py-12">
-          <p className="text-sm font-semibold text-leaf uppercase tracking-wider">Deacomart Shop</p>
-          <h1 className="mt-2 text-4xl md:text-5xl font-bold text-foreground">Quality food & beverages, from Rwandan farms.</h1>
-          <p className="mt-3 text-muted-foreground max-w-xl">Filter by category and District. Place orders via WhatsApp or directly from any product page.</p>
+          <p className="text-sm font-semibold text-leaf uppercase tracking-wider">{t("shop.badge")}</p>
+          <h1 className="mt-2 text-4xl md:text-5xl font-bold text-foreground">{t("shop.title")}</h1>
+          <p className="mt-3 text-muted-foreground max-w-xl">{t("shop.subtitle")}</p>
 
           <div className="mt-8 bg-card rounded-2xl p-2 shadow-[var(--shadow-soft)] border border-border flex flex-col md:flex-row gap-2">
             <label className="flex items-center gap-2 flex-1 px-4 py-3">
@@ -71,7 +73,7 @@ function BrowsePage() {
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Search products, e.g. honey, hibiscus tea..."
+                placeholder={t("shop.search_placeholder")}
                 className="bg-transparent outline-none w-full text-sm"
               />
             </label>
@@ -83,7 +85,7 @@ function BrowsePage() {
                 onChange={(e) => setLoc(e.target.value)}
                 className="bg-transparent outline-none text-sm pr-2"
               >
-                <option value="">All Districts</option>
+                <option value="">{t("shop.all_districts")}</option>
                 {locations.map((l) => (
                   <option key={l} value={l}>{l}</option>
                 ))}
@@ -98,19 +100,19 @@ function BrowsePage() {
         {/* Sidebar filters */}
         <aside className="space-y-6">
           <div>
-            <h3 className="font-display font-bold text-sm uppercase tracking-wider text-muted-foreground mb-3">Categories</h3>
+            <h3 className="font-display font-bold text-sm uppercase tracking-wider text-muted-foreground mb-3">{t("shop.categories")}</h3>
             <div className="flex lg:flex-col gap-2 flex-wrap">
               {(["All", ...CATEGORIES] as const).map((c) => (
                 <button
                   key={c}
                   onClick={() => setCategory(c)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium text-left transition-colors ${
+                  className={`px-4 py-2 rounded-lg text-sm font-medium text-left transition-colors cursor-pointer ${
                     category === c
                       ? "bg-primary text-primary-foreground"
                       : "bg-card border border-border text-foreground hover:border-leaf"
                   }`}
                 >
-                  {c}
+                  {c === "All" ? t("shop.all_products") : c}
                 </button>
               ))}
             </div>

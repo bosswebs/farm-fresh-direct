@@ -5,6 +5,7 @@ import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { getProduct, subscribe, formatRWF, WHATSAPP_LINK, type Product } from "@/lib/products-store";
 import { addToCart } from "@/lib/cart-store";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/product/$id")({
   head: () => ({
@@ -38,6 +39,7 @@ export const Route = createFileRoute("/product/$id")({
 });
 
 function ProductPage() {
+  const { t } = useLanguage();
   const { id } = Route.useParams();
   const [product, setProduct] = useState<Product | undefined>(() => getProduct(id));
 
@@ -66,7 +68,7 @@ function ProductPage() {
       <SiteNav />
       <div className="mx-auto max-w-6xl px-6 py-10">
         <Link to="/browse" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft className="w-4 h-4" /> Back to browse
+          <ArrowLeft className="w-4 h-4" /> {t("product.back")}
         </Link>
 
         <div className="mt-6 grid md:grid-cols-2 gap-10">
@@ -96,47 +98,31 @@ function ProductPage() {
             <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
               {product.rating > 0 && (
                 <span className="inline-flex items-center gap-1 text-foreground font-semibold">
-                  <Star className="w-4 h-4 fill-sun text-sun" /> {product.rating.toFixed(1)}
+                  <Star className="w-4 h-4 fill-amber-400 text-amber-400" /> {product.rating}
                 </span>
               )}
-              <span className="inline-flex items-center gap-1.5">
-                <MapPin className="w-4 h-4" /> {product.location}
+              <span className="inline-flex items-center gap-1">
+                <MapPin className="w-4 h-4 text-leaf" /> {product.location}
               </span>
             </div>
 
-            <div className="mt-6 flex items-baseline gap-3">
-              <span className="font-display text-4xl md:text-5xl font-bold text-primary">{formatRWF(product.price)}</span>
-              <span className="text-muted-foreground">/ {product.unit}</span>
-              <span className={`ml-auto text-xs font-semibold px-3 py-1.5 rounded-full ${stockBadge.className}`}>
-                {stockBadge.label}
-              </span>
+            <div className="mt-6 text-3xl font-extrabold text-foreground">
+              {formatRWF(product.price)}{" "}
+              <span className="text-sm font-normal text-muted-foreground">/ {product.unit}</span>
             </div>
 
-            <p className="mt-6 text-foreground/80 leading-relaxed">{product.description}</p>
+            <p className="mt-4 text-muted-foreground leading-relaxed">{product.description}</p>
 
-            <dl className="mt-8 grid grid-cols-2 gap-4">
-              <Stat icon={Package} label="Available" value={`${product.quantity} ${product.unit}`} />
-              <Stat icon={Calendar} label="Harvested" value={new Date(product.harvestDate).toLocaleDateString()} />
-              <Stat icon={Tractor} label="Farm" value={product.farmName} />
-              <Stat icon={MapPin} label="Location" value={product.location} />
-            </dl>
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              <Stat icon={Tractor} label={t("product.producer")} value={product.farmerName} />
+              <Stat icon={MapPin} label={t("product.location")} value={product.location} />
+            </div>
 
-            <div className="mt-8 p-5 rounded-2xl bg-secondary border border-border flex items-center gap-4">
-              <div className="grid place-items-center w-12 h-12 rounded-full bg-[image:var(--gradient-leaf)] text-primary-foreground font-bold">
-                {product.farmerName.charAt(0)}
-              </div>
+            <div className="mt-6 p-4 rounded-xl bg-card border border-border flex items-center justify-between gap-4">
               <div className="flex-1">
                 <div className="text-xs text-muted-foreground">Sold by</div>
                 <div className="font-semibold text-foreground">{product.farmerName}</div>
               </div>
-              <a
-                href={`${WHATSAPP_LINK}?text=${encodeURIComponent(`Hello Deacomart, I'm interested in products from ${product.farmerName}.`)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg border border-border bg-card hover:border-leaf transition-colors"
-              >
-                <MessageCircle className="w-4 h-4" /> Message
-              </a>
             </div>
 
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
@@ -146,14 +132,14 @@ function ProductPage() {
                 rel="noopener noreferrer"
                 className={`flex-1 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity ${product.quantity === 0 ? "opacity-50 pointer-events-none" : ""}`}
               >
-                <MessageCircle className="w-5 h-5" /> Order on WhatsApp
+                <MessageCircle className="w-5 h-5" /> {t("product.order_whatsapp")}
               </a>
               <button
                 disabled={product.quantity === 0}
                 onClick={handleAddToCart}
                 className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-sun text-sun-foreground font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
-                <ShoppingBasket className="w-5 h-5" /> Add to cart
+                <ShoppingBasket className="w-5 h-5" /> {t("product.add_cart")}
               </button>
             </div>
             <p className="mt-3 text-xs text-muted-foreground">

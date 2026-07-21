@@ -59,8 +59,8 @@ const quickActions = [
   { label: "Add Product", icon: Package, path: "/admin/marketplace/products", color: "bg-teal-500 hover:bg-teal-600" },
   { label: "New Order", icon: ShoppingCart, path: "/admin/marketplace/orders", color: "bg-blue-500 hover:bg-blue-600" },
   { label: "New Training", icon: GraduationCap, path: "/admin/training", color: "bg-violet-500 hover:bg-violet-600" },
+  { label: "Careers & Hiring", icon: Briefcase, path: "/admin/careers", color: "bg-leaf hover:opacity-90" },
   { label: "View Reports", icon: TrendingUp, path: "/admin/reports", color: "bg-orange-500 hover:bg-orange-600" },
-  { label: "Manage Payments", icon: CreditCard, path: "/admin/marketplace/payments", color: "bg-pink-500 hover:bg-pink-600" },
 ];
 
 const pieColors = ["#10b981", "#0ea5e9", "#f59e0b", "#8b5cf6", "#ec4899", "#f97316", "#14b8a6"];

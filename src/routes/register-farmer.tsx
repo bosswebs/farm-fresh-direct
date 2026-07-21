@@ -2,12 +2,14 @@ import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Leaf, Lock, CheckCircle2, ChevronRight, Eye, EyeOff } from "lucide-react";
 import { registerFarmer } from "@/lib/admin-data.server";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/register-farmer")({
   component: RegisterFarmerPage,
 });
 
 function RegisterFarmerPage() {
+  const { t } = useLanguage();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -93,7 +95,7 @@ function RegisterFarmerPage() {
             to="/"
             className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
           >
-            Go back to Deacomart Home
+            {t("common.back")}
           </Link>
         </div>
       </div>
@@ -104,17 +106,17 @@ function RegisterFarmerPage() {
     <div className="min-h-screen bg-background text-foreground flex items-center justify-center py-20 px-6">
       <div className="max-w-lg w-full bg-card border border-border rounded-3xl p-8 shadow-[var(--shadow-glow)]">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-xs font-semibold mb-4 text-emerald-800">
-          <Leaf className="w-3.5 h-3.5" /> Farmer Registration
+          <Leaf className="w-3.5 h-3.5" /> {t("register.badge")}
         </div>
-        <h1 className="text-2xl font-bold mb-1 font-display">Agribusiness Portal Application</h1>
+        <h1 className="text-2xl font-bold mb-1 font-display">{t("register.title")}</h1>
         <p className="text-sm text-muted-foreground mb-6">
-          Submit your application to gain access to sell your fresh produce on Deacomart.
+          {t("register.subtitle")}
         </p>
 
         <form onSubmit={submit} className="space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Full Name</label>
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">{t("register.fullname")}</label>
               <input
                 type="text"
                 required
@@ -126,7 +128,7 @@ function RegisterFarmerPage() {
               />
             </div>
             <div>
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Phone Number</label>
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">{t("register.phone")}</label>
               <input
                 type="tel"
                 required
@@ -140,7 +142,7 @@ function RegisterFarmerPage() {
           </div>
 
           <div>
-            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Email Address</label>
+            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">{t("register.email")}</label>
             <input
               type="email"
               required
@@ -154,7 +156,7 @@ function RegisterFarmerPage() {
 
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">District</label>
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">{t("register.district")}</label>
               <input
                 type="text"
                 required
@@ -166,7 +168,7 @@ function RegisterFarmerPage() {
               />
             </div>
             <div>
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Sector</label>
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">{t("register.sector")}</label>
               <input
                 type="text"
                 required
@@ -181,7 +183,7 @@ function RegisterFarmerPage() {
 
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Farm / Cooperative Name</label>
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">{t("register.farm_name")}</label>
               <input
                 type="text"
                 required
@@ -193,7 +195,7 @@ function RegisterFarmerPage() {
               />
             </div>
             <div>
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Farm Size</label>
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">{t("register.farm_size")}</label>
               <input
                 type="text"
                 required
@@ -207,7 +209,7 @@ function RegisterFarmerPage() {
           </div>
 
           <div>
-            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Products Grown (Comma Separated)</label>
+            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">{t("register.products")}</label>
             <input
               type="text"
               required
@@ -219,7 +221,7 @@ function RegisterFarmerPage() {
           </div>
 
           <div>
-            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Portal Account Password</label>
+            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">{t("register.password")}</label>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -249,7 +251,7 @@ function RegisterFarmerPage() {
             disabled={busy}
             className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity cursor-pointer shadow-[var(--shadow-soft)]"
           >
-            {busy ? "Submitting application…" : "Submit Registration Application"}
+            {busy ? "Submitting application…" : t("register.submit")}
           </button>
         </form>
 

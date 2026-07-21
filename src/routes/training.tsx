@@ -4,6 +4,7 @@ import { Award, GraduationCap, Video, Download, CheckCircle, Search, ArrowRight,
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { registerForTraining, WHATSAPP_LINK } from "@/lib/products-store";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/training")({
   head: () => ({
@@ -174,13 +175,13 @@ function TrainingPage() {
       <section className="border-b border-border bg-[image:var(--gradient-soft)]">
         <div className="mx-auto max-w-7xl px-6 py-16 text-center">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-leaf/10 border border-leaf/20 text-xs font-semibold text-primary">
-            <GraduationCap className="w-4 h-4 text-leaf" /> Farmer Training Academy
+            <GraduationCap className="w-4 h-4 text-leaf" /> {t("training.badge")}
           </div>
           <h1 className="mt-6 text-4xl md:text-6xl font-extrabold max-w-3xl mx-auto leading-[1.05]">
-            Empowering Rwandan Agriculture through E-Learning.
+            {t("training.title")}
           </h1>
           <p className="mt-4 text-muted-foreground max-w-xl mx-auto text-base">
-            Professional capacity building across all districts of Rwanda. Sourcing knowledge directly to rural farmers to ensure higher yields and robust food safety compliance.
+            {t("training.subtitle")}
           </p>
         </div>
       </section>

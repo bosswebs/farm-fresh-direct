@@ -25,6 +25,7 @@ import {
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { WHATSAPP_LINK, WHATSAPP_NUMBER, CONTACT_EMAIL } from "@/lib/products-store";
+import { useLanguage } from "@/lib/i18n";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   getSiteContent,
@@ -173,6 +174,7 @@ function PreviewBanner() {
 }
 
 function Hero() {
+  const { t } = useLanguage();
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
@@ -213,7 +215,7 @@ function Hero() {
       >
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-xs font-medium backdrop-blur-sm">
           <Sprout className="w-3.5 h-3.5 text-sun" />
-          Be EcoWise
+          {t("hero.badge")}
         </div>
         <h1 className="mt-5 max-w-xl text-4xl md:text-6xl font-extrabold leading-none tracking-tight">
           Rwanda grown.
@@ -226,7 +228,7 @@ function Hero() {
             to="/browse"
             className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-sun text-sun-foreground font-semibold hover:opacity-90 transition-opacity"
           >
-            <Search className="w-5 h-5" /> Shop products
+            <Search className="w-5 h-5" /> {t("hero.shop_now")}
           </Link>
           <a
             href={WHATSAPP_LINK}
@@ -234,7 +236,7 @@ function Hero() {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-white/10 border border-white/25 text-primary-foreground font-semibold hover:bg-white/15 transition-colors backdrop-blur-sm"
           >
-            <MessageCircle className="w-5 h-5" /> Order on WhatsApp
+            <MessageCircle className="w-5 h-5" /> {t("nav.order_whatsapp")}
           </a>
         </div>
       </div>
@@ -284,19 +286,19 @@ function Partners({ partners }: { partners: string[] }) {
 }
 
 function Services({ services }: { services: ServiceItem[] }) {
+  const { t } = useLanguage();
   return (
     <section id="services" className="py-20 md:py-28 bg-[image:var(--gradient-soft)]">
       <div className="mx-auto max-w-7xl px-6">
         <div className="max-w-2xl">
           <p className="text-sm font-semibold text-leaf uppercase tracking-wider">
-            Core Activities
+            {t("nav.services")}
           </p>
           <h2 className="mt-2 text-4xl md:text-5xl font-bold text-foreground">
-            Four pillars. One eco-conscious mission.
+            {t("services.title")}
           </h2>
           <p className="mt-4 text-muted-foreground">
-            From the farm gate to the supermarket shelf, Deacomart strengthens every link in
-            Rwanda's agricultural value chain.
+            {t("services.subtitle")}
           </p>
         </div>
         <div className="mt-14 grid md:grid-cols-2 gap-6">

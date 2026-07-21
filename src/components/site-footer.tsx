@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   MapPin,
@@ -8,11 +9,16 @@ import {
   Truck,
   Briefcase,
   BarChart3,
-  Map,
+  BellRing,
 } from "lucide-react";
 import { WHATSAPP_LINK, WHATSAPP_NUMBER, CONTACT_EMAIL } from "@/lib/products-store";
+import { useLanguage } from "@/lib/i18n";
+import { SubscribeModal } from "@/components/subscribe-modal";
 
 export function SiteFooter() {
+  const { t } = useLanguage();
+  const [isSubscribeOpen, setIsSubscribeOpen] = useState(false);
+
   return (
     <footer className="border-t border-border bg-card">
       <div className="mx-auto max-w-7xl px-6 py-14 grid md:grid-cols-4 gap-10">
@@ -26,23 +32,30 @@ export function SiteFooter() {
             />
           </div>
           <p className="mt-2 text-sm text-muted-foreground leading-relaxed max-w-xs">
-            Be EcoWise — Empowering Rwandan farmers and supplying quality food and beverages across
-            all Districts.
+            {t("footer.tagline")}
           </p>
-          <a
-            href={WHATSAPP_LINK}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-5 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#25D366] text-white text-sm font-semibold hover:opacity-90 transition-opacity"
-          >
-            <MessageCircle className="w-4 h-4" /> Order on WhatsApp
-          </a>
+          <div className="mt-5 flex flex-col gap-2.5 max-w-xs">
+            <a
+              href={WHATSAPP_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#25D366] text-white text-xs font-semibold hover:opacity-90 transition-opacity"
+            >
+              <MessageCircle className="w-4 h-4" /> {t("nav.order_whatsapp")}
+            </a>
+            <button
+              onClick={() => setIsSubscribeOpen(true)}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-leaf/10 border border-leaf/30 text-leaf hover:bg-leaf hover:text-primary-foreground text-xs font-bold transition-all cursor-pointer shadow-xs"
+            >
+              <BellRing className="w-3.5 h-3.5" /> Subscribe to Agri Updates
+            </button>
+          </div>
         </div>
 
         {/* Platform Links */}
         <div className="text-sm">
           <div className="font-semibold text-foreground mb-4 uppercase tracking-wider text-xs text-muted-foreground">
-            Platform
+            {t("footer.platform")}
           </div>
           <ul className="space-y-3 text-muted-foreground">
             <li>
@@ -50,15 +63,7 @@ export function SiteFooter() {
                 to="/browse"
                 className="flex items-center gap-2 hover:text-foreground transition-colors"
               >
-                <Truck className="w-3.5 h-3.5 text-leaf shrink-0" /> Shop Products
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/map"
-                className="flex items-center gap-2 hover:text-foreground transition-colors"
-              >
-                <Map className="w-3.5 h-3.5 text-leaf shrink-0" /> Market Map
+                <Truck className="w-3.5 h-3.5 text-leaf shrink-0" /> {t("nav.shop")}
               </Link>
             </li>
             <li>
@@ -66,7 +71,7 @@ export function SiteFooter() {
                 to="/training"
                 className="flex items-center gap-2 hover:text-foreground transition-colors"
               >
-                <GraduationCap className="w-3.5 h-3.5 text-leaf shrink-0" /> Farmer Academy
+                <GraduationCap className="w-3.5 h-3.5 text-leaf shrink-0" /> {t("nav.academy")}
               </Link>
             </li>
             <li>
@@ -74,7 +79,7 @@ export function SiteFooter() {
                 to="/consultancy"
                 className="flex items-center gap-2 hover:text-foreground transition-colors"
               >
-                <Briefcase className="w-3.5 h-3.5 text-leaf shrink-0" /> Consultancy
+                <Briefcase className="w-3.5 h-3.5 text-leaf shrink-0" /> {t("nav.consultancy")}
               </Link>
             </li>
             <li>
@@ -82,7 +87,7 @@ export function SiteFooter() {
                 to="/tracking"
                 className="flex items-center gap-2 hover:text-foreground transition-colors"
               >
-                <Truck className="w-3.5 h-3.5 text-leaf shrink-0" /> Track Delivery
+                <Truck className="w-3.5 h-3.5 text-leaf shrink-0" /> {t("nav.track_order")}
               </Link>
             </li>
             <li>
@@ -90,7 +95,7 @@ export function SiteFooter() {
                 to="/impact"
                 className="flex items-center gap-2 hover:text-foreground transition-colors"
               >
-                <BarChart3 className="w-3.5 h-3.5 text-leaf shrink-0" /> Impact Dashboard
+                <BarChart3 className="w-3.5 h-3.5 text-leaf shrink-0" /> {t("nav.impact")}
               </Link>
             </li>
           </ul>
@@ -99,32 +104,37 @@ export function SiteFooter() {
         {/* Company Links */}
         <div className="text-sm">
           <div className="font-semibold text-foreground mb-4 uppercase tracking-wider text-xs text-muted-foreground">
-            Company
+            {t("footer.company")}
           </div>
           <ul className="space-y-3 text-muted-foreground">
             <li>
               <Link to="/about" className="hover:text-foreground transition-colors">
-                About Deacomart
+                {t("nav.about")}
               </Link>
             </li>
             <li>
-              <a href="/#services" className="hover:text-foreground transition-colors">
-                Our Services
-              </a>
+              <Link to="/trust" className="hover:text-foreground transition-colors">
+                {t("nav.trust")}
+              </Link>
             </li>
             <li>
-              <a href="/#team" className="hover:text-foreground transition-colors">
-                Our Team
-              </a>
+              <Link to="/careers" className="hover:text-foreground transition-colors">
+                {t("nav.careers")}
+              </Link>
             </li>
             <li>
-              <a href="/#contact" className="hover:text-foreground transition-colors">
-                Contact Us
-              </a>
+              <Link to="/advertise" className="hover:text-foreground transition-colors">
+                {t("nav.advertise")}
+              </Link>
+            </li>
+            <li>
+              <Link to="/contact" className="hover:text-foreground transition-colors">
+                {t("nav.contact")}
+              </Link>
             </li>
             <li>
               <Link to="/dashboard" className="hover:text-foreground transition-colors">
-                Inventory Dashboard
+                {t("nav.farmer_portal")}
               </Link>
             </li>
           </ul>
@@ -133,7 +143,7 @@ export function SiteFooter() {
         {/* Contact */}
         <div className="text-sm">
           <div className="font-semibold text-foreground mb-4 uppercase tracking-wider text-xs text-muted-foreground">
-            Contact
+            {t("footer.contact")}
           </div>
           <ul className="space-y-3 text-muted-foreground">
             <li className="flex items-start gap-2">
@@ -141,7 +151,7 @@ export function SiteFooter() {
               <span>
                 Kigali, Rwanda
                 <br />
-                (All Districts served)
+                {t("footer.rights")}
               </span>
             </li>
             <li className="flex items-center gap-2">
@@ -194,6 +204,8 @@ export function SiteFooter() {
           </span>
         </div>
       </div>
+
+      <SubscribeModal isOpen={isSubscribeOpen} onClose={() => setIsSubscribeOpen(false)} />
     </footer>
   );
 }

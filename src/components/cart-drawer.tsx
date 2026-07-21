@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ShoppingBag, Trash2, X, Plus, Minus, Send, MessageCircle } from "lucide-react";
 import { listCart, removeFromCart, updateCartQuantity, clearCart, subscribeCart, type CartItem } from "@/lib/cart-store";
 import { formatRWF, WHATSAPP_LINK } from "@/lib/products-store";
+import { useLanguage } from "@/lib/i18n";
 
 type CartDrawerProps = {
   isOpen: boolean;
@@ -11,6 +12,7 @@ type CartDrawerProps = {
 type OrderType = "Retail" | "Wholesale" | "Institutional" | "Subscription";
 
 export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
+  const { t } = useLanguage();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orderType, setOrderType] = useState<OrderType>("Retail");
   const [address, setAddress] = useState("");
@@ -65,9 +67,9 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
         <div className="px-6 py-5 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2">
             <ShoppingBag className="w-5 h-5 text-leaf" />
-            <h2 className="font-display font-bold text-lg text-foreground">Shopping Cart</h2>
+            <h2 className="font-display font-bold text-lg text-foreground">{t("common.cart")}</h2>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground">
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -77,7 +79,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
           {cart.length === 0 ? (
             <div className="text-center py-20">
               <ShoppingBag className="w-12 h-12 mx-auto text-muted-foreground opacity-50" />
-              <p className="mt-4 font-semibold text-foreground">Your cart is empty</p>
+              <p className="mt-4 font-semibold text-foreground">{t("common.empty_cart")}</p>
               <p className="text-sm text-muted-foreground mt-1">Browse our shop to add fresh items.</p>
             </div>
           ) : (

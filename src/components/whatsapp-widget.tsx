@@ -2,8 +2,10 @@ import { useState } from "react";
 import { X, Send, Award, Briefcase, Truck, ArrowRight, MessageCircle } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { WHATSAPP_LINK } from "@/lib/products-store";
+import { useLanguage } from "@/lib/i18n";
 
 export function WhatsAppFloatingWidget() {
+  const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [chatMessage, setChatMessage] = useState("");
 
@@ -28,16 +30,16 @@ export function WhatsAppFloatingWidget() {
                 <img src="/images/whatsapp.svg" alt="" className="w-8 h-8" />
               </div>
               <div>
-                <h4 className="font-semibold text-sm">Deacomart Support</h4>
+                <h4 className="font-semibold text-sm">{t("whatsapp.header_title")}</h4>
                 <p className="text-xs text-white/70 flex items-center gap-1.5">
                   <span className="inline-block w-2 h-2 rounded-full bg-[#25d366] animate-pulse" />
-                  Online · "Be EcoWise"
+                  {t("whatsapp.status")}
                 </p>
               </div>
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="p-1 rounded-lg hover:bg-white/10 text-white/80 hover:text-white"
+              className="p-1 rounded-lg hover:bg-white/10 text-white/80 hover:text-white cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -47,14 +49,13 @@ export function WhatsAppFloatingWidget() {
           <div className="p-4 space-y-4 bg-background max-h-80 overflow-y-auto text-sm">
             <div className="bg-card border border-border p-3 rounded-xl">
               <p className="text-foreground leading-relaxed">
-                Hello! 👋 We are here to help you connect with Rwandan farms, get consultancy, or
-                register for training. What would you like to do?
+                {t("whatsapp.greeting")}
               </p>
             </div>
 
             <div className="space-y-2">
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest block">
-                Quick Actions
+                {t("whatsapp.quick_actions")}
               </span>
 
               <a
@@ -64,7 +65,7 @@ export function WhatsAppFloatingWidget() {
                 className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-card hover:border-leaf hover:text-primary transition-colors text-left"
               >
                 <span className="flex items-center gap-2 font-medium">
-                  <MessageCircle className="w-4 h-4 text-leaf" /> Request a Quote
+                  <MessageCircle className="w-4 h-4 text-leaf" /> {t("whatsapp.request_quote")}
                 </span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </a>
@@ -75,7 +76,7 @@ export function WhatsAppFloatingWidget() {
                 className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-card hover:border-leaf hover:text-primary transition-colors text-left"
               >
                 <span className="flex items-center gap-2 font-medium">
-                  <Award className="w-4 h-4 text-leaf" /> Register for Training
+                  <Award className="w-4 h-4 text-leaf" /> {t("whatsapp.register_training")}
                 </span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
@@ -86,7 +87,7 @@ export function WhatsAppFloatingWidget() {
                 className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-card hover:border-leaf hover:text-primary transition-colors text-left"
               >
                 <span className="flex items-center gap-2 font-medium">
-                  <Briefcase className="w-4 h-4 text-leaf" /> Agribusiness Consulting
+                  <Briefcase className="w-4 h-4 text-leaf" /> {t("whatsapp.agribusiness_consulting")}
                 </span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
@@ -97,7 +98,7 @@ export function WhatsAppFloatingWidget() {
                 className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-card hover:border-leaf hover:text-primary transition-colors text-left"
               >
                 <span className="flex items-center gap-2 font-medium">
-                  <Truck className="w-4 h-4 text-leaf" /> Track Delivery Status
+                  <Truck className="w-4 h-4 text-leaf" /> {t("whatsapp.track_delivery")}
                 </span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
@@ -114,12 +115,12 @@ export function WhatsAppFloatingWidget() {
               required
               value={chatMessage}
               onChange={(e) => setChatMessage(e.target.value)}
-              placeholder="Type your message..."
+              placeholder={t("whatsapp.type_message")}
               className="input flex-1 py-2 px-3 text-xs"
             />
             <button
               type="submit"
-              className="p-2 rounded-lg bg-[#25d366] hover:bg-[#20b038] text-white transition-colors"
+              className="p-2 rounded-lg bg-[#25d366] hover:bg-[#20b038] text-white transition-colors cursor-pointer"
             >
               <Send className="w-4 h-4" />
             </button>

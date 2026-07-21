@@ -4,6 +4,7 @@ import { Briefcase, Calendar, FileText, CheckCircle, ArrowRight, User, Mail, Pho
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { bookConsultancy, formatRWF, WHATSAPP_LINK } from "@/lib/products-store";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/consultancy")({
   head: () => ({
@@ -150,13 +151,13 @@ function ConsultancyPage() {
       <section className="border-b border-border bg-[image:var(--gradient-soft)]">
         <div className="mx-auto max-w-7xl px-6 py-16 text-center">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-leaf/10 border border-leaf/20 text-xs font-semibold text-primary">
-            <Briefcase className="w-4 h-4 text-leaf" /> Professional Services
+            <Briefcase className="w-4 h-4 text-leaf" /> {t("consultancy.badge")}
           </div>
           <h1 className="mt-6 text-4xl md:text-6xl font-extrabold max-w-3xl mx-auto leading-[1.05]">
-            Agribusiness Consulting & Food Safety Audits.
+            {t("consultancy.title")}
           </h1>
           <p className="mt-4 text-muted-foreground max-w-xl mx-auto text-base">
-            Structured business planning, market access strategies, and certification guidelines. Build a transparent, scalable agricultural project in Rwanda.
+            {t("consultancy.subtitle")}
           </p>
         </div>
       </section>

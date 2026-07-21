@@ -5,6 +5,7 @@ import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend, LineChart, Line, AreaChart, Area } from "recharts";
 import { formatRWF } from "@/lib/products-store";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/impact")({
   head: () => ({
@@ -16,7 +17,6 @@ export const Route = createFileRoute("/impact")({
   component: ImpactDashboardPage,
 });
 
-// Mock Recharts Data
 const TRAINING_HISTORY = [
   { month: "Jan", trainees: 120, cooperatives: 8 },
   { month: "Feb", trainees: 180, cooperatives: 12 },
@@ -43,15 +43,8 @@ const REVENUE_GENERATION = [
   { month: "Jun", revenueRWF: 48000000 },
 ];
 
-const PROVINCE_IMPACT = [
-  { province: "Kigali City", farmers: 680, districts: "Nyarugenge, Kicukiro, Gasabo" },
-  { province: "Eastern Province", farmers: 950, districts: "Nyagatare, Bugesera, Kayonza" },
-  { province: "Northern Province", farmers: 520, districts: "Musanze, Gakenke, Burera" },
-  { province: "Southern Province", farmers: 410, districts: "Huye, Nyanza, Kamonyi" },
-  { province: "Western Province", farmers: 380, districts: "Nyabihu, Rubavu, Karongi" },
-];
-
 function ImpactDashboardPage() {
+  const { t } = useLanguage();
   const [metricTab, setMetricTab] = useState<"training" | "loss" | "revenue">("training");
 
   return (
@@ -62,13 +55,13 @@ function ImpactDashboardPage() {
       <section className="border-b border-border bg-[image:var(--gradient-soft)]">
         <div className="mx-auto max-w-7xl px-6 py-16 text-center">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-leaf/10 border border-leaf/20 text-xs font-semibold text-primary">
-            <BarChart3 className="w-4 h-4 text-leaf" /> "Be EcoWise" Dashboard
+            <BarChart3 className="w-4 h-4 text-leaf" /> {t("impact.badge")}
           </div>
           <h1 className="mt-6 text-4xl md:text-6xl font-extrabold max-w-3xl mx-auto leading-[1.05]">
-            EcoWise & Economic Impact.
+            {t("impact.title")}
           </h1>
           <p className="mt-4 text-muted-foreground max-w-xl mx-auto text-base">
-            Tracking Deacomart's national impact across Rwanda. Driving farmer incomes up, bringing post-harvest losses down, and securing clean supply chains.
+            {t("impact.subtitle")}
           </p>
         </div>
       </section>
@@ -81,10 +74,7 @@ function ImpactDashboardPage() {
         <ImpactCard icon={Award} label="Safety Badges Verified" value="8,500+" desc="Certified crop listings" />
       </section>
 
-      {/* Chart Section */}
-      <section className="mx-auto max-w-7xl px-6 py-12 grid lg:grid-cols-[1fr_280px] gap-10">
-        
-        {/* Main Chart Viewer */}
+      <section className="mx-auto max-w-7xl px-6 py-12">
         <div className="bg-card border border-border rounded-3xl p-6 shadow-[var(--shadow-soft)] flex flex-col justify-between min-h-[450px]">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
             <div>

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Truck, MapPin, Search, Check, CheckCircle, Package, Clock, ShieldAlert, ArrowRight, ShieldCheck, ThermometerSnowflake } from "lucide-react";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/tracking")({
   head: () => ({
@@ -75,6 +76,7 @@ const MOCK_ORDERS: Record<string, MockOrder> = {
 };
 
 function LogisticsTrackingPage() {
+  const { t } = useLanguage();
   const [orderQuery, setOrderQuery] = useState("DM-9941");
   const [activeOrder, setActiveOrder] = useState<MockOrder | null>(MOCK_ORDERS["DM-9941"]);
   const [animateTruck, setAnimateTruck] = useState(0);
@@ -129,13 +131,13 @@ function LogisticsTrackingPage() {
       <section className="border-b border-border bg-[image:var(--gradient-soft)]">
         <div className="mx-auto max-w-7xl px-6 py-16 text-center">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-leaf/10 border border-leaf/20 text-xs font-semibold text-primary">
-            <Truck className="w-4 h-4 text-leaf" /> Logistics & Supply Chain
+            <Truck className="w-4 h-4 text-leaf" /> {t("tracking.badge")}
           </div>
           <h1 className="mt-6 text-4xl md:text-6xl font-extrabold max-w-3xl mx-auto leading-[1.05]">
-            Real-Time Delivery Tracker.
+            {t("tracking.title")}
           </h1>
           <p className="mt-4 text-muted-foreground max-w-xl mx-auto text-base">
-            Track fresh agricultural logistics from Kigali depots or district farms to hotels and supermarket retail counters.
+            {t("tracking.subtitle")}
           </p>
 
           {/* Search bar */}

@@ -14,36 +14,30 @@ import {
   ArrowRight,
   Database,
   Briefcase,
-  HelpCircle,
   Sparkles,
-  Quote,
-  Phone,
-  Mail,
   Linkedin,
+  Mail,
+  User,
+  GraduationCap,
 } from "lucide-react";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/about")({
   loader: async () => {
     try {
-      return await getTeamMembers();
+      const members = await getTeamMembers();
+      return members;
     } catch (e) {
-      console.error("Failed to load team members from DB:", e);
       return [];
     }
   },
   head: () => ({
     meta: [
-      { title: "About Us — DEACOMART Ltd" },
+      { title: "About Us — DEACOMART Ltd | Be EcoWise" },
       {
         name: "description",
         content:
-          "Learn about DEACOMART Ltd — Development and Empowerment of Agri-food Communities for Market Resilience, Training and Transformation in Rwanda.",
-      },
-      { property: "og:title", content: "About DEACOMART — Be EcoWise" },
-      {
-        property: "og:description",
-        content:
-          "Agri-food development, processing, and structured capacity building in Rwanda. Founded by Dukuzumuremyi Eric, MSc.",
+          "DEACOMART Limited (Development & Empowerment of Agri-food Communities for Market Resilience, Training and Transformation) in Kigali, Rwanda.",
       },
     ],
   }),
@@ -51,6 +45,7 @@ export const Route = createFileRoute("/about")({
 });
 
 function AboutPage() {
+  const { t } = useLanguage();
   const teamMembers = Route.useLoaderData();
   const acronymItems = [
     { letter: "D", word: "Development", desc: "Strengthening the agricultural value chain" },
@@ -129,13 +124,13 @@ function AboutPage() {
         <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:30px_30px]" />
         <div className="mx-auto max-w-5xl px-6 text-center relative z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-leaf/10 border border-leaf/25 text-xs font-semibold text-leaf mb-6">
-            <Sparkles className="w-3.5 h-3.5" /> Established & Registered 2025
+            <Sparkles className="w-3.5 h-3.5" /> {t("about.badge")}
           </div>
           <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight leading-[1.05] text-foreground">
-            Development & Empowerment.
+            {t("about.title")}
           </h1>
           <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            Dear guest, you are warmly welcome to <span className="font-semibold text-foreground">DEACOMART Limited</span> — Development and Empowerment of Agri-food Communities for Market Resilience, Training and Transformation.
+            {t("about.subtitle")}
           </p>
         </div>
       </section>
