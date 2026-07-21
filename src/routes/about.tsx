@@ -19,6 +19,7 @@ import {
   Mail,
   User,
   GraduationCap,
+  Quote,
 } from "lucide-react";
 import { useLanguage } from "@/lib/i18n";
 
