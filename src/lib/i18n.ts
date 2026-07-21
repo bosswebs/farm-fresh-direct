@@ -201,6 +201,15 @@ export const translations = {
     "contact.send_msg": "Send Us a Message",
     "contact.hours": "Operating Hours",
     "contact.address": "Headquarters Location",
+
+    // Product Detail Page
+    "product.back": "Back to Marketplace",
+    "product.producer": "Producer / Cooperative",
+    "product.location": "District Location",
+    "product.organic": "Certified Organic",
+    "product.safety": "Food Safety Guaranteed",
+    "product.order_whatsapp": "Order via WhatsApp",
+    "product.add_cart": "Add to Cart",
   },
   rw: {
     // Navigation
