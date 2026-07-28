@@ -19,12 +19,14 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as ConsultancyRouteImport } from './routes/consultancy'
 import { Route as CareersRouteImport } from './routes/careers'
 import { Route as BrowseRouteImport } from './routes/browse'
+import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AdvertiseRouteImport } from './routes/advertise'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
+import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AdminWhatsappRouteImport } from './routes/admin/whatsapp'
 import { Route as AdminTrainingRouteImport } from './routes/admin/training'
 import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
@@ -39,6 +41,7 @@ import { Route as AdminContentRouteImport } from './routes/admin/content'
 import { Route as AdminConsultancyRouteImport } from './routes/admin/consultancy'
 import { Route as AdminCommunicationRouteImport } from './routes/admin/communication'
 import { Route as AdminCareersRouteImport } from './routes/admin/careers'
+import { Route as AdminBlogRouteImport } from './routes/admin/blog'
 import { Route as AdminUsersStaffRouteImport } from './routes/admin/users/staff'
 import { Route as AdminUsersFarmersRouteImport } from './routes/admin/users/farmers'
 import { Route as AdminUsersBuyersRouteImport } from './routes/admin/users/buyers'
@@ -96,6 +99,11 @@ const BrowseRoute = BrowseRouteImport.update({
   path: '/browse',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogRoute = BlogRouteImport.update({
+  id: '/blog',
+  path: '/blog',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdvertiseRoute = AdvertiseRouteImport.update({
   id: '/advertise',
   path: '/advertise',
@@ -125,6 +133,11 @@ const ProductIdRoute = ProductIdRouteImport.update({
   id: '/product/$id',
   path: '/product/$id',
   getParentRoute: () => rootRouteImport,
+} as any)
+const BlogSlugRoute = BlogSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => BlogRoute,
 } as any)
 const AdminWhatsappRoute = AdminWhatsappRouteImport.update({
   id: '/whatsapp',
@@ -196,6 +209,11 @@ const AdminCareersRoute = AdminCareersRouteImport.update({
   path: '/careers',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminBlogRoute = AdminBlogRouteImport.update({
+  id: '/blog',
+  path: '/blog',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminUsersStaffRoute = AdminUsersStaffRouteImport.update({
   id: '/users/staff',
   path: '/users/staff',
@@ -234,6 +252,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/advertise': typeof AdvertiseRoute
+  '/blog': typeof BlogRouteWithChildren
   '/browse': typeof BrowseRoute
   '/careers': typeof CareersRoute
   '/consultancy': typeof ConsultancyRoute
@@ -244,6 +263,7 @@ export interface FileRoutesByFullPath {
   '/tracking': typeof TrackingRoute
   '/training': typeof TrainingRoute
   '/trust': typeof TrustRoute
+  '/admin/blog': typeof AdminBlogRoute
   '/admin/careers': typeof AdminCareersRoute
   '/admin/communication': typeof AdminCommunicationRoute
   '/admin/consultancy': typeof AdminConsultancyRoute
@@ -258,6 +278,7 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/training': typeof AdminTrainingRoute
   '/admin/whatsapp': typeof AdminWhatsappRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/product/$id': typeof ProductIdRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/marketplace/orders': typeof AdminMarketplaceOrdersRoute
@@ -271,6 +292,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/advertise': typeof AdvertiseRoute
+  '/blog': typeof BlogRouteWithChildren
   '/browse': typeof BrowseRoute
   '/careers': typeof CareersRoute
   '/consultancy': typeof ConsultancyRoute
@@ -281,6 +303,7 @@ export interface FileRoutesByTo {
   '/tracking': typeof TrackingRoute
   '/training': typeof TrainingRoute
   '/trust': typeof TrustRoute
+  '/admin/blog': typeof AdminBlogRoute
   '/admin/careers': typeof AdminCareersRoute
   '/admin/communication': typeof AdminCommunicationRoute
   '/admin/consultancy': typeof AdminConsultancyRoute
@@ -295,6 +318,7 @@ export interface FileRoutesByTo {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/training': typeof AdminTrainingRoute
   '/admin/whatsapp': typeof AdminWhatsappRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/product/$id': typeof ProductIdRoute
   '/admin': typeof AdminIndexRoute
   '/admin/marketplace/orders': typeof AdminMarketplaceOrdersRoute
@@ -310,6 +334,7 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/advertise': typeof AdvertiseRoute
+  '/blog': typeof BlogRouteWithChildren
   '/browse': typeof BrowseRoute
   '/careers': typeof CareersRoute
   '/consultancy': typeof ConsultancyRoute
@@ -320,6 +345,7 @@ export interface FileRoutesById {
   '/tracking': typeof TrackingRoute
   '/training': typeof TrainingRoute
   '/trust': typeof TrustRoute
+  '/admin/blog': typeof AdminBlogRoute
   '/admin/careers': typeof AdminCareersRoute
   '/admin/communication': typeof AdminCommunicationRoute
   '/admin/consultancy': typeof AdminConsultancyRoute
@@ -334,6 +360,7 @@ export interface FileRoutesById {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/training': typeof AdminTrainingRoute
   '/admin/whatsapp': typeof AdminWhatsappRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/product/$id': typeof ProductIdRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/marketplace/orders': typeof AdminMarketplaceOrdersRoute
@@ -350,6 +377,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/admin'
     | '/advertise'
+    | '/blog'
     | '/browse'
     | '/careers'
     | '/consultancy'
@@ -360,6 +388,7 @@ export interface FileRouteTypes {
     | '/tracking'
     | '/training'
     | '/trust'
+    | '/admin/blog'
     | '/admin/careers'
     | '/admin/communication'
     | '/admin/consultancy'
@@ -374,6 +403,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/training'
     | '/admin/whatsapp'
+    | '/blog/$slug'
     | '/product/$id'
     | '/admin/'
     | '/admin/marketplace/orders'
@@ -387,6 +417,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/advertise'
+    | '/blog'
     | '/browse'
     | '/careers'
     | '/consultancy'
@@ -397,6 +428,7 @@ export interface FileRouteTypes {
     | '/tracking'
     | '/training'
     | '/trust'
+    | '/admin/blog'
     | '/admin/careers'
     | '/admin/communication'
     | '/admin/consultancy'
@@ -411,6 +443,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/training'
     | '/admin/whatsapp'
+    | '/blog/$slug'
     | '/product/$id'
     | '/admin'
     | '/admin/marketplace/orders'
@@ -425,6 +458,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/admin'
     | '/advertise'
+    | '/blog'
     | '/browse'
     | '/careers'
     | '/consultancy'
@@ -435,6 +469,7 @@ export interface FileRouteTypes {
     | '/tracking'
     | '/training'
     | '/trust'
+    | '/admin/blog'
     | '/admin/careers'
     | '/admin/communication'
     | '/admin/consultancy'
@@ -449,6 +484,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/training'
     | '/admin/whatsapp'
+    | '/blog/$slug'
     | '/product/$id'
     | '/admin/'
     | '/admin/marketplace/orders'
@@ -464,6 +500,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRouteWithChildren
   AdvertiseRoute: typeof AdvertiseRoute
+  BlogRoute: typeof BlogRouteWithChildren
   BrowseRoute: typeof BrowseRoute
   CareersRoute: typeof CareersRoute
   ConsultancyRoute: typeof ConsultancyRoute
@@ -549,6 +586,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BrowseRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blog': {
+      id: '/blog'
+      path: '/blog'
+      fullPath: '/blog'
+      preLoaderRoute: typeof BlogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/advertise': {
       id: '/advertise'
       path: '/advertise'
@@ -590,6 +634,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/product/$id'
       preLoaderRoute: typeof ProductIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/blog/$slug': {
+      id: '/blog/$slug'
+      path: '/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof BlogSlugRouteImport
+      parentRoute: typeof BlogRoute
     }
     '/admin/whatsapp': {
       id: '/admin/whatsapp'
@@ -689,6 +740,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCareersRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/blog': {
+      id: '/admin/blog'
+      path: '/blog'
+      fullPath: '/admin/blog'
+      preLoaderRoute: typeof AdminBlogRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/users/staff': {
       id: '/admin/users/staff'
       path: '/users/staff'
@@ -735,6 +793,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminBlogRoute: typeof AdminBlogRoute
   AdminCareersRoute: typeof AdminCareersRoute
   AdminCommunicationRoute: typeof AdminCommunicationRoute
   AdminConsultancyRoute: typeof AdminConsultancyRoute
@@ -759,6 +818,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminBlogRoute: AdminBlogRoute,
   AdminCareersRoute: AdminCareersRoute,
   AdminCommunicationRoute: AdminCommunicationRoute,
   AdminConsultancyRoute: AdminConsultancyRoute,
@@ -784,11 +844,22 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface BlogRouteChildren {
+  BlogSlugRoute: typeof BlogSlugRoute
+}
+
+const BlogRouteChildren: BlogRouteChildren = {
+  BlogSlugRoute: BlogSlugRoute,
+}
+
+const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AdminRoute: AdminRouteWithChildren,
   AdvertiseRoute: AdvertiseRoute,
+  BlogRoute: BlogRouteWithChildren,
   BrowseRoute: BrowseRoute,
   CareersRoute: CareersRoute,
   ConsultancyRoute: ConsultancyRoute,

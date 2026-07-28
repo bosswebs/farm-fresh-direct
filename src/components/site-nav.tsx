@@ -18,6 +18,7 @@ import {
   User,
   Leaf,
   Lock,
+  Newspaper,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { listCart, subscribeCart, openCartDrawer } from "@/lib/cart-store";
@@ -36,6 +37,7 @@ const PRIMARY_NAV_CONFIG = [
   { to: "/about", labelKey: "nav.about", icon: Info },
   { to: "/advertise", labelKey: "nav.advertise", icon: Megaphone },
   { to: "/careers", labelKey: "nav.careers", icon: Briefcase },
+  { to: "/blog", labelKey: "nav.blog", icon: Newspaper },
   { to: "/contact", labelKey: "nav.contact", icon: Mail },
 ] as const;
 

@@ -1613,6 +1613,252 @@ export const getContentPages = createServerFn({ method: "GET" }).handler(async (
   }));
 });
 
+// ─── Blog Posts (content_pages, type='blog') ──────────────────────
+const blogStatusSchema = z.enum(["draft", "published", "archived"]);
+
+const blogPostPayloadSchema = z.object({
+  title: z.string().trim().min(3).max(200),
+  slug: z
+    .string()
+    .trim()
+    .max(200)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must be lowercase letters, numbers, and hyphens only.")
+    .optional()
+    .or(z.literal("")),
+  excerpt: z.string().trim().max(400).default(""),
+  body: z.string().trim().min(1),
+  coverImage: z.string().trim().nullable().optional(),
+  status: blogStatusSchema.default("draft"),
+  author: z.string().trim().max(120).optional(),
+});
+
+function slugify(input: string): string {
+  const slug = input
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 180);
+  return slug || "post";
+}
+
+type BlogPostRow = {
+  id: string;
+  title: string;
+  slug: string | null;
+  excerpt: string;
+  body: string;
+  cover_image: string | null;
+  status: string;
+  author: string;
+  last_updated: string;
+  published_at: string | null;
+};
+
+function mapBlogPostRow(row: BlogPostRow) {
+  return {
+    id: row.id,
+    title: row.title,
+    slug: row.slug ?? "",
+    excerpt: row.excerpt,
+    body: row.body,
+    coverImage: row.cover_image,
+    status: row.status as "draft" | "published" | "archived",
+    author: row.author,
+    lastUpdated: row.last_updated,
+    publishedAt: row.published_at,
+  };
+}
+
+const BLOG_SELECT_FIELDS = `id, title, slug, excerpt, body, cover_image, status, author,
+            last_updated::text, published_at::text`;
+
+async function findAvailableSlug(pool: ReturnType<typeof getDatabasePool>, base: string, excludeId?: string) {
+  let slug = base;
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const exists = excludeId
+      ? await pool.query("SELECT 1 FROM content_pages WHERE slug = $1 AND id != $2", [slug, excludeId])
+      : await pool.query("SELECT 1 FROM content_pages WHERE slug = $1", [slug]);
+    if (exists.rowCount === 0) return slug;
+    slug = `${base}-${Math.floor(1000 + Math.random() * 9000)}`;
+  }
+  return `${base}-${Date.now()}`;
+}
+
+// Public — published posts only, no authentication required
+export const getPublishedBlogPosts = createServerFn({ method: "GET" }).handler(async () => {
+  const pool = getDatabasePool();
+  const result = await pool.query<BlogPostRow>(
+    `SELECT ${BLOG_SELECT_FIELDS}
+     FROM content_pages
+     WHERE type = 'blog' AND status = 'published' AND slug IS NOT NULL
+     ORDER BY published_at DESC NULLS LAST, last_updated DESC`,
+  );
+  return result.rows.map(mapBlogPostRow);
+});
+
+export const getBlogPostBySlug = createServerFn({ method: "GET" })
+  .validator(z.object({ slug: z.string().trim().min(1).max(200) }))
+  .handler(async ({ data }) => {
+    const pool = getDatabasePool();
+    const result = await pool.query<BlogPostRow>(
+      `SELECT ${BLOG_SELECT_FIELDS}
+       FROM content_pages
+       WHERE type = 'blog' AND status = 'published' AND slug = $1
+       LIMIT 1`,
+      [data.slug],
+    );
+    return result.rows[0] ? mapBlogPostRow(result.rows[0]) : null;
+  });
+
+// Admin — full CRUD across all statuses
+export const getBlogPosts = createServerFn({ method: "GET" }).handler(async () => {
+  await requireAdmin();
+  const pool = getDatabasePool();
+  const result = await pool.query<BlogPostRow>(
+    `SELECT ${BLOG_SELECT_FIELDS}
+     FROM content_pages
+     WHERE type = 'blog'
+     ORDER BY updated_at DESC`,
+  );
+  return result.rows.map(mapBlogPostRow);
+});
+
+export const createBlogPost = createServerFn({ method: "POST" })
+  .validator(blogPostPayloadSchema)
+  .handler(async ({ data }) => {
+    const admin = await requireAdmin();
+    const pool = getDatabasePool();
+
+    const slug = await findAvailableSlug(pool, slugify(data.slug || data.title));
+    const id = "blog-" + Math.random().toString(36).slice(2, 10);
+    const publishedAt = data.status === "published" ? new Date() : null;
+
+    const result = await pool.query<BlogPostRow>(
+      `INSERT INTO content_pages (id, title, type, status, body, author, slug, excerpt, cover_image, last_updated, published_at)
+       VALUES ($1, $2, 'blog', $3, $4, $5, $6, $7, $8, CURRENT_DATE, $9)
+       RETURNING ${BLOG_SELECT_FIELDS}`,
+      [
+        id,
+        data.title,
+        data.status,
+        data.body,
+        data.author?.trim() || admin.displayName,
+        slug,
+        data.excerpt,
+        data.coverImage || null,
+        publishedAt,
+      ],
+    );
+
+    await pool.query(
+      "INSERT INTO activity_feed(type, message, icon) VALUES ($1, $2, $3)",
+      ["content", `${admin.displayName} created blog post "${data.title}"`, "newspaper"],
+    );
+
+    return mapBlogPostRow(result.rows[0]);
+  });
+
+export const updateBlogPost = createServerFn({ method: "POST" })
+  .validator(blogPostPayloadSchema.extend({ id: z.string().trim().min(1) }))
+  .handler(async ({ data }) => {
+    const admin = await requireAdmin();
+    const pool = getDatabasePool();
+
+    const existingRes = await pool.query<{ slug: string | null; published_at: string | null }>(
+      "SELECT slug, published_at FROM content_pages WHERE id = $1 AND type = 'blog'",
+      [data.id],
+    );
+    if (existingRes.rowCount === 0) throw new Error("Blog post not found");
+    const existing = existingRes.rows[0];
+
+    const desiredSlug = slugify(data.slug || data.title);
+    const slug =
+      desiredSlug === existing.slug ? existing.slug! : await findAvailableSlug(pool, desiredSlug, data.id);
+
+    const publishedAt = existing.published_at ?? (data.status === "published" ? new Date() : null);
+
+    const result = await pool.query<BlogPostRow>(
+      `UPDATE content_pages
+       SET title = $1, status = $2, body = $3, author = $4, slug = $5,
+           excerpt = $6, cover_image = $7, last_updated = CURRENT_DATE,
+           published_at = $8, updated_at = now()
+       WHERE id = $9
+       RETURNING ${BLOG_SELECT_FIELDS}`,
+      [
+        data.title,
+        data.status,
+        data.body,
+        data.author?.trim() || admin.displayName,
+        slug,
+        data.excerpt,
+        data.coverImage || null,
+        publishedAt,
+        data.id,
+      ],
+    );
+
+    await pool.query(
+      "INSERT INTO activity_feed(type, message, icon) VALUES ($1, $2, $3)",
+      ["content", `${admin.displayName} updated blog post "${data.title}"`, "edit"],
+    );
+
+    return mapBlogPostRow(result.rows[0]);
+  });
+
+export const updateBlogPostStatus = createServerFn({ method: "POST" })
+  .validator(z.object({ id: z.string().trim().min(1), status: blogStatusSchema }))
+  .handler(async ({ data }) => {
+    const admin = await requireAdmin();
+    const pool = getDatabasePool();
+
+    const existingRes = await pool.query<{ published_at: string | null; title: string }>(
+      "SELECT published_at, title FROM content_pages WHERE id = $1 AND type = 'blog'",
+      [data.id],
+    );
+    if (existingRes.rowCount === 0) throw new Error("Blog post not found");
+    const existing = existingRes.rows[0];
+
+    const publishedAt = existing.published_at ?? (data.status === "published" ? new Date() : null);
+
+    const result = await pool.query<BlogPostRow>(
+      `UPDATE content_pages
+       SET status = $1, published_at = $2, updated_at = now()
+       WHERE id = $3
+       RETURNING ${BLOG_SELECT_FIELDS}`,
+      [data.status, publishedAt, data.id],
+    );
+
+    await pool.query(
+      "INSERT INTO activity_feed(type, message, icon) VALUES ($1, $2, $3)",
+      ["content", `${admin.displayName} set blog post "${existing.title}" to ${data.status}`, "newspaper"],
+    );
+
+    return mapBlogPostRow(result.rows[0]);
+  });
+
+export const deleteBlogPost = createServerFn({ method: "POST" })
+  .validator(z.object({ id: z.string().trim().min(1) }))
+  .handler(async ({ data }) => {
+    const admin = await requireAdmin();
+    const pool = getDatabasePool();
+
+    const result = await pool.query<{ title: string }>(
+      "DELETE FROM content_pages WHERE id = $1 AND type = 'blog' RETURNING title",
+      [data.id],
+    );
+    if (result.rowCount === 0) throw new Error("Blog post not found");
+
+    await pool.query(
+      "INSERT INTO activity_feed(type, message, icon) VALUES ($1, $2, $3)",
+      ["content", `${admin.displayName} deleted blog post "${result.rows[0].title}"`, "trash-2"],
+    );
+
+    return { id: data.id };
+  });
+
 // ─── Geographic Stats ─────────────────────────────────────────────
 export const getGeographicStats = createServerFn({ method: "GET" }).handler(async () => {
   await requireAdmin();

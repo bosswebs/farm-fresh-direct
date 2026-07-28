@@ -150,6 +150,7 @@ const navGroups = [
     label: "Content & Reports",
     items: [
       { label: "Content Management", icon: FileText, path: "/admin/content" },
+      { label: "Blog & Updates", icon: Newspaper, path: "/admin/blog" },
       { label: "Reports & Analytics", icon: BarChart3, path: "/admin/reports" },
       { label: "Communication", icon: Mail, path: "/admin/communication" },
     ],
