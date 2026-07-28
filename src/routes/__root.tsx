@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { CartDrawer } from "../components/cart-drawer";
 import { WhatsAppFloatingWidget } from "../components/whatsapp-widget";
+import { Toaster } from "../components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -142,6 +143,7 @@ function RootComponent() {
       <Outlet />
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
       <WhatsAppFloatingWidget />
+      <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );
 }
