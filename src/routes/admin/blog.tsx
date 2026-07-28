@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Newspaper,
   Plus,
@@ -13,6 +13,8 @@ import {
   Archive,
   ExternalLink,
   X,
+  Image as ImageIcon,
+  Link2,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -61,9 +63,36 @@ function AdminBlogPage() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [insertingImage, setInsertingImage] = useState(false);
+  const [linkDraft, setLinkDraft] = useState<{ label: string; url: string } | null>(null);
+
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const cursorPosRef = useRef<number | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+
+  function trackCursor() {
+    const el = bodyRef.current;
+    if (el) cursorPosRef.current = el.selectionStart;
+  }
+
+  function insertIntoBody(snippet: string) {
+    setForm((prev) => {
+      const pos = cursorPosRef.current ?? prev.body.length;
+      const nextBody = prev.body.slice(0, pos) + snippet + prev.body.slice(pos);
+      const nextPos = pos + snippet.length;
+      requestAnimationFrame(() => {
+        const el = bodyRef.current;
+        if (el) {
+          el.focus();
+          el.setSelectionRange(nextPos, nextPos);
+        }
+        cursorPosRef.current = nextPos;
+      });
+      return { ...prev, body: nextBody };
+    });
+  }
 
   async function refresh() {
     await router.invalidate();
@@ -148,12 +177,37 @@ function AdminBlogPage() {
     try {
       const url = await uploadProductImage(file);
       setForm((prev) => ({ ...prev, coverImage: url }));
-      toast.success("Cover image uploaded");
+      toast.success("Thumbnail uploaded");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to upload image");
     } finally {
       setUploading(false);
     }
+  }
+
+  async function handleInsertBodyImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setInsertingImage(true);
+    try {
+      const url = await uploadProductImage(file);
+      insertIntoBody(`\n\n![Image description](${url})\n\n`);
+      toast.success("Image inserted into post");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to upload image");
+    } finally {
+      setInsertingImage(false);
+    }
+  }
+
+  function handleInsertLink() {
+    if (!linkDraft?.label.trim() || !linkDraft.url.trim()) {
+      toast.error("Enter both link text and a URL");
+      return;
+    }
+    insertIntoBody(`[${linkDraft.label.trim()}](${linkDraft.url.trim()})`);
+    setLinkDraft(null);
   }
 
   const filteredPosts = posts.filter((post) => {
@@ -398,15 +452,83 @@ function AdminBlogPage() {
               </div>
 
               <div>
-                <label className="font-bold uppercase text-[10px] text-muted-foreground mb-1 block">Post Content *</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="font-bold uppercase text-[10px] text-muted-foreground block">Post Content *</label>
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleInsertBodyImage}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                        disabled={insertingImage}
+                      />
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-border text-[10px] font-bold text-muted-foreground hover:bg-muted transition-colors">
+                        <ImageIcon className="w-3 h-3" /> {insertingImage ? "Uploading..." : "Insert Image"}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setLinkDraft({ label: "", url: "" })}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-border text-[10px] font-bold text-muted-foreground hover:bg-muted transition-colors"
+                    >
+                      <Link2 className="w-3 h-3" /> Insert Link
+                    </button>
+                  </div>
+                </div>
+
+                {linkDraft && (
+                  <div className="mb-2 p-3 rounded-xl border border-border bg-muted/40 flex flex-col sm:flex-row gap-2">
+                    <input
+                      type="text"
+                      autoFocus
+                      value={linkDraft.label}
+                      onChange={(e) => setLinkDraft({ ...linkDraft, label: e.target.value })}
+                      placeholder="Link text (e.g. Read the full report)"
+                      className="flex-1 h-8 px-2.5 rounded-lg border border-input bg-background text-[11px]"
+                    />
+                    <input
+                      type="url"
+                      value={linkDraft.url}
+                      onChange={(e) => setLinkDraft({ ...linkDraft, url: e.target.value })}
+                      placeholder="https://example.com"
+                      className="flex-1 h-8 px-2.5 rounded-lg border border-input bg-background text-[11px]"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={handleInsertLink}
+                        className="h-8 px-3 rounded-lg bg-primary text-primary-foreground text-[11px] font-bold"
+                      >
+                        Insert
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLinkDraft(null)}
+                        className="h-8 px-3 rounded-lg border border-border text-[11px] font-semibold"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <textarea
+                  ref={bodyRef}
                   rows={8}
                   required
                   value={form.body}
                   onChange={(e) => setForm({ ...form, body: e.target.value })}
+                  onClick={trackCursor}
+                  onKeyUp={trackCursor}
+                  onSelect={trackCursor}
                   placeholder="Write the full post. Separate paragraphs with a blank line."
                   className="w-full p-3 rounded-xl border border-input bg-background"
                 />
+                <p className="mt-1 text-[10px] text-muted-foreground">
+                  Tip: use the buttons above to drop in photos or links, or type your own — links look like{" "}
+                  <code className="font-mono">[link text](https://example.com)</code>.
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -435,7 +557,9 @@ function AdminBlogPage() {
               </div>
 
               <div>
-                <label className="font-bold uppercase text-[10px] text-muted-foreground mb-1 block">Cover Image</label>
+                <label className="font-bold uppercase text-[10px] text-muted-foreground mb-1 block">
+                  Thumbnail (shown on the blog list & post header)
+                </label>
                 <div className="flex items-center gap-3">
                   <div className="relative flex-1">
                     <input
@@ -446,7 +570,7 @@ function AdminBlogPage() {
                       disabled={uploading}
                     />
                     <div className="flex h-9 w-full items-center justify-center rounded-xl border border-dashed border-gray-300 bg-gray-50 text-[11px] font-semibold text-gray-500 hover:bg-gray-100 transition-colors">
-                      {uploading ? "Uploading..." : "Choose Cover Image"}
+                      {uploading ? "Uploading..." : "Choose Thumbnail"}
                     </div>
                   </div>
                   {form.coverImage && (
@@ -461,7 +585,7 @@ function AdminBlogPage() {
                 </div>
                 {form.coverImage && (
                   <div className="mt-2 relative aspect-video max-w-xs rounded-xl overflow-hidden border border-border bg-muted">
-                    <img src={form.coverImage} alt="Cover preview" className="w-full h-full object-cover" />
+                    <img src={form.coverImage} alt="Thumbnail preview" className="w-full h-full object-cover" />
                   </div>
                 )}
               </div>
@@ -476,7 +600,7 @@ function AdminBlogPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={saving || uploading}
+                  disabled={saving || uploading || insertingImage}
                   className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-xs hover:opacity-90 disabled:opacity-50 cursor-pointer"
                 >
                   {saving ? "Saving..." : "Save Post"}

@@ -1,4 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import type { ReactNode } from "react";
 import { ArrowLeft, Calendar, User, Newspaper } from "lucide-react";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
@@ -42,9 +43,61 @@ function formatDate(value: string | null) {
   return new Date(value).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 }
 
+// Body content supports a small, safe markup subset authored via the admin editor:
+//   ![alt text](https://image-url)   — a standalone image block
+//   [link text](https://example.com) — an inline link within a paragraph
+type BodyBlock = { type: "image"; alt: string; src: string } | { type: "paragraph"; text: string };
+
+function parseBodyBlocks(body: string): BodyBlock[] {
+  return body
+    .split(/\n{2,}/)
+    .map((block) => block.trim())
+    .filter(Boolean)
+    .map((block) => {
+      const imageMatch = block.match(/^!\[([^\]]*)\]\((\S+)\)$/);
+      if (imageMatch) return { type: "image", alt: imageMatch[1], src: imageMatch[2] };
+      return { type: "paragraph", text: block };
+    });
+}
+
+function isSafeUrl(url: string): boolean {
+  return /^https?:\/\//i.test(url) || url.startsWith("/") || url.startsWith("mailto:");
+}
+
+function renderInline(text: string): ReactNode[] {
+  const linkPattern = /\[([^\]]+)\]\((\S+?)\)/g;
+  const nodes: ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let key = 0;
+
+  while ((match = linkPattern.exec(text)) !== null) {
+    if (match.index > lastIndex) nodes.push(text.slice(lastIndex, match.index));
+    const [full, label, url] = match;
+    if (isSafeUrl(url)) {
+      nodes.push(
+        <a
+          key={key++}
+          href={url}
+          target={url.startsWith("/") ? undefined : "_blank"}
+          rel="noopener noreferrer"
+          className="text-leaf font-semibold underline underline-offset-2 hover:text-primary transition-colors"
+        >
+          {label}
+        </a>,
+      );
+    } else {
+      nodes.push(full);
+    }
+    lastIndex = match.index + full.length;
+  }
+  if (lastIndex < text.length) nodes.push(text.slice(lastIndex));
+  return nodes;
+}
+
 function BlogPostPage() {
   const { post } = Route.useLoaderData();
-  const paragraphs = post.body.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+  const blocks = parseBodyBlocks(post.body);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -81,9 +134,20 @@ function BlogPostPage() {
         </div>
 
         <div className="mt-10 space-y-5 text-sm md:text-base leading-relaxed text-foreground/90">
-          {paragraphs.map((paragraph, i) => (
-            <p key={i}>{paragraph}</p>
-          ))}
+          {blocks.map((block, i) =>
+            block.type === "image" ? (
+              <figure key={i} className="rounded-2xl overflow-hidden border border-border bg-muted">
+                <img src={block.src} alt={block.alt} className="w-full h-auto" loading="lazy" />
+                {block.alt && (
+                  <figcaption className="px-4 py-2 text-xs text-muted-foreground text-center">
+                    {block.alt}
+                  </figcaption>
+                )}
+              </figure>
+            ) : (
+              <p key={i}>{renderInline(block.text)}</p>
+            ),
+          )}
         </div>
       </article>
 

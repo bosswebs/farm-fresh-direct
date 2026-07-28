@@ -19,14 +19,15 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as ConsultancyRouteImport } from './routes/consultancy'
 import { Route as CareersRouteImport } from './routes/careers'
 import { Route as BrowseRouteImport } from './routes/browse'
-import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AdvertiseRouteImport } from './routes/advertise'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
+import { Route as BlogRouteRouteImport } from './routes/blog/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BlogIndexRouteImport } from './routes/blog/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
-import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
+import { Route as BlogSlugRouteImport } from './routes/blog/$slug'
 import { Route as AdminWhatsappRouteImport } from './routes/admin/whatsapp'
 import { Route as AdminTrainingRouteImport } from './routes/admin/training'
 import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
@@ -99,11 +100,6 @@ const BrowseRoute = BrowseRouteImport.update({
   path: '/browse',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BlogRoute = BlogRouteImport.update({
-  id: '/blog',
-  path: '/blog',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AdvertiseRoute = AdvertiseRouteImport.update({
   id: '/advertise',
   path: '/advertise',
@@ -119,10 +115,20 @@ const AboutRoute = AboutRouteImport.update({
   path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogRouteRoute = BlogRouteRouteImport.update({
+  id: '/blog',
+  path: '/blog',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const BlogIndexRoute = BlogIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => BlogRouteRoute,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
@@ -137,7 +143,7 @@ const ProductIdRoute = ProductIdRouteImport.update({
 const BlogSlugRoute = BlogSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
-  getParentRoute: () => BlogRoute,
+  getParentRoute: () => BlogRouteRoute,
 } as any)
 const AdminWhatsappRoute = AdminWhatsappRouteImport.update({
   id: '/whatsapp',
@@ -249,10 +255,10 @@ const AdminMarketplaceOrdersRoute = AdminMarketplaceOrdersRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/blog': typeof BlogRouteRouteWithChildren
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/advertise': typeof AdvertiseRoute
-  '/blog': typeof BlogRouteWithChildren
   '/browse': typeof BrowseRoute
   '/careers': typeof CareersRoute
   '/consultancy': typeof ConsultancyRoute
@@ -281,6 +287,7 @@ export interface FileRoutesByFullPath {
   '/blog/$slug': typeof BlogSlugRoute
   '/product/$id': typeof ProductIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/blog/': typeof BlogIndexRoute
   '/admin/marketplace/orders': typeof AdminMarketplaceOrdersRoute
   '/admin/marketplace/payments': typeof AdminMarketplacePaymentsRoute
   '/admin/marketplace/products': typeof AdminMarketplaceProductsRoute
@@ -292,7 +299,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/advertise': typeof AdvertiseRoute
-  '/blog': typeof BlogRouteWithChildren
   '/browse': typeof BrowseRoute
   '/careers': typeof CareersRoute
   '/consultancy': typeof ConsultancyRoute
@@ -321,6 +327,7 @@ export interface FileRoutesByTo {
   '/blog/$slug': typeof BlogSlugRoute
   '/product/$id': typeof ProductIdRoute
   '/admin': typeof AdminIndexRoute
+  '/blog': typeof BlogIndexRoute
   '/admin/marketplace/orders': typeof AdminMarketplaceOrdersRoute
   '/admin/marketplace/payments': typeof AdminMarketplacePaymentsRoute
   '/admin/marketplace/products': typeof AdminMarketplaceProductsRoute
@@ -331,10 +338,10 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/blog': typeof BlogRouteRouteWithChildren
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/advertise': typeof AdvertiseRoute
-  '/blog': typeof BlogRouteWithChildren
   '/browse': typeof BrowseRoute
   '/careers': typeof CareersRoute
   '/consultancy': typeof ConsultancyRoute
@@ -363,6 +370,7 @@ export interface FileRoutesById {
   '/blog/$slug': typeof BlogSlugRoute
   '/product/$id': typeof ProductIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/blog/': typeof BlogIndexRoute
   '/admin/marketplace/orders': typeof AdminMarketplaceOrdersRoute
   '/admin/marketplace/payments': typeof AdminMarketplacePaymentsRoute
   '/admin/marketplace/products': typeof AdminMarketplaceProductsRoute
@@ -374,10 +382,10 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/blog'
     | '/about'
     | '/admin'
     | '/advertise'
-    | '/blog'
     | '/browse'
     | '/careers'
     | '/consultancy'
@@ -406,6 +414,7 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/product/$id'
     | '/admin/'
+    | '/blog/'
     | '/admin/marketplace/orders'
     | '/admin/marketplace/payments'
     | '/admin/marketplace/products'
@@ -417,7 +426,6 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/advertise'
-    | '/blog'
     | '/browse'
     | '/careers'
     | '/consultancy'
@@ -446,6 +454,7 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/product/$id'
     | '/admin'
+    | '/blog'
     | '/admin/marketplace/orders'
     | '/admin/marketplace/payments'
     | '/admin/marketplace/products'
@@ -455,10 +464,10 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/blog'
     | '/about'
     | '/admin'
     | '/advertise'
-    | '/blog'
     | '/browse'
     | '/careers'
     | '/consultancy'
@@ -487,6 +496,7 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/product/$id'
     | '/admin/'
+    | '/blog/'
     | '/admin/marketplace/orders'
     | '/admin/marketplace/payments'
     | '/admin/marketplace/products'
@@ -497,10 +507,10 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BlogRouteRoute: typeof BlogRouteRouteWithChildren
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRouteWithChildren
   AdvertiseRoute: typeof AdvertiseRoute
-  BlogRoute: typeof BlogRouteWithChildren
   BrowseRoute: typeof BrowseRoute
   CareersRoute: typeof CareersRoute
   ConsultancyRoute: typeof ConsultancyRoute
@@ -586,13 +596,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BrowseRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/blog': {
-      id: '/blog'
-      path: '/blog'
-      fullPath: '/blog'
-      preLoaderRoute: typeof BlogRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/advertise': {
       id: '/advertise'
       path: '/advertise'
@@ -614,12 +617,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blog': {
+      id: '/blog'
+      path: '/blog'
+      fullPath: '/blog'
+      preLoaderRoute: typeof BlogRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/blog/': {
+      id: '/blog/'
+      path: '/'
+      fullPath: '/blog/'
+      preLoaderRoute: typeof BlogIndexRouteImport
+      parentRoute: typeof BlogRouteRoute
     }
     '/admin/': {
       id: '/admin/'
@@ -640,7 +657,7 @@ declare module '@tanstack/react-router' {
       path: '/$slug'
       fullPath: '/blog/$slug'
       preLoaderRoute: typeof BlogSlugRouteImport
-      parentRoute: typeof BlogRoute
+      parentRoute: typeof BlogRouteRoute
     }
     '/admin/whatsapp': {
       id: '/admin/whatsapp'
@@ -792,6 +809,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface BlogRouteRouteChildren {
+  BlogSlugRoute: typeof BlogSlugRoute
+  BlogIndexRoute: typeof BlogIndexRoute
+}
+
+const BlogRouteRouteChildren: BlogRouteRouteChildren = {
+  BlogSlugRoute: BlogSlugRoute,
+  BlogIndexRoute: BlogIndexRoute,
+}
+
+const BlogRouteRouteWithChildren = BlogRouteRoute._addFileChildren(
+  BlogRouteRouteChildren,
+)
+
 interface AdminRouteChildren {
   AdminBlogRoute: typeof AdminBlogRoute
   AdminCareersRoute: typeof AdminCareersRoute
@@ -844,22 +875,12 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
-interface BlogRouteChildren {
-  BlogSlugRoute: typeof BlogSlugRoute
-}
-
-const BlogRouteChildren: BlogRouteChildren = {
-  BlogSlugRoute: BlogSlugRoute,
-}
-
-const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BlogRouteRoute: BlogRouteRouteWithChildren,
   AboutRoute: AboutRoute,
   AdminRoute: AdminRouteWithChildren,
   AdvertiseRoute: AdvertiseRoute,
-  BlogRoute: BlogRouteWithChildren,
   BrowseRoute: BrowseRoute,
   CareersRoute: CareersRoute,
   ConsultancyRoute: ConsultancyRoute,
