@@ -4,6 +4,7 @@ import { ArrowLeft, Calendar, User, Newspaper } from "lucide-react";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { getBlogPostBySlug } from "@/lib/admin-data.server";
+import { absoluteUrl, socialImageUrl } from "@/lib/site-config";
 
 export const Route = createFileRoute("/blog/$slug")({
   loader: async ({ params }) => {
@@ -11,14 +12,31 @@ export const Route = createFileRoute("/blog/$slug")({
     if (!post) throw notFound();
     return { post };
   },
-  head: ({ loaderData }) => ({
-    meta: loaderData
-      ? [
-          { title: `${loaderData.post.title} — Deacomart Blog` },
-          { name: "description", content: loaderData.post.excerpt },
-        ]
-      : [],
-  }),
+  head: ({ loaderData }) => {
+    if (!loaderData) return { meta: [] };
+    const { post } = loaderData;
+    const title = `${post.title} — Deacomart Blog`;
+    const description = post.excerpt || "News and updates from Deacomart Ltd.";
+    const image = socialImageUrl(post.coverImage);
+    const url = absoluteUrl(`/blog/${post.slug}`);
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:type", content: "article" },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:image", content: image },
+        { property: "og:image:secure_url", content: image },
+        { property: "og:url", content: url },
+        { property: "og:site_name", content: "Deacomart Ltd" },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
+        { name: "twitter:image", content: image },
+      ],
+    };
+  },
   component: BlogPostPage,
   notFoundComponent: () => (
     <div className="min-h-screen bg-background">

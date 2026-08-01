@@ -35,6 +35,7 @@ import {
   type ServiceItem,
   type SiteContent,
 } from "@/lib/content-store";
+import { absoluteUrl } from "@/lib/site-config";
 const FEATURED_PRODUCT_IMAGE = "/images/AVOCADO AIL.jpeg";
 const PRODUCT_SHOWCASE_IMAGE = "/images/SLIDER6.jpeg";
 const TEA_PRODUCT_IMAGE = "/images/Tea1.jpeg";
@@ -77,14 +78,18 @@ export const Route = createFileRoute("/")({
         content:
           "Deacomart trains farmers, supplies quality food and beverages, and delivers agribusiness consultancy across all Districts of Rwanda. Based in Kigali.",
       },
+      { property: "og:type", content: "website" },
       { property: "og:title", content: "Deacomart Ltd — Be EcoWise" },
       {
         property: "og:description",
         content:
           "Rwandan agribusiness empowering farmers and supplying juices, teas, honey, sesame, eggs and more. Order on WhatsApp +250 780 165 257.",
       },
-      { property: "og:image", content: "/images/SLIDER6.jpeg" },
-      { name: "twitter:image", content: "/images/SLIDER6.jpeg" },
+      { property: "og:image", content: absoluteUrl("/images/SLIDER6.jpeg") },
+      { property: "og:url", content: absoluteUrl("/") },
+      { property: "og:site_name", content: "Deacomart Ltd" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: absoluteUrl("/images/SLIDER6.jpeg") },
     ],
   }),
   component: Index,

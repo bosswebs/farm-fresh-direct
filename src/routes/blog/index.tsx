@@ -4,18 +4,31 @@ import { Newspaper, Search, Calendar, User, ArrowRight } from "lucide-react";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { getPublishedBlogPosts } from "@/lib/admin-data.server";
+import { absoluteUrl, socialImageUrl } from "@/lib/site-config";
 
 export const Route = createFileRoute("/blog/")({
-  head: () => ({
-    meta: [
-      { title: "Blog & Updates — Deacomart Ltd" },
-      {
-        name: "description",
-        content:
-          "News, updates, and stories from Deacomart Ltd — Rwanda's agribusiness marketplace and farmer empowerment platform.",
-      },
-    ],
-  }),
+  head: () => {
+    const title = "Blog & Updates — Deacomart Ltd";
+    const description =
+      "News, updates, and stories from Deacomart Ltd — Rwanda's agribusiness marketplace and farmer empowerment platform.";
+    const image = socialImageUrl(null);
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:type", content: "website" },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:image", content: image },
+        { property: "og:url", content: absoluteUrl("/blog") },
+        { property: "og:site_name", content: "Deacomart Ltd" },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
+        { name: "twitter:image", content: image },
+      ],
+    };
+  },
   loader: async () => {
     try {
       return { posts: await getPublishedBlogPosts() };
