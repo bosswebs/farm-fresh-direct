@@ -21,17 +21,17 @@ jobs:
             exit 1
           fi
 
-          status=$(curl -s -o /tmp/resp.json -w "%{http_code}" \
-            "$SUPABASE_URL/storage/v1/bucket/product-images" \
-            -H "apikey: $SUPABASE_ANON_KEY" \
-            -H "Authorization: Bearer $SUPABASE_ANON_KEY")
+          # Fetching a real, permanent object is unambiguous: 200 means the
+          # project (and this bucket) are genuinely reachable and serving traffic.
+          status=$(curl -s -o /tmp/resp.txt -w "%{http_code}" \
+            "$SUPABASE_URL/storage/v1/object/public/product-images/_healthcheck.txt" \
+            -H "apikey: $SUPABASE_ANON_KEY")
 
           echo "Storage API responded: $status"
-          cat /tmp/resp.json
+          cat /tmp/resp.txt
           echo ""
 
-          # 200 = bucket found, 404 = bucket missing but project is awake either way.
-          if [ "$status" != "200" ] && [ "$status" != "404" ]; then
-            echo "Unexpected status from Supabase — project may be paused or misconfigured." >&2
+          if [ "$status" != "200" ]; then
+            echo "Supabase project did not respond as expected — it may be paused." >&2
             exit 1
           fi
