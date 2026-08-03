@@ -14,6 +14,7 @@ import {
   Crown,
   Edit3,
   Eye,
+  FileText,
   GraduationCap,
   HeadphonesIcon,
   Mail,
@@ -68,7 +69,7 @@ type StaffFormState = {
   loginRole?: string;
 };
 
-const roles: StaffRole[] = ["trainer", "consultant", "driver", "admin", "support"];
+const roles: StaffRole[] = ["trainer", "consultant", "driver", "admin", "support", "content"];
 const statuses: StaffStatus[] = ["active", "on_leave", "inactive"];
 
 const roleConfig: Record<StaffRole, { icon: ElementType; color: string; label: string }> = {
@@ -92,6 +93,11 @@ const roleConfig: Record<StaffRole, { icon: ElementType; color: string; label: s
     icon: HeadphonesIcon,
     color: "bg-pink-100 text-pink-700 border-pink-200",
     label: "Support Officer",
+  },
+  content: {
+    icon: FileText,
+    color: "bg-cyan-100 text-cyan-700 border-cyan-200",
+    label: "Content Specialist",
   },
 };
 
@@ -119,6 +125,8 @@ function defaultLoginRoleFor(role: StaffRole): string {
       return "logistics_manager";
     case "support":
       return "support_officer";
+    case "content":
+      return "content_manager";
     default:
       return "manager";
   }
@@ -244,9 +252,15 @@ function StaffPage() {
     setSaving(true);
     setFormError(null);
     try {
+      // A blank password field means "don't change it" on edit — never submit
+      // an empty string, only a real value or nothing at all.
+      const payload = {
+        ...form,
+        loginPassword: form.loginPassword?.trim() ? form.loginPassword.trim() : undefined,
+      };
       const saved = editingMember
-        ? await updateStaffMember({ data: { id: editingMember.id, ...form } as any })
-        : await createStaffMember({ data: form as any });
+        ? await updateStaffMember({ data: { id: editingMember.id, ...payload } as any })
+        : await createStaffMember({ data: payload as any });
 
       if (editingMember) {
         applyStaffUpdate(saved);
@@ -260,9 +274,7 @@ function StaffPage() {
       await refreshStaff();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unable to save staff member.";
-      setFormError(
-        message.includes("duplicate") ? "A staff member with this email already exists." : message,
-      );
+      setFormError(message);
     } finally {
       setSaving(false);
     }

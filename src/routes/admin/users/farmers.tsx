@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, type ElementType } from "react";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import {
   Search, Filter, UserCheck, UserX, Eye, CheckCircle, XCircle,
   Pause, Star, MapPin, Phone, Mail, Leaf, TrendingUp, Clock,
-  Award, MoreHorizontal, Download, RefreshCw
+  Award, MoreHorizontal, Download, RefreshCw, X, ShoppingBasket,
+  CalendarDays, ClipboardCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "../../../components/ui/badge";
@@ -51,6 +52,7 @@ function FarmersPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
+  const [profileFarmer, setProfileFarmer] = useState<Farmer | null>(null);
 
   async function handleStatusUpdate(id: string, status: "active" | "pending" | "suspended" | "rejected") {
     setBusy(true);
@@ -307,7 +309,10 @@ function FarmersPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-44">
-                        <DropdownMenuItem className="gap-2 cursor-pointer text-sm">
+                        <DropdownMenuItem
+                          onClick={() => setProfileFarmer(farmer)}
+                          className="gap-2 cursor-pointer text-sm"
+                        >
                           <Eye className="w-3.5 h-3.5" /> View Profile
                         </DropdownMenuItem>
                         {farmer.status === "pending" && (
@@ -364,6 +369,166 @@ function FarmersPage() {
           </div>
         </div>
       </div>
+
+      {profileFarmer && (
+        <FarmerProfileModal
+          farmer={profileFarmer}
+          busy={busy}
+          onClose={() => setProfileFarmer(null)}
+          onStatusChange={(status) => {
+            handleStatusUpdate(profileFarmer.id, status);
+            setProfileFarmer({ ...profileFarmer, status });
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function FarmerProfileModal({
+  farmer,
+  busy,
+  onClose,
+  onStatusChange,
+}: {
+  farmer: Farmer;
+  busy: boolean;
+  onClose: () => void;
+  onStatusChange: (status: "active" | "pending" | "suspended" | "rejected") => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-xl rounded-2xl border border-gray-100 bg-white p-6 shadow-2xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-xl font-bold flex-shrink-0 overflow-hidden">
+              {farmer.profileImage ? (
+                <img src={farmer.profileImage} alt={farmer.name} className="w-full h-full object-cover" />
+              ) : (
+                farmer.name.charAt(0)
+              )}
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-lg font-bold text-gray-900 font-display truncate">{farmer.name}</h2>
+              <div className="mt-1 flex flex-wrap gap-2">
+                <span className={`text-xs font-medium px-2.5 py-1 rounded-full border capitalize ${getStatusColor(farmer.status)}`}>
+                  {farmer.status}
+                </span>
+                <KycBadge status={farmer.kycStatus} />
+              </div>
+            </div>
+          </div>
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={onClose}>
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <ProfileField icon={Leaf} label="Farm Name" value={farmer.farmName} />
+          <ProfileField icon={MapPin} label="Location" value={`${farmer.sector}, ${farmer.district}`} />
+          <ProfileField icon={Phone} label="Phone" value={farmer.phone} />
+          <ProfileField icon={Mail} label="Email" value={farmer.email} />
+          <ProfileField icon={CalendarDays} label="Registered" value={farmer.registeredDate} />
+          <ProfileField icon={ShoppingBasket} label="Farm Size" value={farmer.farmSize} />
+          <ProfileField icon={TrendingUp} label="Total Sales" value={farmer.totalSales > 0 ? formatRWF(farmer.totalSales) : "—"} />
+          <ProfileField icon={Award} label="Trainings Attended" value={farmer.trainingsAttended.toString()} />
+        </div>
+
+        <div className="mt-4 rounded-xl border border-gray-100 bg-gray-50 p-3">
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase text-gray-400 mb-2">
+            <ClipboardCheck className="w-3 h-3" /> Performance Score
+          </div>
+          {farmer.performanceScore > 0 ? (
+            <QualityBar score={farmer.performanceScore} />
+          ) : (
+            <span className="text-xs text-gray-400">No data yet</span>
+          )}
+        </div>
+
+        {farmer.products.length > 0 && (
+          <div className="mt-4">
+            <div className="text-[10px] font-semibold uppercase text-gray-400 mb-2">Products</div>
+            <div className="flex flex-wrap gap-1.5">
+              {farmer.products.map((p) => (
+                <span key={p} className="text-xs bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 rounded-full">
+                  {p}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="mt-6 flex flex-wrap justify-end gap-2">
+          {farmer.status === "pending" && (
+            <Button
+              variant="outline"
+              className="gap-2 text-emerald-700 border-emerald-300"
+              onClick={() => onStatusChange("active")}
+              disabled={busy}
+            >
+              <CheckCircle className="w-4 h-4" />
+              Approve
+            </Button>
+          )}
+          {farmer.status === "active" && (
+            <Button
+              variant="outline"
+              className="gap-2 text-amber-700 border-amber-300"
+              onClick={() => onStatusChange("suspended")}
+              disabled={busy}
+            >
+              <Pause className="w-4 h-4" />
+              Suspend
+            </Button>
+          )}
+          {farmer.status === "suspended" && (
+            <Button
+              variant="outline"
+              className="gap-2 text-emerald-700 border-emerald-300"
+              onClick={() => onStatusChange("active")}
+              disabled={busy}
+            >
+              <RefreshCw className="w-4 h-4" />
+              Reactivate
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            className="gap-2 text-red-600 hover:text-red-700"
+            onClick={() => onStatusChange("rejected")}
+            disabled={busy}
+          >
+            <XCircle className="w-4 h-4" />
+            Reject
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProfileField({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: ElementType;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
+      <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase text-gray-400">
+        <Icon className="w-3 h-3" />
+        {label}
+      </div>
+      <div className="mt-1 text-sm font-medium text-gray-800 break-words">{value}</div>
     </div>
   );
 }

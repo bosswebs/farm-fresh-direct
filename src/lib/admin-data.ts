@@ -93,7 +93,7 @@ export interface Order {
 export interface StaffMember {
   id: string;
   name: string;
-  role: "trainer" | "consultant" | "driver" | "admin" | "support";
+  role: "trainer" | "consultant" | "driver" | "admin" | "support" | "content";
   department: string;
   phone: string;
   email: string;

@@ -20,7 +20,7 @@ async function requireAdmin() {
   ]);
 }
 
-const staffRoleSchema = z.enum(["trainer", "consultant", "driver", "admin", "support"]);
+const staffRoleSchema = z.enum(["trainer", "consultant", "driver", "admin", "support", "content"]);
 const staffStatusSchema = z.enum(["active", "on_leave", "inactive"]);
 const appUserRoleSchema = z.enum([
   "super_admin",
@@ -44,7 +44,12 @@ const staffPayloadSchema = z.object({
   status: staffStatusSchema.default("active"),
   joinDate: z.string().trim().min(1).max(20),
   enableLogin: z.boolean().default(false),
-  loginPassword: z.string().min(10).max(128).optional().nullable(),
+  // Blank/whitespace-only means "don't change the password" — only enforce the
+  // length requirement when a password value is actually being set.
+  loginPassword: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    z.string().min(10, "Password must be at least 10 characters.").max(128).optional().nullable(),
+  ),
   loginRole: appUserRoleSchema.optional().nullable(),
 });
 const staffIdSchema = z.object({ id: z.string().trim().min(1).max(80) });
@@ -68,7 +73,7 @@ function mapStaffRow(row: StaffRow) {
   return {
     id: row.id,
     name: row.name,
-    role: row.role as "trainer" | "consultant" | "driver" | "admin" | "support",
+    role: row.role as "trainer" | "consultant" | "driver" | "admin" | "support" | "content",
     department: row.department,
     phone: row.phone,
     email: row.email,
@@ -282,6 +287,7 @@ export const getFarmers = createServerFn({ method: "GET" }).handler(async () => 
     performanceScore: parseFloat(r.performance_score),
     farmName: r.farm_name,
     farmSize: r.farm_size,
+    status: r.status as "active" | "pending" | "suspended" | "rejected",
     kycStatus: r.kyc_status as "verified" | "pending" | "failed",
     registeredDate: r.registered_date,
     trainingsAttended: r.trainings_attended,
@@ -385,8 +391,12 @@ export const createStaffMember = createServerFn({ method: "POST" })
 
       await client.query("COMMIT");
       return mapStaffRow(mappedResult.rows[0]);
-    } catch (error) {
+    } catch (error: any) {
       await client.query("ROLLBACK");
+      // 23505 = unique_violation — surface a clear message instead of raw DB error
+      if (error?.code === "23505") {
+        throw new Error("A user account with this email address already exists.");
+      }
       throw error;
     } finally {
       client.release();
@@ -514,8 +524,12 @@ export const updateStaffMember = createServerFn({ method: "POST" })
       ]);
       await client.query("COMMIT");
       return mapStaffRow(mappedResult.rows[0]);
-    } catch (error) {
+    } catch (error: any) {
       await client.query("ROLLBACK");
+      // 23505 = unique_violation — surface a clear message instead of raw DB error
+      if (error?.code === "23505") {
+        throw new Error("A user account with this email address already exists.");
+      }
       throw error;
     } finally {
       client.release();
@@ -1483,7 +1497,143 @@ export const getVehicles = createServerFn({ method: "GET" }).handler(async () =>
   }));
 });
 
+const vehicleStatusSchema = z.enum(["active", "maintenance", "inactive"]);
+
+const vehiclePayloadSchema = z.object({
+  plate: z.string().trim().min(2).max(20),
+  type: z.string().trim().min(2).max(80),
+  driverName: z.string().trim().max(120).default("TBD"),
+  capacity: z.string().trim().min(1).max(60),
+  status: vehicleStatusSchema.default("active"),
+  lastMaintenance: z.string().trim().max(20).nullable().optional(),
+});
+
+type VehicleRow = {
+  id: string;
+  plate: string;
+  type: string;
+  driver_name: string;
+  capacity: string;
+  status: string;
+  last_maintenance: string | null;
+};
+
+function mapVehicleRow(r: VehicleRow) {
+  return {
+    id: r.id,
+    plate: r.plate,
+    type: r.type,
+    driver: r.driver_name,
+    capacity: r.capacity,
+    status: r.status,
+    lastMaintenance: r.last_maintenance ?? "—",
+  };
+}
+
+export const createVehicle = createServerFn({ method: "POST" })
+  .validator(vehiclePayloadSchema)
+  .handler(async ({ data }) => {
+    await requireAdmin();
+    const pool = getDatabasePool();
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const result = await client.query<VehicleRow>(
+        `INSERT INTO vehicles (id, plate, type, driver_name, capacity, status, last_maintenance)
+         VALUES (
+           'VEH-' || upper(substr(gen_random_uuid()::text, 1, 8)),
+           $1, $2, $3, $4, $5,
+           CASE WHEN $6::text IS NOT NULL AND $6 <> '' THEN $6::date ELSE NULL END
+         )
+         RETURNING id, plate, type, driver_name, capacity, status, last_maintenance::text`,
+        [data.plate, data.type, data.driverName, data.capacity, data.status, data.lastMaintenance ?? null],
+      );
+      await client.query(
+        "INSERT INTO activity_feed(type, message, icon) VALUES ($1, $2, $3)",
+        ["logistics", `Added vehicle ${data.plate} (${data.type})`, "truck"],
+      );
+      await client.query("COMMIT");
+      return mapVehicleRow(result.rows[0]);
+    } catch (err: any) {
+      await client.query("ROLLBACK");
+      if (err?.code === "23505") throw new Error("A vehicle with this plate number already exists.");
+      throw new Error(err.message || "Failed to create vehicle.");
+    } finally {
+      client.release();
+    }
+  });
+
+export const updateVehicle = createServerFn({ method: "POST" })
+  .validator(vehiclePayloadSchema.extend({ id: z.string().trim().min(1) }))
+  .handler(async ({ data }) => {
+    await requireAdmin();
+    const pool = getDatabasePool();
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const result = await client.query<VehicleRow>(
+        `UPDATE vehicles
+            SET plate            = $2,
+                type             = $3,
+                driver_name      = $4,
+                capacity         = $5,
+                status           = $6,
+                last_maintenance = CASE WHEN $7::text IS NOT NULL AND $7 <> '' THEN $7::date ELSE last_maintenance END,
+                updated_at       = now()
+          WHERE id = $1
+          RETURNING id, plate, type, driver_name, capacity, status, last_maintenance::text`,
+        [data.id, data.plate, data.type, data.driverName, data.capacity, data.status, data.lastMaintenance ?? null],
+      );
+      if (!result.rows[0]) throw new Error("Vehicle not found.");
+      await client.query(
+        "INSERT INTO activity_feed(type, message, icon) VALUES ($1, $2, $3)",
+        ["logistics", `Updated vehicle ${data.plate}`, "truck"],
+      );
+      await client.query("COMMIT");
+      return mapVehicleRow(result.rows[0]);
+    } catch (err: any) {
+      await client.query("ROLLBACK");
+      if (err?.code === "23505") throw new Error("A vehicle with this plate number already exists.");
+      throw new Error(err.message || "Failed to update vehicle.");
+    } finally {
+      client.release();
+    }
+  });
+
+export const updateVehicleStatus = createServerFn({ method: "POST" })
+  .validator(z.object({ id: z.string().trim().min(1), status: vehicleStatusSchema }))
+  .handler(async ({ data }) => {
+    await requireAdmin();
+    const pool = getDatabasePool();
+    const result = await pool.query<VehicleRow>(
+      `UPDATE vehicles SET status = $2, updated_at = now()
+        WHERE id = $1
+        RETURNING id, plate, type, driver_name, capacity, status, last_maintenance::text`,
+      [data.id, data.status],
+    );
+    if (!result.rows[0]) throw new Error("Vehicle not found.");
+    return mapVehicleRow(result.rows[0]);
+  });
+
+export const deleteVehicle = createServerFn({ method: "POST" })
+  .validator(z.object({ id: z.string().trim().min(1) }))
+  .handler(async ({ data }) => {
+    await requireAdmin();
+    const pool = getDatabasePool();
+    const result = await pool.query<{ plate: string }>(
+      "DELETE FROM vehicles WHERE id = $1 RETURNING plate",
+      [data.id],
+    );
+    if (!result.rows[0]) throw new Error("Vehicle not found.");
+    await pool.query(
+      "INSERT INTO activity_feed(type, message, icon) VALUES ($1, $2, $3)",
+      ["logistics", `Removed vehicle ${result.rows[0].plate} from fleet`, "truck"],
+    );
+    return { success: true };
+  });
+
 // ─── Partners ─────────────────────────────────────────────────────
+
 export const getPartners = createServerFn({ method: "GET" }).handler(async () => {
   await requireAdmin();
   const pool = getDatabasePool();
@@ -1503,13 +1653,134 @@ export const getPartners = createServerFn({ method: "GET" }).handler(async () =>
             since::text, total_orders, total_value::text
      FROM partners ORDER BY created_at DESC`,
   );
-  return result.rows.map((r) => ({
-    ...r,
-    contactPerson: r.contact_person,
-    totalOrders: r.total_orders,
-    totalValue: parseFloat(r.total_value),
-  }));
+  return result.rows.map(mapPartnerRow);
 });
+
+const partnerTypeSchema = z.enum(["hotel", "supermarket", "cooperative", "ngo", "government"]);
+const partnerStatusSchema = z.enum(["active", "pending", "inactive"]);
+
+const partnerPayloadSchema = z.object({
+  name: z.string().trim().min(2).max(160),
+  type: partnerTypeSchema,
+  district: z.string().trim().min(2).max(80),
+  contactPerson: z.string().trim().min(2).max(120),
+  phone: z.string().trim().min(3).max(40),
+  status: partnerStatusSchema.default("pending"),
+});
+
+type PartnerRow = {
+  id: string;
+  name: string;
+  type: string;
+  district: string;
+  contact_person: string;
+  phone: string;
+  status: string;
+  since: string;
+  total_orders: number;
+  total_value: string;
+};
+
+function mapPartnerRow(row: PartnerRow) {
+  return {
+    ...row,
+    type: row.type as z.infer<typeof partnerTypeSchema>,
+    status: row.status as z.infer<typeof partnerStatusSchema>,
+    contactPerson: row.contact_person,
+    totalOrders: row.total_orders,
+    totalValue: parseFloat(row.total_value),
+  };
+}
+
+const PARTNER_SELECT_FIELDS = `id, name, type, district, contact_person, phone, status,
+            since::text, total_orders, total_value::text`;
+
+export const createPartner = createServerFn({ method: "POST" })
+  .validator(partnerPayloadSchema)
+  .handler(async ({ data }) => {
+    const admin = await requireAdmin();
+    const pool = getDatabasePool();
+
+    const id = "PTN-" + Math.floor(100000 + Math.random() * 900000);
+    const result = await pool.query<PartnerRow>(
+      `INSERT INTO partners (id, name, type, district, contact_person, phone, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING ${PARTNER_SELECT_FIELDS}`,
+      [id, data.name, data.type, data.district, data.contactPerson, data.phone, data.status],
+    );
+
+    await pool.query(
+      "INSERT INTO activity_feed(type, message, icon) VALUES ($1, $2, $3)",
+      ["partnerships", `${admin.displayName} added partner "${data.name}"`, "handshake"],
+    );
+
+    return mapPartnerRow(result.rows[0]);
+  });
+
+export const updatePartner = createServerFn({ method: "POST" })
+  .validator(partnerPayloadSchema.extend({ id: z.string().trim().min(1) }))
+  .handler(async ({ data }) => {
+    const admin = await requireAdmin();
+    const pool = getDatabasePool();
+
+    const result = await pool.query<PartnerRow>(
+      `UPDATE partners
+       SET name = $2, type = $3, district = $4, contact_person = $5, phone = $6, status = $7, updated_at = now()
+       WHERE id = $1
+       RETURNING ${PARTNER_SELECT_FIELDS}`,
+      [data.id, data.name, data.type, data.district, data.contactPerson, data.phone, data.status],
+    );
+    if (result.rowCount === 0) throw new Error("Partner not found");
+
+    await pool.query(
+      "INSERT INTO activity_feed(type, message, icon) VALUES ($1, $2, $3)",
+      ["partnerships", `${admin.displayName} updated partner "${data.name}"`, "edit"],
+    );
+
+    return mapPartnerRow(result.rows[0]);
+  });
+
+export const updatePartnerStatus = createServerFn({ method: "POST" })
+  .validator(z.object({ id: z.string().trim().min(1), status: partnerStatusSchema }))
+  .handler(async ({ data }) => {
+    const admin = await requireAdmin();
+    const pool = getDatabasePool();
+
+    const result = await pool.query<PartnerRow>(
+      `UPDATE partners SET status = $2, updated_at = now()
+       WHERE id = $1
+       RETURNING ${PARTNER_SELECT_FIELDS}`,
+      [data.id, data.status],
+    );
+    if (result.rowCount === 0) throw new Error("Partner not found");
+
+    await pool.query(
+      "INSERT INTO activity_feed(type, message, icon) VALUES ($1, $2, $3)",
+      ["partnerships", `${admin.displayName} set partner "${result.rows[0].name}" to ${data.status}`, "check-circle"],
+    );
+
+    return mapPartnerRow(result.rows[0]);
+  });
+
+export const deletePartner = createServerFn({ method: "POST" })
+  .validator(z.object({ id: z.string().trim().min(1) }))
+  .handler(async ({ data }) => {
+    const admin = await requireAdmin();
+    const pool = getDatabasePool();
+
+    const result = await pool.query<{ name: string }>(
+      "DELETE FROM partners WHERE id = $1 RETURNING name",
+      [data.id],
+    );
+    if (result.rowCount === 0) throw new Error("Partner not found");
+
+    await pool.query(
+      "INSERT INTO activity_feed(type, message, icon) VALUES ($1, $2, $3)",
+      ["partnerships", `${admin.displayName} removed partner "${result.rows[0].name}"`, "trash-2"],
+    );
+
+    return { id: data.id };
+  });
 
 // ─── FnB Categories + Products ────────────────────────────────────
 interface FnbProduct {
@@ -2125,12 +2396,22 @@ export const registerFarmer = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const pool = getDatabasePool();
-    const checkUser = await pool.query(
-      "SELECT id FROM application_users WHERE email = $1",
-      [data.email.toLowerCase()]
+    const normalizedEmail = data.email.trim().toLowerCase();
+
+    // Check for an existing account by this email.
+    // If the account is active or suspended (pending review), block registration.
+    // If the account is disabled (previously rejected), allow re-registration by resetting it.
+    const existingUser = await pool.query<{ id: string; status: string }>(
+      "SELECT id, status FROM application_users WHERE email = $1 LIMIT 1",
+      [normalizedEmail]
     );
-    if (checkUser.rowCount && checkUser.rowCount > 0) {
-      throw new Error("Email address is already registered.");
+    const existing = existingUser.rows[0];
+    if (existing && existing.status !== "disabled") {
+      // Active or pending-review account — genuine duplicate
+      throw new Error(
+        "An account with this email address is already registered. " +
+        "If you have forgotten your password, please contact support."
+      );
     }
 
     const client = await pool.connect();
@@ -2143,28 +2424,73 @@ export const registerFarmer = createServerFn({ method: "POST" })
       );
       const passHash = passRes.rows[0].hash;
 
-      const userInsert = await client.query<{ id: string }>(
-        `INSERT INTO application_users (email, password_hash, display_name, role, status)
-         VALUES ($1, $2, $3, 'farmer', 'suspended') RETURNING id`,
-        [data.email.toLowerCase(), passHash, data.name]
-      );
-      const userId = userInsert.rows[0].id;
+      let userId: string;
 
-      await client.query(
-        `INSERT INTO farmers (id, name, phone, email, district, sector, farm_name, farm_size, products, status, kyc_status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending', 'pending')`,
-        [
-          userId,
-          data.name,
-          data.phone,
-          data.email.toLowerCase(),
-          data.district,
-          data.sector,
-          data.farmName,
-          data.farmSize,
-          data.products,
-        ]
-      );
+      if (existing) {
+        // Re-registration path: reset a previously disabled (rejected) account
+        userId = existing.id;
+        await client.query(
+          `UPDATE application_users
+             SET display_name = $2,
+                 password_hash = $3,
+                 status = 'suspended',
+                 updated_at = now()
+           WHERE id = $1`,
+          [userId, data.name, passHash]
+        );
+        // Reset or upsert the farmers profile row
+        await client.query(
+          `INSERT INTO farmers (id, name, phone, email, district, sector, farm_name, farm_size, products, status, kyc_status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending', 'pending')
+           ON CONFLICT (id) DO UPDATE SET
+             name       = EXCLUDED.name,
+             phone      = EXCLUDED.phone,
+             email      = EXCLUDED.email,
+             district   = EXCLUDED.district,
+             sector     = EXCLUDED.sector,
+             farm_name  = EXCLUDED.farm_name,
+             farm_size  = EXCLUDED.farm_size,
+             products   = EXCLUDED.products,
+             status     = 'pending',
+             kyc_status = 'pending',
+             updated_at = now()`,
+          [
+            userId,
+            data.name,
+            data.phone,
+            normalizedEmail,
+            data.district,
+            data.sector,
+            data.farmName,
+            data.farmSize,
+            data.products,
+          ]
+        );
+      } else {
+        // Fresh registration path
+        const userInsert = await client.query<{ id: string }>(
+          `INSERT INTO application_users (email, password_hash, display_name, role, status)
+           VALUES ($1, $2, $3, 'farmer', 'suspended') RETURNING id`,
+          [normalizedEmail, passHash, data.name]
+        );
+        userId = userInsert.rows[0].id;
+
+        await client.query(
+          `INSERT INTO farmers (id, name, phone, email, district, sector, farm_name, farm_size, products, status, kyc_status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending', 'pending')`,
+          [
+            userId,
+            data.name,
+            data.phone,
+            normalizedEmail,
+            data.district,
+            data.sector,
+            data.farmName,
+            data.farmSize,
+            data.products,
+          ]
+        );
+      }
 
       await client.query(
         `INSERT INTO activity_feed (type, message, icon)
@@ -2180,6 +2506,13 @@ export const registerFarmer = createServerFn({ method: "POST" })
       return { success: true };
     } catch (err: any) {
       await client.query("ROLLBACK");
+      // 23505 = unique_violation — last-resort guard for any remaining UNIQUE constraint
+      if (err?.code === "23505") {
+        throw new Error(
+          "An account with this email address is already registered. " +
+          "If you have forgotten your password, please contact support."
+        );
+      }
       throw new Error(err.message || "Failed to register farmer account.");
     } finally {
       client.release();
